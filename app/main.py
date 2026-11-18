@@ -21,8 +21,15 @@ from app import NOME_APP
 from app.aggiornamenti.router import router as aggiornamenti_router
 from app.appalti.router import router as appalti_router
 from app.auth.account import router as account_router
-from app.auth.dipendenze import CsrfNonValido, NonAutenticato, Proibito, utente_corrente
+from app.auth.dipendenze import (
+    CsrfNonValido,
+    NonAutenticato,
+    Proibito,
+    controllo_accesso,
+    utente_corrente,
+)
 from app.auth.router import router as auth_router
+from app.auth.utenti import router as utenti_router
 from app.bandi.router import router as bandi_router
 from app.clienti.crm import router as crm_router
 from app.clienti.router import router as clienti_router
@@ -48,7 +55,14 @@ from app.web import render
 
 log = logging.getLogger(__name__)
 
-app = FastAPI(title=NOME_APP, docs_url=None, redoc_url=None, openapi_url=None)
+app = FastAPI(
+    title=NOME_APP,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+    # Sezioni assegnate e sola lettura, su ogni pagina (app/auth/permessi.py)
+    dependencies=[Depends(controllo_accesso)],
+)
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 
 METODI_CHE_MODIFICANO = {"POST", "PUT", "PATCH", "DELETE"}
@@ -113,6 +127,7 @@ app.include_router(account_router)
 app.include_router(integrazioni_router)
 app.include_router(bandi_router)
 app.include_router(crm_router)
+app.include_router(utenti_router)
 app.include_router(report_router)
 app.include_router(aggiornamenti_router)
 app.include_router(import_router)

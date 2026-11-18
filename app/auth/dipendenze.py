@@ -56,6 +56,23 @@ def utente_corrente(
     return sessione.utente
 
 
+def controllo_accesso(
+    request: Request,
+    sessione: Annotated[Sessione | None, Depends(sessione_opzionale)],
+) -> None:
+    """Su ogni richiesta: l'utente vede solo le sezioni assegnate e, se in sola lettura,
+    non modifica nulla (app/auth/permessi.py). Le pagine senza login non sono toccate."""
+    if sessione is None or not sessione.mfa_verificata:
+        return
+    from app.auth.permessi import puo_modificare, puo_vedere
+
+    percorso = request.url.path
+    if not puo_vedere(sessione.utente, percorso) or not puo_modificare(
+        sessione.utente, percorso, request.method
+    ):
+        raise Proibito
+
+
 def richiede_titolare(utente: Annotated[Utente, Depends(utente_corrente)]) -> Utente:
     if not utente.is_titolare:
         raise Proibito

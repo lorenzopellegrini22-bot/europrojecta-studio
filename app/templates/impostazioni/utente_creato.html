@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block titolo %}Password temporanea · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<nav aria-label="breadcrumb"><ul><li><a href="/impostazioni/utenti">Utenti e permessi</a></li><li>{{ u.nome }}</li></ul></nav>
+<h1>{{ "Utente creato" if nuovo else "Nuova password temporanea" }}</h1>
+<article>
+  <p><strong>{{ u.nome }}</strong> ({{ u.email }}) può entrare con questa password temporanea:</p>
+  <p class="password-temporanea" id="password-temporanea">{{ password }}</p>
+  <button type="button" class="secondary piccolo" data-copia="password-temporanea">Copia</button>
+  <div class="messaggio attenzione">
+    La password compare <strong>solo ora</strong>: comunicala alla persona a voce o di persona (non per email). Al primo accesso configurerà il codice sul telefono e potrà cambiarla da «Il mio account».
+  </div>
+  <a href="/impostazioni/utenti" role="button">Torna agli utenti</a>
+</article>
+{% endblock %}

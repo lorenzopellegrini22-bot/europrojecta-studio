@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import audit
-from app.auth.dipendenze import richiede_titolare, verifica_csrf
+from app.auth.dipendenze import utente_corrente, verifica_csrf
 from app.db import get_db
 from app.importer import csv_clienti as imp
 from app.models import ImportJob, MappaturaImport, Utente
@@ -19,7 +19,8 @@ from app.web import leggi_form, render, testo
 router = APIRouter()
 
 Db = Annotated[Session, Depends(get_db)]
-Titolare = Annotated[Utente, Depends(richiede_titolare)]
+# Chi può importare lo decide il titolare (sezione «importazione», app/auth/permessi.py)
+Titolare = Annotated[Utente, Depends(utente_corrente)]
 Form = Annotated[dict[str, Any], Depends(leggi_form)]
 CSRF = [Depends(verifica_csrf)]
 TIPI = {

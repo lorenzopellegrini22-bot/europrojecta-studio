@@ -14,12 +14,12 @@ from sqlalchemy import (
     Text,
     func,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base, ConTimestamp
 
-RUOLI = ("titolare", "collaboratore")
+RUOLI = ("titolare", "collaboratore", "lettura")
 ESITI_ACCESSO = ("ok", "password_errata", "totp_errato", "bloccato", "utente_inesistente")
 AZIONI_AUDIT = ("crea", "modifica", "elimina", "esporta", "invia")
 
@@ -39,6 +39,8 @@ class Utente(ConTimestamp, Base):
     # Ultimo intervallo TOTP usato: impedisce di riusare lo stesso codice due volte.
     totp_ultimo_intervallo: Mapped[int | None] = mapped_column(BigInteger)
     ruolo: Mapped[str] = mapped_column(String(20))
+    # Sezioni dell'app assegnate (app/auth/permessi.py); None = predefinite del ruolo
+    sezioni: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
     attivo: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     tentativi_falliti: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     bloccato_fino_al: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

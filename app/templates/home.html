@@ -20,18 +20,22 @@
 </div>
 {% endfor %}
 
-{% if pdf_da_caricare %}
+{% set vede = namespace(bandi=puo_vedere(utente, "/bandi"), pratiche=puo_vedere(utente, "/pratiche"), opportunita=puo_vedere(utente, "/opportunita"), aggiornamenti=puo_vedere(utente, "/aggiornamenti"), clienti=puo_vedere(utente, "/clienti")) %}
+{% if pdf_da_caricare and vede.bandi %}
 <div class="messaggio attenzione">{{ pdf_da_caricare }} PDF di bandi aperti non si possono scaricare in automatico: <a href="/documenti/da-caricare">caricali a mano</a> perché l'AI possa leggerli.</div>
 {% endif %}
 
+{% if vede.bandi %}
 <section class="cifre" aria-label="Bandi">
   <a class="cifra in-evidenza" href="/bandi?stato=aperto"><span class="cifra-etichetta">Bandi aperti</span><span class="cifra-valore">{{ aperti }}</span></a>
   <a class="cifra" href="/bandi?stato=in_arrivo"><span class="cifra-etichetta">In arrivo</span><span class="cifra-valore">{{ in_arrivo }}</span></a>
   <a class="cifra{% if in_scadenza %} urgente{% endif %}" href="/bandi?stato=aperto&scadenza=7"><span class="cifra-etichetta">Scadono entro 7 giorni</span><span class="cifra-valore">{{ in_scadenza }}</span></a>
   <div class="cifra"><span class="cifra-etichetta">Nuovi negli ultimi 7 giorni</span><span class="cifra-valore">{{ nuovi }}</span></div>
 </section>
+{% endif %}
 
 <div class="home-griglia">
+  {% if vede.pratiche %}
   <article>
     <header><strong>Le mie scadenze</strong> <small>scadute e prossimi 7 giorni</small></header>
     {% if not scadenze_vicine %}
@@ -51,24 +55,25 @@
     <a href="/scadenzario?mie=1" class="piccolo">Tutte le mie scadenze</a>
     {% endif %}
   </article>
+  {% endif %}
 
   <article>
     <header><strong>Lo studio oggi</strong></header>
     <ul class="righe">
-      <li>
+      {% if vede.opportunita %}<li>
         <span class="riga-testo">Nuove opportunità per i clienti</span>
         <a class="riga-valore" href="/opportunita?stato=nuova">{{ opportunita_nuove }}</a>
-      </li>
-      <li>
+      </li>{% endif %}
+      {% if vede.pratiche %}<li>
         <span class="riga-testo">Pratiche attive
           {% if pratiche_per_stato %}<small>{% for st, n in pratiche_per_stato %}{{ etichette_pratica.get(st, st) }}: {{ n }}{% if not loop.last %}, {% endif %}{% endfor %}</small>{% endif %}
         </span>
         <a class="riga-valore" href="/pratiche">{{ pratiche_attive }}</a>
-      </li>
-      <li>
+      </li>{% endif %}
+      {% if vede.aggiornamenti %}<li>
         <span class="riga-testo">Aggiornamenti ai clienti da approvare</span>
         <a class="riga-valore" href="/aggiornamenti">{{ bozze_aggiornamenti }}</a>
-      </li>
+      </li>{% endif %}
       <li>
         <span class="riga-testo">Spesa AI del mese
           <small>{% if budget_ai.budget %}su un budget di {{ budget_ai.budget | euro }}{% if budget_ai.percentuale is not none %} ({{ budget_ai.percentuale }}%){% endif %}{% else %}nessun budget impostato{% endif %}</small>
@@ -78,8 +83,8 @@
     </ul>
     {% if budget_ai.superato or budget_ai.sospesa %}<p class="messaggio errore">Le chiamate AI sono ferme: {{ budget_ai.motivo or "budget del mese esaurito" }}.</p>{% endif %}
     <footer class="gruppo-pulsanti">
-      <a href="/pratiche/nuova" role="button" class="piccolo">Nuova pratica</a>
-      <a href="/opportunita" role="button" class="secondary piccolo">Vai alle opportunità</a>
+      {% if vede.pratiche %}<a href="/pratiche/nuova" role="button" class="piccolo">Nuova pratica</a>{% endif %}
+      {% if vede.opportunita %}<a href="/opportunita" role="button" class="secondary piccolo">Vai alle opportunità</a>{% endif %}
     </footer>
   </article>
 </div>
@@ -87,10 +92,10 @@
 <article>
   <header><strong>Prossimi passi</strong></header>
   <ul>
-    <li><a href="/bandi">Consulta i bandi</a> per regione, forma di agevolazione e scadenza.</li>
-    {% if utente.is_titolare %}<li><a href="/impostazioni/integrazioni">Collega le chiavi API</a> (OpenAI, email, WhatsApp).</li>{% endif %}
-    <li><a href="/clienti">Inserisci i clienti</a> e apri le <a href="/pratiche">pratiche</a> partendo dai <a href="/modelli">modelli</a>.</li>
-    <li>Il matching automatico tra clienti e bandi arriva nella fase 4.</li>
+    {% if vede.bandi %}<li><a href="/bandi">Consulta i bandi</a> per regione, forma di agevolazione e scadenza.</li>{% endif %}
+    {% if utente.is_titolare %}<li><a href="/impostazioni/integrazioni">Collega le chiavi API</a> (OpenAI, email, WhatsApp) e crea le <a href="/impostazioni/utenti">utenze dello studio</a>.</li>{% endif %}
+    {% if vede.clienti %}<li><a href="/clienti">Inserisci i clienti</a> con i progetti d'investimento: ogni mattina l'app cerca i bandi adatti.</li>{% endif %}
+    {% if vede.pratiche %}<li>Apri le <a href="/pratiche">pratiche</a> partendo dai <a href="/modelli">modelli</a>.</li>{% endif %}
   </ul>
 </article>
 {% endblock %}

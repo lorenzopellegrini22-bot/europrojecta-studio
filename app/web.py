@@ -52,6 +52,15 @@ templates.env.filters["data"] = _data
 templates.env.globals["NOME_APP"] = NOME_APP
 
 
+def _puo_vedere(utente: Any, percorso: str) -> bool:
+    from app.auth.permessi import puo_vedere
+
+    return utente is not None and puo_vedere(utente, percorso)
+
+
+templates.env.globals["puo_vedere"] = _puo_vedere
+
+
 def render(
     request: Request, nome: str, contesto: dict[str, Any] | None = None, status_code: int = 200
 ) -> HTMLResponse:

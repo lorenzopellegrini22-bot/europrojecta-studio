@@ -13,6 +13,11 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
 - **Intelligenza artificiale:** modelli, budget mensile e prezzi; consumi del mese. Imposta un
   limite di spesa anche nel tuo account OpenAI (il link è nella pagina).
 
+### Utenti dello studio
+- **Impostazioni → Utenti e permessi**: crei le utenze, scegli il ruolo (collaboratore o sola
+  lettura) e le sezioni che ognuno può usare. La password temporanea compare una volta sola:
+  comunicala a voce. Puoi disattivare un utente, azzerargli la 2FA o dargli una nuova password.
+
 ## 3. Clienti
 - **Importa clienti** (menu Studio): carica l'export del programma precedente in CSV, controlla
   la mappatura e l'anteprima, fai la **prova a vuoto**, poi importa. Reimportare non crea
@@ -29,8 +34,8 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
   legge i bandi nuovi o cambiati e ne ricava i requisiti, segnando «da verificare» quello
   che il testo non dice.
 - **Revisione bandi (AI):** confermi o correggi i campi incerti; le correzioni prevalgono.
-- **PDF da caricare:** i PDF che i siti non lasciano scaricare in automatico; aprili dal link
-  e caricali.
+- **PDF da caricare:** i PDF che i siti non lasciano scaricare in automatico: apri i link (il
+  browser li scarica) e caricali **tutti insieme**; ognuno va da solo al bando giusto.
 
 ## 5. Opportunità ed email del mattino
 - Ogni mattina alle 7 ricevi un'email con i nuovi bandi adatti a ciascun cliente, il

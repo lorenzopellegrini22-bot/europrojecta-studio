@@ -1338,3 +1338,7 @@ form.feedback select, form.feedback input { width: auto; margin: 0; min-height: 
   body { background: #fff; color: #000; }
   article, .overflow-auto:has(> table), .filtri { border-color: #ccc; }
 }
+
+/* Impostazioni → Utenti */
+.password-temporanea { font-family: ui-monospace, monospace; font-size: 1.4rem; letter-spacing: .08em; padding: .5rem .75rem; background: var(--sfondo-tenue, #f4f4f0); display: inline-block; border-radius: 6px; }
+article.utente.disattivato { opacity: .6; }

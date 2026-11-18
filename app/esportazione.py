@@ -23,7 +23,7 @@ from starlette.background import BackgroundTask
 
 from app import audit
 from app import models as m
-from app.auth.dipendenze import richiede_titolare
+from app.auth.dipendenze import utente_corrente
 from app.config import get_settings
 from app.db import get_db
 from app.web import render
@@ -31,7 +31,8 @@ from app.web import render
 router = APIRouter()
 
 Db = Annotated[Session, Depends(get_db)]
-Titolare = Annotated[m.Utente, Depends(richiede_titolare)]
+# Chi può esportare lo decide il titolare (sezione «esportazione», app/auth/permessi.py)
+Titolare = Annotated[m.Utente, Depends(utente_corrente)]
 
 # Tabelle esportate: nome del file → modello
 TABELLE: dict[str, Any] = {

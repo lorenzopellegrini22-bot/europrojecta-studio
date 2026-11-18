@@ -9,8 +9,8 @@
     <p>{{ azienda.forma_giuridica or "" }}{% if azienda.partita_iva %} · P.IVA {{ azienda.partita_iva }}{% endif %} · Cliente {{ azienda.stato_cliente }}</p>
   </hgroup>
   <div class="gruppo-pulsanti">
-    <a href="/pratiche/nuova?azienda_id={{ azienda.id }}" role="button">Nuova pratica</a>
-    <a href="/prefattibilita/nuova?azienda_id={{ azienda.id }}" role="button" class="secondary outline">Verifica prefattibilità</a>
+    {% if puo_vedere(utente, "/pratiche") %}<a href="/pratiche/nuova?azienda_id={{ azienda.id }}" role="button">Nuova pratica</a>{% endif %}
+    {% if puo_vedere(utente, "/prefattibilita") %}<a href="/prefattibilita/nuova?azienda_id={{ azienda.id }}" role="button" class="secondary outline">Verifica prefattibilità</a>{% endif %}
     <a href="/clienti/{{ azienda.id }}/modifica" role="button" class="secondary outline">Modifica{% if registro_disponibile %} o aggiorna dal Registro Imprese{% endif %}</a>
   </div>
 </div>
@@ -87,7 +87,7 @@
 {% if messaggio_crm %}<div class="messaggio errore" role="alert">{{ messaggio_crm }}</div>{% endif %}
 {% include "clienti/_crm.html" %}
 
-<section id="aggiornamenti">
+{% if puo_vedere(utente, "/aggiornamenti") %}<section id="aggiornamenti">
   <h2>Aggiornamenti al cliente</h2>
   <form method="post" action="/clienti/{{ azienda.id }}/aggiornamenti" class="in-linea">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -97,7 +97,7 @@
   {% if aggiornamenti %}
   <ul>{% for ag in aggiornamenti %}<li><a href="/aggiornamenti/{{ ag.id }}">{{ ag.creato_il | data_ora }}</a> · {{ "email" if ag.canale == "email" else "WhatsApp" }} · {{ {"bozza": "bozza", "approvato": "approvato", "inviato": "inviato il " ~ (ag.inviato_il | data_ora), "errore": "non inviato", "scartato": "scartato"}[ag.stato] }}</li>{% endfor %}</ul>
   {% else %}<p><small>Nessun aggiornamento inviato.</small></p>{% endif %}
-</section>
+</section>{% endif %}
 
 <section id="opportunita">
   <h2>Opportunità</h2>

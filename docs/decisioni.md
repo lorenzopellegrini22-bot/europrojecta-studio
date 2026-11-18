@@ -323,6 +323,22 @@ Tolto Pico.css: `app/static/css/app.css` è l'unico foglio di stile e disegna da
   e non ha ClamAV, WeasyPrint e Tesseract. Per l'uso reale serve l'installazione Docker
   (`docs/messa-in-produzione.md`) o un servizio esterno per job e file.
 
+## 2026-11-18 — Utenti e permessi; PDF vietati dai siti
+
+- **Utenti e permessi** (Impostazioni → Utenti e permessi, solo titolare): ruoli titolare,
+  collaboratore e sola lettura; per collaboratori e sola lettura si scelgono le sezioni
+  (clienti, opportunità, pratiche, bandi, appalti, aggiornamenti, prefattibilità,
+  segnalatori, statistiche, importazione, esportazione). Il controllo è su ogni richiesta in
+  base all'indirizzo (app/auth/permessi.py), menu e home mostrano solo ciò che si può usare.
+  Password temporanea generata e mostrata una sola volta al titolare; 2FA obbligatoria al
+  primo accesso. Sempre almeno un titolare attivo; nessuno disattiva sé stesso.
+  Sostituisce la proposta del brief «il collaboratore non esporta»: ora lo decide il titolare
+  (predefinito: niente import ed export).
+- **PDF vietati** (es. Parco Gran Sasso-Laga: robots.txt «User-agent: * Disallow: /»): non si
+  aggira il divieto, nemmeno facendo scaricare il file all'AI. Il consulente li scarica dal
+  browser e li carica tutti insieme: abbinamento automatico per nome del file. L'AI riceve
+  comunque il link dei documenti non letti e segna «da verificare» ciò che potrebbero dire.
+
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.
 - Jinja2 + HTMX salvati nel repository, nessuna risorsa da CDN (Pico.css sostituito da uno stile proprio, vedi sopra).

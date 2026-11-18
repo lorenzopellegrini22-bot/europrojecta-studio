@@ -77,7 +77,7 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("crea-utente", help="crea un utente (la password viene chiesta)")
     p.add_argument("--email", required=True)
     p.add_argument("--nome", required=True)
-    p.add_argument("--ruolo", choices=["titolare", "collaboratore"], default="titolare")
+    p.add_argument("--ruolo", choices=["titolare", "collaboratore", "lettura"], default="titolare")
 
     p = sub.add_parser("reimposta-2fa", help="azzera la 2FA di un utente")
     p.add_argument("--email", required=True)

@@ -36,8 +36,9 @@
     ("/segnalatori", "Segnalatori", None),
     ("/statistiche", "Statistiche", None),
   ]),
-  ("amministrazione", "Amministrazione", true, [
-    ("/impostazioni/integrazioni", "Impostazioni", "/impostazioni"),
+  ("amministrazione", "Amministrazione", false, [
+    ("/impostazioni/integrazioni", "Impostazioni", "/impostazioni/integrazioni"),
+    ("/impostazioni/utenti", "Utenti e permessi", "/impostazioni/utenti"),
     ("/import", "Importa clienti", None),
     ("/export", "Esporta tutti i dati", None),
   ]),
@@ -63,7 +64,10 @@
         <ul>
           <li><a href="/"{% if percorso == "/" %} aria-current="page"{% endif %}>Home</a></li>
         </ul>
-        {% for chiave, titolo, solo_titolare, voci in sezioni_menu if not solo_titolare or utente.is_titolare %}
+        {% for chiave, titolo, solo_titolare, tutte in sezioni_menu if not solo_titolare or utente.is_titolare %}
+        {%- set voci = [] %}
+        {%- for v in tutte if puo_vedere(utente, v[0]) %}{% set _ = voci.append(v) %}{% endfor %}
+        {%- if voci %}
         {%- set ns = namespace(aperta=false) %}
         {%- for href, etichetta, prefisso in voci if attiva(percorso, href, prefisso) %}{% set ns.aperta = true %}{% endfor %}
         <details class="sezione" data-sezione="{{ chiave }}"{% if ns.aperta %} open data-corrente{% endif %}>
@@ -74,6 +78,7 @@
             {%- endfor %}
           </ul>
         </details>
+        {%- endif %}
         {% endfor %}
       </nav>
       <div class="laterale-piede">
