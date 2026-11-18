@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://ci:ci@localhost:5432/postgres
+      DATABASE_URL: postgresql+psycopg://ci:ci@localhost:5432/postgres
+      SECRET_KEY: chiave-solo-per-la-ci-lunga-almeno-trentadue-caratteri
+      AMBIENTE: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --frozen
+      - name: Ruff
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+      - name: Pytest (unit + integrazione su Postgres reale)
+        run: uv run pytest
+      - name: Build immagine Docker
+        run: docker build -f docker/Dockerfile -t europrojecta-studio:ci .
