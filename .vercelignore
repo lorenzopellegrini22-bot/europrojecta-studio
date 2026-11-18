@@ -1,0 +1,17 @@
+# File che non vanno caricati su Vercel (segreti, dati locali, strumenti di sviluppo)
+.env
+.env.*
+.venv
+.claude
+.git
+.github
+__pycache__
+.pytest_cache
+.ruff_cache
+dati
+allegati
+backup
+tests
+docs
+docker
+docker-compose*.yml

@@ -6,7 +6,7 @@ Nessun segreto sta nel repository: vedi .env.example per l'elenco delle variabil
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -59,6 +59,16 @@ class Settings(BaseSettings):
     de_minimis_sieg: int = 750_000
     de_minimis_agricolo: int = 50_000
     de_minimis_pesca: int = 40_000
+
+    @field_validator("database_url")
+    @classmethod
+    def _driver_psycopg(cls, valore: str) -> str:
+        """I servizi gestiti (Neon su Vercel, Heroku...) danno postgres:// o postgresql://:
+        si usa sempre il driver psycopg 3."""
+        for prefisso in ("postgres://", "postgresql://"):
+            if valore.startswith(prefisso):
+                return "postgresql+psycopg://" + valore[len(prefisso) :]
+        return valore
 
     # Sessioni e login
     cookie_secure: bool = True
