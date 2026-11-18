@@ -268,3 +268,17 @@ def riassumi(appalto_id: int, db: Db, _: Autenticato) -> Response:
             f"/appalti/{a.id}?errore={quote(str(e))}#riassunto", status_code=303
         )
     return RedirectResponse(f"/appalti/{a.id}#riassunto", status_code=303)
+
+
+@router.post("/appalti/{appalto_id}/documenti", dependencies=[Depends(verifica_csrf)])
+def cerca_documenti(appalto_id: int, db: Db, _: Autenticato) -> Response:
+    """Legge subito la documentazione di questa gara (di notte lo fa il worker per tutte)."""
+    from app.appalti.documenti import leggi_gara
+    from app.documenti.servizio import Robots
+    from app.sources import http
+
+    a = _appalto(db, appalto_id)
+    with http.client() as client:
+        esito = leggi_gara(a, client, Robots(client))
+    db.commit()
+    return RedirectResponse(f"/appalti/{a.id}?msg={quote('Documentazione: ' + esito)}", 303)

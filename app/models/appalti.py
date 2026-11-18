@@ -53,6 +53,8 @@ class Appalto(ConTimestamp, Base):
     link_partecipazione: Mapped[str | None] = mapped_column(Text)
     # [{"titolo", "url"}]
     documenti: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB)
+    # Ultima lettura della pagina della gara per la documentazione (app/appalti/documenti.py)
+    documenti_letti_il: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # [{"codice": "OG6", "descrizione", "tipo": "prevalente"|"scorporabile"|None,
     #   "importo", "provenienza": "anac"|"testo"}]
     categorie_soa: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB)

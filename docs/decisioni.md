@@ -339,6 +339,20 @@ Tolto Pico.css: `app/static/css/app.css` è l'unico foglio di stile e disegna da
   browser e li carica tutti insieme: abbinamento automatico per nome del file. L'AI riceve
   comunque il link dei documenti non letti e segna «da verificare» ciò che potrebbero dire.
 
+## 2026-11-18 — Documentazione delle gare
+
+Per ogni gara la scheda elenca la documentazione per tipo (Bando GUUE, bando, disciplinare,
+capitolato, domanda di partecipazione, DGUE, offerta, modulistica, schema di contratto,
+progetto, atti, chiarimenti, altri allegati); ogni voce è un link che scarica il file dal
+sito dell'ente. Fonti verificate sulle gare aperte del 18/11/2026:
+- PDF dell'avviso su TED (ted.europa.eu/it/notice/{numero}/pdf), consentito da robots.txt;
+- pagina della gara sulla piattaforma indicata da TED, letta ogni notte (al massimo 150 gare,
+  ogni gara rivista dopo 7 giorni) o con «Cerca i documenti adesso»: funziona su Asmecomm,
+  Soresa, SardegnaCAT, Giada (10-18 documenti per gara); le piattaforme solo JavaScript
+  (START Toscana), i link alla sola home (Sintel, MEPA) e i siti che lo vietano nel
+  robots.txt (portali «PortaleAppalti» di MIT e RAI) restano con il link alla pagina.
+I file non si scaricano sul server: si leggono solo le pagine, i documenti li apre chi clicca.
+
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.
 - Jinja2 + HTMX salvati nel repository, nessuna risorsa da CDN (Pico.css sostituito da uno stile proprio, vedi sopra).

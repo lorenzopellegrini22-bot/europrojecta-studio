@@ -233,8 +233,10 @@ def righe_scheda(a: Any) -> list[tuple[str, str]]:
         ("Fonte", fonte),
         ("Riferimenti di legge", a.riferimenti_legge or "—"),
     ]
-    documenti = [d for d in (a.documenti or []) if d.get("url")]
-    if a.link_partecipazione:
+    from app.appalti.documenti import documentazione
+
+    documenti = documentazione(a)
+    if a.link_partecipazione and a.link_partecipazione not in {d["url"] for d in documenti}:
         documenti.append(
             {"titolo": "Piattaforma per presentare l'offerta", "url": a.link_partecipazione}
         )
@@ -243,7 +245,16 @@ def righe_scheda(a: Any) -> list[tuple[str, str]]:
     righe.append(
         (
             "Documentazione",
-            "\n".join(f"{d.get('titolo') or 'Documento'}: {d['url']}" for d in documenti) or "—",
+            "\n".join(
+                (
+                    f"{d['tipo']} · "
+                    if d.get("tipo") and not (d.get("titolo") or "").startswith(d["tipo"])
+                    else ""
+                )
+                + f"{d.get('titolo') or 'Documento'}: {d['url']}"
+                for d in documenti
+            )
+            or "—",
         )
     )
     return righe

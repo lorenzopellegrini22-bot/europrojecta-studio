@@ -18,6 +18,7 @@
 <article id="riassunto">
   <header><strong>Riassunto</strong>{% if a.riassunto_il %} <small>(scritto dall'AI il {{ a.riassunto_il | data_ora }} — verificare sempre sul bando)</small>{% endif %}</header>
   {% if errore %}<div class="messaggio errore" role="alert">{{ errore }}</div>{% endif %}
+  {% set msg = request.query_params.get("msg") %}{% if msg %}<div class="messaggio ok" role="status">{{ msg }}</div>{% endif %}
   {% if a.riassunto %}<div class="testo-email">{{ a.riassunto }}</div>{% endif %}
   {% if ai_ok %}
   <form method="post" action="/appalti/{{ a.id }}/riassunto">
@@ -39,7 +40,14 @@
         <th scope="row">{{ etichetta }}</th>
         <td>
           {% if etichetta == "Documentazione" and valore != "—" %}
-            {% for riga in valore.split("\n") %}{% set parti = riga.split(": ", 1) %}<a href="{{ parti[1] }}" target="_blank" rel="noopener noreferrer">{{ parti[0] }}</a><br>{% endfor %}
+            <ul class="documentazione">
+            {% for riga in valore.split("\n") %}{% set parti = riga.rsplit(": ", 1) %}<li><a href="{{ parti[1] }}" target="_blank" rel="noopener noreferrer">{{ parti[0] }}</a></li>{% endfor %}
+            </ul>
+            {% if not a.documenti_letti_il %}
+            <form method="post" action="/appalti/{{ a.id }}/documenti" class="in-linea"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Cerca i documenti adesso</button></form>
+            {% else %}
+            <small>Documenti letti dalla pagina della gara il {{ a.documenti_letti_il | data_ora }}. Cliccando un documento lo scarichi dal sito dell'ente.</small>
+            {% endif %}
           {% else %}
             <span class="note-testo">{{ valore }}</span>
           {% endif %}

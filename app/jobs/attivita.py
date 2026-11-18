@@ -197,7 +197,13 @@ def raccolta_appalti() -> str:
 
     righe, errori = [], []
     with get_sessionmaker()() as db:
-        for nome, funzione in (("TED", ted.raccogli), ("Consip", consip.raccogli)):
+        from app.appalti import documenti
+
+        for nome, funzione in (
+            ("TED", ted.raccogli),
+            ("Consip", consip.raccogli),
+            ("Documentazione delle gare", documenti.aggiorna),
+        ):
             try:
                 esito = funzione(db)
                 righe.append(esito[0] if isinstance(esito, tuple) else esito)
