@@ -1,8 +1,8 @@
 /* Europrojecta Studio: foglio di stile unico dell'app (nessun framework, nessun CDN).
  *
  * Direzione: preciso, calmo, da archivio. Superfici neutre perché lo studio ci lavora
- * tutto il giorno; il verde del marchio solo dove conta (azione principale, voce attiva,
- * cifra chiave). Un solo carattere: Schibsted Grotesk, salvato in static/fonts (OFL).
+ * tutto il giorno; il blu del marchio (#0544d4, dal logo) solo dove conta (azione principale,
+ * voce attiva, cifra chiave). Grigi leggermente freddi, intonati al blu. Un solo carattere: Schibsted Grotesk, salvato in static/fonts (OFL).
  * Griglia di 4px, due pesi (400 e 500, 600 di rado), cifre tabellari per date e importi.
  */
 
@@ -27,26 +27,29 @@
   --font: "Schibsted Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  --sfondo: #f6f6f4;
-  --laterale: #efefec;
+  --sfondo: #f6f7f9;
+  --laterale: #eff1f5;
   --superficie: #ffffff;
-  --rialzato: #f0f0ed;
-  --linea: rgba(24, 24, 22, 0.09);
-  --linea-forte: rgba(24, 24, 22, 0.17);
-  --testo: #181816;
-  --testo-2: #54544f;
-  --testo-3: #73736d;
+  --rialzato: #e9ecf1;
+  --linea: rgba(16, 20, 40, 0.09);
+  --linea-forte: rgba(16, 20, 40, 0.17);
+  --testo: #14151c;
+  --testo-2: #4f5260;
+  --testo-3: #6d7080;
 
-  --accento: #1f5f3f;
-  --accento-hover: #184c32;
-  --accento-testo: #1f5f3f;
+  /* Colori del logo: blu notte di «Euro», blu di «projecta», azzurro delle linee */
+  --marchio-notte: #0c0940;
+  --marchio-azzurro: #268ce9;
+  --accento: #0544d4;
+  --accento-hover: #0437ad;
+  --accento-testo: #0544d4;
   --su-accento: #ffffff;
-  --accento-tenue: color-mix(in srgb, var(--accento) 9%, transparent);
+  --accento-tenue: color-mix(in srgb, var(--accento) 8%, transparent);
 
   --ok: #1c7444;
   --errore: #b8322a;
   --attenzione: #8f5d00;
-  --info: #24548f;
+  --info: #1769c2;
   --evidenzia: #fff0a3;
 
   --raggio-s: 6px;
@@ -71,10 +74,10 @@
   --testo-2: #a8a8a2;
   --testo-3: #8a8a84;
 
-  --accento: #2e7a53;
-  --accento-hover: #358c5f;
-  --accento-testo: #74c69b;
-  --accento-tenue: color-mix(in srgb, #74c69b 12%, transparent);
+  --accento: #2f63e0;
+  --accento-hover: #4474e6;
+  --accento-testo: #8aaeff;
+  --accento-tenue: color-mix(in srgb, #8aaeff 12%, transparent);
 
   --ok: #5cc28c;
   --errore: #ec6d64;
@@ -225,6 +228,9 @@ hgroup > p + p { margin-top: 0.5rem; }
   color: var(--testo-3);
 }
 
+.marchio img { display: block; width: 11rem; height: auto; }
+.logo-accesso { display: block; width: 15rem; max-width: 100%; height: auto; margin: 0 0 1.25rem; }
+
 .apri-menu { display: none; }
 
 .menu {
@@ -299,9 +305,9 @@ hgroup > p + p { margin-top: 0.5rem; }
 }
 .menu .sezione[open] > summary { margin-bottom: 2px; }
 .menu .sezione[open] > summary::after { transform: translateY(0.1rem) rotate(-135deg); }
-/* Tendina chiusa che contiene la pagina aperta: il titolo resta in verde */
+/* Tendina chiusa che contiene la pagina aperta: il titolo resta in blu */
 .menu .sezione[data-corrente]:not([open]) > summary { color: var(--accento-testo); }
-/* Voci interne su una linea guida; la voce aperta la segna in verde */
+/* Voci interne su una linea guida; la voce aperta la segna in blu */
 .menu .sezione > ul {
   margin: 0 0 0.5rem 0.875rem;
   padding-left: 0.5rem;
@@ -378,6 +384,7 @@ hgroup > p + p { margin-top: 0.5rem; }
     border-bottom: 1px solid var(--linea);
   }
   .laterale-testa { padding: 0.75rem 1rem; }
+  .marchio img { width: 9rem; }
   .apri-menu { display: inline-flex; }
   .menu, .laterale-piede { display: none; }
   .laterale[data-aperto] .menu,
@@ -566,7 +573,7 @@ textarea { min-height: 6rem; resize: vertical; }
 select {
   appearance: none;
   padding-right: 2.25rem;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2373736d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4.5 6.5 3.5 3.5 3.5-3.5'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236d7080' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4.5 6.5 3.5 3.5 3.5-3.5'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.625rem center;
   background-size: 16px;
@@ -579,7 +586,7 @@ select[multiple], select[size] {
 
 input[type="search"] {
   padding-left: 2.125rem;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2373736d' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='4.5'/%3E%3Cpath d='m10.5 10.5 3 3'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236d7080' stroke-width='1.6' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='4.5'/%3E%3Cpath d='m10.5 10.5 3 3'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: left 0.625rem center;
   background-size: 16px;

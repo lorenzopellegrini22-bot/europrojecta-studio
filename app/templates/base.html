@@ -7,6 +7,8 @@
   <meta name="color-scheme" content="light">
   <title>{% block titolo %}{{ NOME_APP }}{% endblock %}</title>
   <link rel="preload" href="{{ url_for('static', path='fonts/schibsted-grotesk-wght-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="icon" type="image/png" href="{{ url_for('static', path='img/favicon.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='img/apple-touch-icon.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}?v={{ versione_statico('css/app.css') }}">
   <script src="{{ url_for('static', path='vendor/htmx.min.js') }}" defer></script>
   <script src="{{ url_for('static', path='js/app.js') }}?v={{ versione_statico('js/app.js') }}" defer></script>
@@ -56,7 +58,7 @@
   <div class="struttura">
     <aside class="laterale" id="laterale">
       <div class="laterale-testa">
-        <a href="/" class="marchio">Europrojecta <span>Studio</span></a>
+        <a href="/" class="marchio"><img src="{{ url_for('static', path='img/logo.png') }}?v={{ versione_statico('img/logo.png') }}" alt="Europrojecta Studio" width="600" height="127"></a>
         <button type="button" class="apri-menu secondary piccolo" aria-expanded="false" aria-controls="menu-principale">Menu</button>
       </div>
       {%- set percorso = request.url.path %}
