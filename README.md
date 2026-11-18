@@ -7,18 +7,22 @@ Ha tre parti:
 2. **Motore di matching**: ogni notte raccoglie i bandi nazionali e regionali, li struttura con l'LLM e segnala per quali aziende sono compatibili, spiegando il perché.
 3. **Comunicazione**: email del mattino al consulente e aggiornamenti ai suoi clienti, ognuno approvato da lui.
 
-> **Stato attuale:**
-> - fase 0 completata;
-> - accesso sicuro (password + 2FA) e pagina *Il mio account*;
-> - **Impostazioni → Integrazioni** (chiavi API cifrate);
-> - **raccolta dei bandi nazionali da Incentivi Italia, ogni notte**, con pagine Bandi e Fonti.
-> - **estrazione dei requisiti dei bandi con l'AI** (OpenAI del consulente): citazioni verificate, revisione con conferma o correzione, budget mensile;
-> - **opportunità per cliente**: ogni mattina bandi e appalti adatti a ogni cliente (territorio, dimensione, ATECO, SOA con classifica, CPV), con email delle novità;
-> - **appalti pubblici** italiani aperti da TED, ogni notte, con ricerca per categoria (CPV), tipo, regione, provincia, comune, importo e scadenza;
-> - **Registro Imprese (Openapi)** per compilare i clienti dalla partita IVA; integrazioni attivabili con guida al collegamento;
-> - allegati nelle pratiche, invio email dalla pratica, promemoria delle scadenze, segnalatori, prefattibilità e statistiche;
-> - **clienti, pratiche a fasi da modelli** (checklist documenti, dati, email al cliente con segnaposto), **scadenzario** ed export per Excel;
-> - **fonti regionali Toscana (Sviluppo Toscana) e Lazio (Lazio Innova + Lazio Europa)**, raccolte nella stessa notte; Umbria e Marche per ora dal dataset nazionale.
+> **Stato attuale (18/11/2026):** tutto il perimetro del brief e del preventivo è implementato.
+> - **CRM:** clienti con sedi, ATECO, referenti con consensi, progetti d'investimento, attività,
+>   scadenze, de minimis con plafond, tag, dimensione stimata; **import da CSV** del CRM
+>   precedente; **export completo** in zip; compilazione dal **Registro Imprese** (Openapi).
+> - **Bandi:** Incentivi Italia + fonti regionali di Toscana e Lazio ogni notte, doppioni
+>   collegati, PDF letti dall'AI (o caricati a mano se il sito non li lascia scaricare).
+> - **AI sull'account OpenAI del cliente:** estrazione dei requisiti con citazioni verificate e
+>   revisione, punteggio delle opportunità con embeddings e griglia, budget e consumi.
+> - **Matching:** filtri a regole con motivo per ogni esclusione, punteggio AI, feedback e
+>   precisione per fascia; comando **collaudo** (20 bandi reali, 10 aziende).
+> - **Comunicazione:** email del mattino completa, **aggiornamenti ai clienti** via email o
+>   WhatsApp con approvazione e disiscrizione, **report PDF** del bando per il cliente.
+> - **Pratiche a fasi** da modelli, scadenzario, prefattibilità, segnalatori, statistiche.
+> - **Appalti pubblici:** TED, Consip, import ANAC, scheda gara con categorie SOA.
+> - **Produzione:** Caddy (https), ClamAV, backup restic con prova di ripristino, guida in
+>   `docs/messa-in-produzione.md`; manuale d'uso in `docs/manuale.md`.
 >
 > Le scelte sono in `docs/decisioni.md`, i prossimi passi in `docs/da-migliorare.md`.
 
@@ -100,6 +104,12 @@ uv run python -m app.jobs.worker
 | `uv run python -m app.cli raccogli-bandi [--forza]` | Raccolta dei bandi immediata |
 | `uv run python -m app.cli pulizia` | Elimina le sessioni scadute e i log vecchi |
 | `uv run python -m app.jobs.worker` | Avvia il worker con i job notturni |
+| `uv run python -m app.cli opportunita` | Abbinamento, punteggio AI, bozze ed email del mattino subito |
+| `uv run python -m app.cli estrai-bandi` / `documenti-bandi` | Estrazione AI / download dei PDF subito |
+| `uv run python -m app.cli raccogli-appalti` | Raccolta degli appalti (TED, Consip) subito |
+| `uv run python -m app.cli collega-doppioni` | Collega i bandi doppi tra fonte nazionale e regionali |
+| `uv run python -m app.cli collaudo-prepara --file F` / `collaudo --file F --report R` | Collaudo del matching (`docs/collaudo/`) |
+| `uv run python -m app.cli ruota-chiavi` | Ricifra i segreti dopo il cambio di `SECRET_KEY` |
 
 I test di integrazione creano un database con nome casuale a partire da `TEST_DATABASE_URL`, applicano le migrazioni e lo eliminano alla fine.
 
@@ -110,7 +120,7 @@ app/
   main.py        FastAPI, router, /health
   config.py      Settings da variabili d'ambiente
   db.py          engine, sessioni, Base dei modelli e mixin dei timestamp
-  cli.py         comandi: crea-utente, reimposta-2fa, raccogli-bandi, pulizia
+  cli.py         comandi da riga di comando (vedi tabella sopra)
   models/        modelli SQLAlchemy (auth, impostazioni, bandi, jobs)
   sources/       fonti dei bandi: download robusto, parser, runner comune
   bandi/         stato dei bandi, pagine Bandi e Fonti
@@ -119,7 +129,19 @@ app/
   integrazioni/  Impostazioni → Integrazioni: registro, salvataggio, verifiche
   templates/     Jinja2 + HTMX
   static/        Pico.css e htmx salvati nel repository (nessun CDN)
-  jobs/          worker APScheduler (raccolta notturna, pulizia), lock, registro job_run
+  jobs/          worker APScheduler (raccolte, AI, email del mattino), lock, registro job_run
+  clienti/       CRM: clienti, referenti, progetti, attività, scadenze, de minimis
+  importer/      import dei clienti da CSV
+  pratiche/      pratiche a fasi, modelli, scadenzario, prefattibilità, statistiche
+  extraction/    estrazione dei requisiti con l'AI, revisione, budget
+  opportunita/   abbinamento a regole, punteggio AI, feedback
+  aggiornamenti/ aggiornamenti ai clienti: bozze, canali email e WhatsApp, disiscrizione
+  report/        report PDF del bando (WeasyPrint)
+  appalti/       TED, Consip, ANAC, scheda gara
+  documenti/     PDF dei bandi
+  notifiche.py   email del mattino
+  collaudo.py    collaudo del matching
+  esportazione.py export completo dei dati
 migrations/      Alembic (una migrazione per fase)
 tests/unit       funzioni pure, nessuna rete né database
 tests/integration  Postgres + pgvector reale
@@ -135,6 +157,9 @@ docker/          Dockerfile (app e worker usano la stessa immagine)
 - `docs/decisioni.md`: registro delle decisioni, con data e motivo.
 - `docs/schema.md`: schema dati completo (confermato in fase 0, implementato fase per fase).
 - `docs/dati-in-uscita.md`: quali dati escono dal server e verso chi.
+- `docs/manuale.md`: manuale d'uso per il consulente.
+- `docs/messa-in-produzione.md` e `docs/ripristino.md`: installazione, backup e ripristino.
+- `docs/collaudo/`: procedura e set proposto per il collaudo prima della consegna.
 - `docs/fonti/incentivi-italia.md`: com'è fatta davvero la fonte nazionale.
 - `docs/fonti/regioni.md`: fonti regionali verificate (Toscana, Lazio, Umbria, Marche).
 

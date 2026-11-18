@@ -44,25 +44,34 @@ Aggiornato il 18/11/2026, dopo una nuova verifica su dati reali:
 - **Categorie SOA scritte senza trattino** ("OS18B").
 - **Ricerca** con più parole, accenti o plurali (vedi sopra).
 
+## Fatto il 18/11/2026 (verifica contro brief e preventivo)
+- Punteggio AI delle opportunità, feedback e precisione per fascia.
+- Doppioni tra fonte nazionale e regionale collegati; ricerca ordinata per pertinenza.
+- CRM completo (progetti, attività, scadenze, de minimis, tag, consensi), import CSV,
+  export completo, aggiornamenti ai clienti (email e WhatsApp), email del mattino completa,
+  report PDF, comando di collaudo.
+- Kit di produzione: Caddy, ClamAV, backup restic con prova di ripristino, rotazione della
+  SECRET_KEY, avviso di scadenza della sessione. Tolto InfoAppalti.
+
 ## Da fare, in ordine di priorità
-1. **Punteggio delle opportunità con l'AI.** Oggi l'abbinamento è a regole: territorio, dimensione, ATECO, settore, SOA, CPV. Con l'estrazione dei requisiti (fase 3) si aggiungono similarità e motivazione scritta.
-2. **Formato del «bando tipo»** del Codice degli incentivi: da trovare e verificare per indicarlo al modello. Mancano anche l'OCR dei PDF scansionati e i PDF del dataset nazionale che non sono link diretti.
-3. **Doppioni tra fonte nazionale e regionale.** Lo stesso bando può comparire due volte; il collegamento arriva con la fase 3.
-4. **Ordinamento per pertinenza** nella ricerca dei bandi. Oggi l'ordine è per scadenza; servirebbe prima il titolo che contiene le parole cercate.
-5. **Categorie SOA per le gare TED.** Arrivano solo dal file ANAC importato (collegato per CIG) o dal riassunto AI. Si potrebbe leggere anche il disciplinare in PDF.
-6. **Prove con gli account veri del consulente:**
+1. **Collaudo con il consulente:** etichettare insieme `docs/collaudo/set-proposto.json`
+   (atteso compatibile / non compatibile / dubbio) ed eseguire `collaudo` (requisito del
+   contratto: almeno 80% di precisione, zero esclusioni sbagliate).
+2. **Prove con gli account veri del consulente** (non si possono fare senza le sue chiavi):
    - token Openapi in sandbox, poi in produzione;
-   - casella SMTP con email di prova;
-   - chiave OpenAI con un riassunto;
+   - casella SMTP: email del mattino e un aggiornamento di prova a sé stessi;
+   - chiave OpenAI: estrazione di qualche bando e punteggio di 2-3 clienti, controllando i costi;
+   - WhatsApp: modello approvato da Meta e un invio di prova (se scelto come canale);
    - giro completo nel browser con login e 2FA.
-7. **Messa in produzione (fase 7):**
-   - VPS con Caddy;
-   - backup cifrati di database e volume `allegati`;
-   - antivirus sugli allegati (es. ClamAV).
-9. **Codici ISTAT dei comuni**, per il matching per sede e per i luoghi degli appalti ANAC.
-10. **Permessi dei collaboratori** da confermare con il committente. Oggi possono tutto tranne modificare i modelli, le impostazioni ed eliminare dati.
-11. Minori:
-    - avviso prima della scadenza della sessione;
-    - verifica WhatsApp;
-    - rotazione della SECRET_KEY con MultiFernet;
-    - catalogo MIT da ricontrollare quando torna online.
+3. **Messa in produzione:** VPS in UE, dominio, storage esterno per restic
+   (`docs/messa-in-produzione.md`). I file sono pronti e verificati in CI.
+4. **Import reale:** chiedere al consulente l'export del CRM attuale e fare la prova a vuoto.
+5. **Formato del «bando tipo»** del Codice degli incentivi: da trovare la fonte ufficiale.
+   Mancano anche l'OCR dei PDF scansionati e i PDF del dataset nazionale che non sono link diretti.
+6. **Tabella ISTAT dei comuni** e raccordo **ATECO 2007/2025**: oggi i territori si
+   confrontano per nome e gli ATECO per prefisso.
+7. **Categorie SOA per le gare TED**: oggi dal file ANAC importato o dal riassunto AI.
+8. **Permessi dei collaboratori** da confermare: oggi non possono esportare, eliminare,
+   importare né cambiare impostazioni e modelli.
+9. Minori: verifica della connessione WhatsApp dalla pagina Integrazioni; catalogo MIT da
+   ricontrollare quando torna online.

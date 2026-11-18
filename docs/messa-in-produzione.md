@@ -13,7 +13,7 @@ Nel file `.env` imposta almeno:
 - `POSTGRES_PASSWORD`: password lunga e casuale.
 - `SECRET_KEY`: `python3 -c "import secrets; print(secrets.token_urlsafe(48))"`.
 - `DOMINIO`: il dominio dell'app; `EMAIL_CERTIFICATI`: email per Let's Encrypt.
-- `BACKUP_PASSPHRASE`: passphrase dei backup. **Conservala anche fuori dal server**
+- `BACKUP_PASSPHRASE`: passphrase dei backup (restic). **Conservala anche fuori dal server**
   (gestore di password): senza, i backup non si aprono.
 
 ## 2. Avvio
@@ -31,20 +31,14 @@ Servizi in produzione:
 | `worker` | job notturni e del mattino |
 | `db` | PostgreSQL 16 + pgvector, non esposto |
 | `clamav` | antivirus: ogni file caricato viene controllato prima di essere salvato |
-| `backup` | backup cifrati ogni notte (01:30) in `./backup`, conservati 14 giorni |
+| `backup` | backup restic cifrati ogni notte (01:30), retention 7/4/12, prova di ripristino mensile |
 
 ## 3. Backup
-- Ogni notte: dump del database e archivio degli allegati, cifrati con GPG (AES256).
-- I file sono in `./backup` sul server. **Copiali anche altrove** (es. snapshot del provider
-  o `rsync` verso un altro server): un backup sullo stesso disco non protegge da un guasto.
-- Backup immediato: `docker compose -f docker-compose.yml -f docker-compose.prod.yml exec backup /usr/local/bin/backup.sh ora`
-- Ripristino del database:
-  ```bash
-  gpg --decrypt backup/europrojecta-AAAAMMGG-HHMM.db.gpg > db.dump
-  docker compose exec -T db pg_restore --clean --if-exists -U europrojecta -d europrojecta < db.dump
-  ```
-- Ripristino degli allegati: `gpg --decrypt ...allegati.gpg | tar -xf -` e copia nel volume `allegati`.
-- La CI prova a ogni commit un backup e la sua decifratura su un database vero.
+- Ogni notte con **restic**: dump del database e allegati, cifrati; retention 7 giornalieri,
+  4 settimanali, 12 mensili; prova di ripristino automatica il primo di ogni mese.
+- Imposta nel `.env` uno **storage esterno** in `RESTIC_REPOSITORY` (S3, Backblaze B2, SFTP)
+  con le sue credenziali: per default i backup restano in `./backup/restic` sul server.
+- Comandi e ripristino completo: **`docs/ripristino.md`**.
 
 ## 4. Antivirus
 Gli allegati delle pratiche e i PDF caricati a mano passano da ClamAV. Se il file è

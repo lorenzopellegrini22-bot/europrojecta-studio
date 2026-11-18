@@ -258,6 +258,34 @@ Implementata secondo il brief (sezioni 8 e 10).
 - **Email:** le opportunità valutate dall'AI entrano nell'email solo sopra la soglia (60 predefinito); quelle con solo il punteggio delle regole restano come prima.
 - **Feedback:** «Utile» (→ interessante), «Non pertinente» e «Già noto» (→ scartata, non riproposta né rivalutata). La pagina Statistiche mostra la precisione per fascia di punteggio, per tarare la soglia.
 
+## 2026-11-18 — Verifica completa contro brief e preventivo
+
+Riletti il brief e il preventivo e implementato quello che mancava:
+- **CRM completo:** progetti d'investimento con categorie di spesa (vocabolario chiuso come
+  colonna ARRAY invece di una tabella ponte: stessi valori dell'estrazione AI, più semplice),
+  attività, scadenze dei clienti, aiuti de minimis con plafond residuo su 3 anni mobili
+  (massimali configurabili), dimensione stimata (Racc. 2003/361/CE, la manuale prevale),
+  tag, consensi dei referenti, filtri della lista clienti.
+- **Filtri del matching:** anzianità, forma giuridica, plafond de minimis, dimensione stimata
+  (solo «da verificare», perché senza ULA è una stima), spese dei progetti. Ogni esclusione
+  ha un motivo; si esclude solo con requisito certo e dato noto. Le esclusioni non si salvano
+  in tabella: il comando `collaudo` le ricalcola con il motivo per tutte le coppie.
+- **Embeddings dei progetti:** i progetti entrano (anonimi) nel profilo del cliente usato per
+  embeddings e punteggio, invece di un vettore per progetto: un solo confronto per coppia.
+- **Import CSV** dal CRM precedente ed **export completo** in zip; il collaboratore non esporta.
+- **Aggiornamenti ai clienti** (email e WhatsApp), con approvazione, consensi e disiscrizione.
+- **Email del mattino** completa e sempre inviata; **dashboard** con spesa AI e bozze.
+- **Report PDF** con WeasyPrint (librerie nell'immagine Docker; su Windows non disponibile).
+- **Collaudo:** `collaudo-prepara` e `collaudo`, set proposto in `docs/collaudo/`. Ha già
+  trovato un'esclusione sbagliata («sport» dentro «esportatrici»), corretta.
+- **Backup con restic** (come da brief), al posto dei file GPG della prima versione.
+- **Duplicati** tra fonte nazionale e regionale collegati con `bando_canonico_id`.
+- **Antivirus** ClamAV sui file caricati, **rotazione della SECRET_KEY**, avviso di scadenza
+  della sessione. Tolto InfoAppalti su richiesta del committente.
+- **Non fatti, con motivo:** tabella ISTAT dei comuni e raccordo ATECO 2007/2025 (file ISTAT
+  da scaricare e verificare: i confronti oggi sono per nome e per prefisso ATECO); OCR dei
+  PDF scansionati; formato del «bando tipo» (da trovare la fonte ufficiale).
+
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.
 - Jinja2 + HTMX + Pico.css salvati nel repository, nessuna risorsa da CDN.
