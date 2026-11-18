@@ -63,9 +63,15 @@ services:
       PGUSER: ${POSTGRES_USER:-europrojecta}
       PGPASSWORD: ${POSTGRES_PASSWORD}
       PGDATABASE: ${POSTGRES_DB:-europrojecta}
-      BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE:?imposta BACKUP_PASSPHRASE nel file .env}
+      # Repository restic: locale (./backup/restic) oppure esterno (s3:..., sftp:..., b2:...).
+      # Brief: i backup vanno anche fuori dal server, quindi in produzione uno storage esterno.
+      RESTIC_REPOSITORY: ${RESTIC_REPOSITORY:-/backup/restic}
+      RESTIC_PASSWORD: ${BACKUP_PASSPHRASE:?imposta BACKUP_PASSPHRASE nel file .env}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      B2_ACCOUNT_ID: ${B2_ACCOUNT_ID:-}
+      B2_ACCOUNT_KEY: ${B2_ACCOUNT_KEY:-}
       BACKUP_ORARIO: ${BACKUP_ORARIO:-01:30}
-      BACKUP_GIORNI: ${BACKUP_GIORNI:-14}
       TZ: Europe/Rome
     volumes:
       - allegati:/dati/allegati:ro

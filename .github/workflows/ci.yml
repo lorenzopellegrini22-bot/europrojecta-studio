@@ -59,24 +59,19 @@ jobs:
           docker run --rm -e DOMINIO=studio.esempio.test -e EMAIL_CERTIFICATI=ci@esempio.test \
             -v "$PWD/docker/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2.10 \
             caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
-      - name: Backup cifrato e ripristino
+      - name: Backup restic e prova di ripristino
         run: |
           docker build -f docker/backup.Dockerfile -t europrojecta-backup:ci .
           docker network create ci
           docker run -d --name db --network ci -e POSTGRES_PASSWORD=ci pgvector/pgvector:pg16
           for i in $(seq 30); do docker exec db pg_isready -U postgres && break; sleep 2; done
-          docker exec db psql -U postgres -c "create table prova (x text); insert into prova values ('ciao');"
+          docker exec db psql -U postgres -c "create table azienda (id int, nome text); insert into azienda values (1, 'Prova');"
           mkdir -p backup allegati && echo "allegato di prova" > allegati/a.txt
-          docker run --rm --network ci -e PGHOST=db -e PGUSER=postgres -e PGPASSWORD=ci \
-            -e PGDATABASE=postgres -e BACKUP_PASSPHRASE=segreta \
-            -v "$PWD/allegati:/dati/allegati:ro" -v "$PWD/backup:/backup" \
-            europrojecta-backup:ci /usr/local/bin/backup.sh ora
-          ls -l backup
-          docker run --rm -v "$PWD/backup:/backup" europrojecta-backup:ci sh -c '
-            set -e
-            f=$(ls /backup/*.db.gpg)
-            gpg --batch --quiet --pinentry-mode loopback --passphrase segreta --decrypt "$f" > /tmp/db.dump
-            pg_restore --list /tmp/db.dump | grep -q "TABLE public prova"
-            a=$(ls /backup/*.allegati.gpg)
-            gpg --batch --quiet --pinentry-mode loopback --passphrase segreta --decrypt "$a" | tar -tf - | grep -q "allegati/a.txt"
-            echo ripristino-ok'
+          AMB="--network ci -e PGHOST=db -e PGUSER=postgres -e PGPASSWORD=ci -e PGDATABASE=postgres -e RESTIC_REPOSITORY=/backup/restic -e RESTIC_PASSWORD=segreta -v $PWD/allegati:/dati/allegati:ro -v $PWD/backup:/backup"
+          docker run --rm $AMB europrojecta-backup:ci /usr/local/bin/backup.sh ora
+          docker run --rm $AMB europrojecta-backup:ci /usr/local/bin/backup.sh ora
+          docker run --rm $AMB europrojecta-backup:ci /usr/local/bin/backup.sh verifica | tee verifica.log
+          grep -q "prova di ripristino riuscita: 1 tabelle, 1 aziende" verifica.log
+          docker run --rm $AMB europrojecta-backup:ci restic ls latest --tag allegati | grep -q "/dati/allegati/a.txt"
+          # senza la passphrase giusta il repository non si apre
+          ! docker run --rm $AMB -e RESTIC_PASSWORD=sbagliata europrojecta-backup:ci restic snapshots
