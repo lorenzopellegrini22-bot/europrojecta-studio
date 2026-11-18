@@ -7,8 +7,9 @@ hanno pratiche)."""
 import re
 from datetime import UTC, date, datetime
 from typing import Annotated, Any
+from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
@@ -18,7 +19,16 @@ from app.auth.dipendenze import richiede_titolare, utente_corrente, verifica_csr
 from app.db import get_db
 from app.integrazioni import servizio as integrazioni
 from app.integrazioni.registro_imprese import ErroreRegistro, cerca
-from app.models import Azienda, AziendaAteco, Pratica, Referente, Sede, Segnalatore, Utente
+from app.models import (
+    Allegato,
+    Azienda,
+    AziendaAteco,
+    Pratica,
+    Referente,
+    Sede,
+    Segnalatore,
+    Utente,
+)
 from app.models.crm import DIMENSIONI, STATI_CLIENTE
 from app.models.crm_esteso import FREQUENZE_AGGIORNAMENTO, Tag
 from app.opportunita.abbinamento import CLASSIFICHE_SOA
@@ -495,11 +505,21 @@ def scheda(request: Request, azienda_id: int, db: Db, _: Autenticato) -> Respons
     )
     from app.clienti.crm import dati_scheda
 
+    documenti = list(
+        db.scalars(
+            select(Allegato)
+            .where(Allegato.azienda_id == azienda_id)
+            .options(selectinload(Allegato.utente))
+            .order_by(Allegato.creato_il.desc())
+        )
+    )
     return render(
         request,
         "clienti/scheda.html",
         {
             **dati_scheda(db, azienda),
+            "documenti": documenti,
+            "codici_pratica": {p.id: p.codice for p in pratiche},
             "opportunita": opportunita,
             "azienda": azienda,
             "pratiche": pratiche,
@@ -507,6 +527,29 @@ def scheda(request: Request, azienda_id: int, db: Db, _: Autenticato) -> Respons
             "registro_disponibile": integrazioni.utilizzabile(db, "registro_imprese"),
         },
     )
+
+
+@router.post("/clienti/{azienda_id}/documenti", dependencies=CSRF)
+def carica_documento(
+    azienda_id: int,
+    db: Db,
+    utente: Autenticato,
+    file: Annotated[UploadFile, File()],
+) -> Response:
+    """Documento dell'azienda (visura, bilancio, DURC...): sulla scheda, fuori dalle pratiche."""
+    from app.pratiche import allegati as archivio
+
+    a = _azienda(db, azienda_id)
+    nome = (file.filename or "documento").replace("\\", "/").rsplit("/", 1)[-1][:200]
+    try:
+        archivio.nuovo_allegato(db, file.file, nome, azienda_id=a.id, caricato_da=utente.id)
+    except archivio.ErroreAllegato as e:
+        return RedirectResponse(
+            f"/clienti/{a.id}?{urlencode({'msg_doc': str(e)})}#documenti", status_code=303
+        )
+    audit.registra(db, utente, "azienda", a.id, "modifica", {"documento": nome})
+    db.commit()
+    return RedirectResponse(f"/clienti/{a.id}#documenti", status_code=303)
 
 
 @router.get("/clienti/{azienda_id}/modifica")

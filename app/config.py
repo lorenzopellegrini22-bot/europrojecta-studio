@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     documenti_orario: str = Field(default="04:05", pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
     # Allegati delle pratiche: cartella sul server (volume Docker in produzione) e limite
     cartella_allegati: str = "dati/allegati"
+    # Dove stanno i file caricati: "disco" (cartella sopra) o "database" (tabella
+    # allegato_contenuto), per le piattaforme senza disco permanente come Vercel.
+    archivio_allegati: Literal["disco", "database"] = "disco"
     allegato_max_mb: int = 20
     # Antivirus ClamAV per i file caricati (vuoto = nessun controllo, solo in sviluppo)
     clamav_host: str | None = None

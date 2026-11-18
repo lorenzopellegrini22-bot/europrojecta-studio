@@ -22,6 +22,7 @@ from app.models.jobs import JobRun
 from app.models.opportunita import Opportunita
 from app.models.pratiche import (
     Allegato,
+    AllegatoContenuto,
     ModelloFase,
     ModelloOperazione,
     ModelloPratica,
@@ -61,6 +62,7 @@ __all__ = [
     "NotificaEmail",
     "AziendaAteco",
     "Allegato",
+    "AllegatoContenuto",
     "AuditLog",
     "Azienda",
     "Bando",

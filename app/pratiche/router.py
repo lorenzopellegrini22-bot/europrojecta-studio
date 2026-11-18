@@ -10,7 +10,7 @@ from decimal import Decimal
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, RedirectResponse, Response
+from fastapi.responses import RedirectResponse, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
@@ -886,22 +886,17 @@ def carica_allegato(
     ancora = f"op-{documento.operazione_id}" if documento else "allegati"
     nome = (file.filename or "documento").replace("\\", "/").rsplit("/", 1)[-1][:200]
     try:
-        relativo, mime, dimensione, sha = archivio.salva(file.file, nome)
-    except archivio.ErroreAllegato as e:
-        return _torna_con_messaggio(p, fase, ancora, "errore", str(e))
-    db.add(
-        Allegato(
+        archivio.nuovo_allegato(
+            db,
+            file.file,
+            nome,
             azienda_id=p.azienda_id,
             pratica_id=p.id,
             pratica_documento_id=documento.id if documento else None,
-            nome_originale=nome,
-            percorso=relativo,
-            mime=mime,
-            dimensione=dimensione,
-            sha256=sha,
             caricato_da=utente.id,
         )
-    )
+    except archivio.ErroreAllegato as e:
+        return _torna_con_messaggio(p, fase, ancora, "errore", str(e))
     if documento is not None and documento.stato in ("mancante", "richiesto"):
         documento.stato = "ricevuto"
     s.evento(
@@ -921,27 +916,21 @@ def _allegato(db: Session, allegato_id: int) -> Allegato:
 
 @router.get("/allegati/{allegato_id}")
 def scarica_allegato(allegato_id: int, db: Db, _: Autenticato) -> Response:
-    a = _allegato(db, allegato_id)
-    try:
-        percorso = archivio.percorso_assoluto(a.percorso)
-    except archivio.ErroreAllegato as e:
-        raise HTTPException(404) from e
-    if not percorso.is_file():
-        raise HTTPException(404, "File non trovato sul server")
-    return FileResponse(
-        percorso,
-        media_type=a.mime,
-        filename=a.nome_originale,
-        content_disposition_type="attachment",
-    )
+    return archivio.risposta_download(_allegato(db, allegato_id))
 
 
 @router.post("/allegati/{allegato_id}/elimina", dependencies=CSRF)
 def elimina_allegato(allegato_id: int, db: Db, utente: Autenticato) -> Response:
     a = _allegato(db, allegato_id)
-    pratica_id = a.pratica_id
+    pratica_id, azienda_id = a.pratica_id, a.azienda_id
     archivio.elimina_file(a.percorso)
-    audit.registra(db, utente, "pratica", pratica_id, "elimina", {"allegato": a.nome_originale})
+    if pratica_id is not None:
+        audit.registra(db, utente, "pratica", pratica_id, "elimina", {"allegato": a.nome_originale})
+    else:
+        dettagli = {"documento": a.nome_originale}
+        audit.registra(db, utente, "azienda", azienda_id, "elimina", dettagli)
     db.delete(a)
     db.commit()
+    if pratica_id is None:
+        return RedirectResponse(f"/clienti/{azienda_id}#documenti", status_code=303)
     return RedirectResponse(f"/pratiche/{pratica_id}#allegati", status_code=303)

@@ -1265,6 +1265,8 @@ table.barre progress { margin: 0.5rem 0 0; }
 tr.voce-ko td:first-child { color: var(--errore); }
 tr.voce-ok td:first-child { color: var(--ok); }
 .carica-file { margin-top: 0.5rem; }
+input.campo-file { max-width: 24rem; margin: 0; }
+#documenti > form { margin: 1rem 0 0.375rem; }
 
 /* Scheda appalto */
 table.scheda-gara th { width: 13rem; vertical-align: top; font-weight: 400; color: var(--testo-2); }

@@ -20,6 +20,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    LargeBinary,
     Numeric,
     String,
     Text,
@@ -311,6 +312,21 @@ class Allegato(ConTimestamp, Base):
     caricato_da: Mapped[int | None] = mapped_column(ForeignKey("utente.id", ondelete="SET NULL"))
 
     utente: Mapped[Utente | None] = relationship()
+    # Solo con ARCHIVIO_ALLEGATI=database: il contenuto del file (caricato solo quando serve)
+    contenuto: Mapped["AllegatoContenuto | None"] = relationship(
+        cascade="all, delete-orphan", passive_deletes=True, uselist=False
+    )
+
+
+class AllegatoContenuto(Base):
+    """Byte del file quando l'archivio è il database (Vercel e simili, senza disco permanente)."""
+
+    __tablename__ = "allegato_contenuto"
+
+    allegato_id: Mapped[int] = mapped_column(
+        ForeignKey("allegato.id", ondelete="CASCADE"), primary_key=True
+    )
+    dati: Mapped[bytes] = mapped_column(LargeBinary)
 
 
 class Prefattibilita(ConTimestamp, Base):

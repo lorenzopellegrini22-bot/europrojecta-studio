@@ -101,9 +101,16 @@ def crea_zip(db: Session, destinazione: Path) -> dict[str, int]:
             conteggi[nome] = testo.count("\n") - 1
         allegati = 0
         for a in db.scalars(select(m.Allegato)):
+            nome_zip = f"allegati/{a.id}_{Path(a.nome_originale).name}"
+            if a.percorso.startswith("db/"):  # ARCHIVIO_ALLEGATI=database
+                if a.contenuto is not None:
+                    z.writestr(nome_zip, a.contenuto.dati)
+                    allegati += 1
+                db.expire(a, ["contenuto"])  # non tenere in memoria tutti i file
+                continue
             percorso = (cartella / a.percorso).resolve()
             if percorso.is_file() and cartella in percorso.parents:
-                z.write(percorso, f"allegati/{a.id}_{Path(a.nome_originale).name}")
+                z.write(percorso, nome_zip)
                 allegati += 1
         conteggi["file_allegati"] = allegati
         z.writestr(
