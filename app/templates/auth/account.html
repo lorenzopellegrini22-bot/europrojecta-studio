@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block titolo %}Il mio account · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<hgroup>
+  <h1>Il mio account</h1>
+  <p>{{ utente.nome }} · {{ utente.email }} · {{ "Titolare" if utente.is_titolare else "Collaboratore" }}</p>
+</hgroup>
+
+{% if ok %}<div class="messaggio ok" role="status">{{ ok }}</div>{% endif %}
+
+<div class="grid">
+  <article>
+    <header><strong>Cambia password</strong></header>
+    {% if errore_password %}<div class="messaggio errore" role="alert">{{ errore_password }}</div>{% endif %}
+    <form method="post" action="/account/password">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Password attuale
+        <input type="password" name="attuale" autocomplete="current-password" required>
+      </label>
+      <label>Nuova password <small>(almeno 12 caratteri)</small>
+        <input type="password" name="nuova" autocomplete="new-password" minlength="12" required>
+      </label>
+      <label>Ripeti la nuova password
+        <input type="password" name="conferma" autocomplete="new-password" minlength="12" required>
+      </label>
+      <button type="submit">Cambia password</button>
+    </form>
+  </article>
+
+  <article>
+    <header><strong>Codici di recupero</strong></header>
+    <p>Ti restano <strong>{{ codici_rimasti }}</strong> codici di recupero non usati su 10.</p>
+    {% if codici_rimasti <= 3 %}<div class="messaggio attenzione">Ne restano pochi: generane di nuovi.</div>{% endif %}
+    {% if errore_codici %}<div class="messaggio errore" role="alert">{{ errore_codici }}</div>{% endif %}
+    <form method="post" action="/account/codici-recupero">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Codice dell'app di autenticazione
+        <input type="text" name="codice" inputmode="numeric" autocomplete="one-time-code" required>
+        <small>I codici vecchi smetteranno di funzionare.</small>
+      </label>
+      <button type="submit" class="secondary">Genera nuovi codici</button>
+    </form>
+  </article>
+</div>
+
+<article>
+  <header><strong>Dispositivi collegati</strong></header>
+  <div class="overflow-auto">
+  <table>
+    <thead><tr><th>Ultimo uso</th><th>Indirizzo</th><th>Browser</th><th></th></tr></thead>
+    <tbody>
+    {% for s in sessioni %}
+      <tr>
+        <td>{{ s.ultimo_uso | data_ora }}</td>
+        <td>{{ s.ip or "—" }}</td>
+        <td><small>{{ (s.user_agent or "—")[:80] }}</small></td>
+        <td>{% if s.id == sessione_corrente_id %}<span class="stato ok">Questo dispositivo</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% if sessioni | length > 1 %}
+  <form method="post" action="/account/esci-altrove">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="secondary outline">Esci da tutti gli altri dispositivi</button>
+  </form>
+  {% endif %}
+</article>
+
+<article>
+  <header><strong>Ultimi accessi</strong></header>
+  <div class="overflow-auto">
+  <table class="striped">
+    <thead><tr><th>Data</th><th>Esito</th><th>Indirizzo</th></tr></thead>
+    <tbody>
+    {% for a in accessi %}
+      {% set etichette = {"ok": "Accesso riuscito", "password_errata": "Password errata", "totp_errato": "Codice errato", "bloccato": "Bloccato", "utente_inesistente": "Utente inesistente"} %}
+      <tr>
+        <td>{{ a.creato_il | data_ora }}</td>
+        <td><span class="stato {{ 'ok' if a.esito == 'ok' else 'errore' }}">{{ etichette.get(a.esito, a.esito) }}</span></td>
+        <td>{{ a.ip or "—" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</article>
+{% endblock %}

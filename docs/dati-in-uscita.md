@@ -4,7 +4,9 @@ Elenco di tutti i dati che lasciano il server, verso chi e perché. Va aggiornat
 
 | Destinatario | Quando | Cosa esce | Cosa NON esce mai | Stato |
 |---|---|---|---|---|
-| Incentivi Italia (`www.incentivitalia.gov.it`) | Raccolta notturna | Solo richieste HTTP di download del dataset pubblico, con user agent identificabile | Qualsiasi dato del CRM | Fase 2 |
+| Incentivi Italia (`www.incentivitalia.gov.it`) | Raccolta notturna (02:30) | Solo una richiesta HEAD e il download del dataset pubblico, con user agent identificabile | Qualsiasi dato del CRM | **Attiva** |
+| OpenAI: "Verifica connessione" | Solo quando il titolare preme il pulsante | La sola API key (elenco dei modelli disponibili, nessun token consumato) | Qualsiasi dato del CRM | **Attiva** |
+| Server SMTP configurato: "Verifica connessione" | Solo quando il titolare preme il pulsante | Utente e password SMTP per il login; nessuna email inviata | Qualsiasi dato del CRM | **Attiva** |
 | Siti degli enti (solo link diretti a PDF) | Raccolta | Richieste di download dei documenti pubblici dei bandi | Qualsiasi dato del CRM | Fase 2 |
 | OpenAI (account del cliente): estrazione | Notte, bandi aperti o in arrivo cambiati | Solo il testo pubblico dei bandi | Dati delle aziende | Fase 3 |
 | OpenAI: embeddings e scoring | Notte, matching | Dati anonimi: ATECO, regione e provincia, dimensione, anzianità, forma giuridica; descrizione, categorie e importo del progetto | Ragione sociale, P.IVA, codice fiscale, referenti, contatti, note, allegati | Fase 4 |

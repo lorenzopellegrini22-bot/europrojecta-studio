@@ -21,6 +21,7 @@
         <li><a href="/bandi">Bandi</a></li>
         <li><a href="/fonti">Fonti</a></li>
         {% if utente.is_titolare %}<li><a href="/impostazioni/integrazioni">Impostazioni</a></li>{% endif %}
+        <li><a href="/account">Account</a></li>
         <li>
           <form method="post" action="/logout" class="esci">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

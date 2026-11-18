@@ -7,17 +7,23 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.auth import totp
-from app.auth.password import hash_password, serve_rehash, verifica_password
+from app.auth.password import (
+    hash_password,
+    serve_rehash,
+    valida_nuova_password,
+    verifica_password,
+)
 from app.config import get_settings
 from app.models import CodiceRecupero, LogAccesso, Utente
 from app.sicurezza.cifratura import cifra, decifra
 
 SCOPO_TOTP = "totp"
 MESSAGGIO_CREDENZIALI = "Email o password non corretti."
+MESSAGGIO_IP_BLOCCATO = "Troppi tentativi da questo indirizzo: riprova tra qualche minuto."
 
 
 @dataclass
@@ -69,11 +75,66 @@ def _fallimento(db: Session, utente: Utente) -> None:
         utente.tentativi_falliti = 0
 
 
+def troppi_tentativi_da_ip(db: Session, ip: str) -> bool:
+    """Limite per indirizzo IP, oltre a quello per account: chi prova molte email diverse
+    dallo stesso indirizzo viene fermato per la durata del blocco."""
+    settings = get_settings()
+    da = _adesso() - timedelta(minutes=settings.login_blocco_minuti)
+    falliti = db.scalar(
+        select(func.count())
+        .select_from(LogAccesso)
+        .where(LogAccesso.ip == ip, LogAccesso.esito != "ok", LogAccesso.creato_il >= da)
+    )
+    return (falliti or 0) >= settings.login_max_tentativi_ip
+
+
+def cambia_password(
+    db: Session, utente: Utente, attuale: str, nuova: str, conferma: str
+) -> str | None:
+    """Restituisce un messaggio d'errore, o None se la password è stata cambiata."""
+    if not verifica_password(utente.password_hash, attuale):
+        return "La password attuale non è corretta."
+    if nuova != conferma:
+        return "Le due nuove password non coincidono."
+    if nuova == attuale:
+        return "La nuova password deve essere diversa da quella attuale."
+    errore = valida_nuova_password(nuova)
+    if errore:
+        return errore
+    utente.password_hash = hash_password(nuova)
+    return None
+
+
+def rigenera_codici_recupero(utente: Utente) -> list[str]:
+    codici = totp.genera_codici_recupero()
+    utente.codici_recupero.clear()
+    for c in codici:
+        utente.codici_recupero.append(CodiceRecupero(codice_hash=totp.hash_codice_recupero(c)))
+    return codici
+
+
+def verifica_solo_totp(utente: Utente, codice: str) -> bool:
+    """Conferma di un'operazione sensibile con il codice dell'app (non i codici di recupero)."""
+    segreto = segreto_totp(utente)
+    if not segreto or not utente.totp_attivo:
+        return False
+    intervallo = totp.verifica_codice(segreto, codice, utente.totp_ultimo_intervallo)
+    if intervallo is None:
+        return False
+    utente.totp_ultimo_intervallo = intervallo
+    return True
+
+
 def verifica_credenziali(
     db: Session, email: str, password: str, ip: str | None, user_agent: str | None
 ) -> EsitoLogin:
     email = email.strip().lower()
     utente = db.scalar(select(Utente).where(Utente.email == email))
+
+    if ip and troppi_tentativi_da_ip(db, ip):
+        _log(db, email, utente, "bloccato", ip, user_agent)
+        db.commit()
+        return EsitoLogin(False, messaggio=MESSAGGIO_IP_BLOCCATO)
 
     if utente is None:
         verifica_password(None, password)  # stesso tempo di risposta di un utente esistente

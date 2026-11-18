@@ -1,23 +1,29 @@
-# Cose da migliorare (dalla prova del 18/11/2026)
+# Cose da migliorare
 
-Prova eseguita sull'app vera (browser + PostgreSQL 16 con pgvector):
-- primo accesso con configurazione della 2FA e codici di recupero;
-- salvataggio della chiave OpenAI e verifica reale (chiave finta rifiutata correttamente da OpenAI);
-- pagina SMTP, vista su telefono, logout.
+Aggiornato il 18/11/2026, dopo la prova completa su dati reali:
+- raccolta reale da Incentivi Italia: 6.095 bandi, di cui 749 aperti e 12 in arrivo;
+- verifica nel browser di dashboard, bandi, scheda bando, fonti, account e impostazioni;
+- 90 test automatici verdi.
 
-Test automatici: 43 verdi in locale e in CI.
+## Fatto
+- Pagina **Il mio account**: cambio password (disconnette gli altri dispositivi), nuovi codici di recupero confermati con il codice dell'app, dispositivi collegati, ultimi accessi.
+- **Pulizia notturna** (04:00): sessioni scadute e log di accesso più vecchi di un anno.
+- **Limite per indirizzo IP** sul login: 20 tentativi falliti in 15 minuti, su qualsiasi account. Dietro Caddy si legge l'IP reale (`--proxy-headers`).
+- **Stato delle integrazioni e delle fonti in home**: avvisi se OpenAI o SMTP non sono collegati, o se una fonte fallisce da 2 raccolte.
+- Raccolta dei bandi **pianificata ogni notte** nel worker, con un test che lo verifica.
 
-## Già corretto durante la prova
-- Etichetta "Rimuovi api key salvata" (tutto minuscolo) → "Rimuovi il valore salvato di «API key»".
-- Su telefono il nome "Europrojecta Studio" andava a capo.
-- L'estensione `unaccent` non era usata: tolta dalla prima migrazione, si aggiunge con la ricerca testuale.
+## Problemi trovati provando con i dati reali (già corretti)
+- Importi assurdi nella fonte (oltre mille miliardi) mandavano in errore il salvataggio: ora vengono scartati e segnalati come "da verificare".
+- Il job risultava "ok" anche se una fonte era in errore: ora risulta "errore".
+- 6 bandi di enti locali (Comuni, Regioni) dichiarano "tutte le regioni": non vengono più trattati come nazionali, il territorio è "da verificare".
+- In alcuni record più comuni sono in un'unica voce separata da ";": ora vengono separati.
+- La dashboard contava come "nuovi" tutti i bandi della prima importazione: ora conta solo quelli comparsi dopo.
 
 ## Da fare, in ordine di priorità
-1. **Pagina "Il mio account"**: cambio password, rigenerazione dei codici di recupero, elenco delle sessioni attive con "esci da tutti i dispositivi", ultimi accessi da `log_accesso`. Oggi si fa solo da riga di comando.
-2. **Pulizia periodica nel worker**: le sessioni scadute si cancellano solo se qualcuno le riusa. Serve un job notturno che elimini sessioni scadute e log più vecchi di N mesi.
-3. **Limite di richieste per IP sul login**: oggi il blocco è per account (5 tentativi). Chi prova molte email diverse non viene rallentato.
-4. **Avviso alla scadenza della sessione**: se la sessione scade mentre si compila un form, i dati inseriti si perdono. Serve un avviso prima della scadenza, oppure la conservazione della bozza.
-5. **Stato delle integrazioni in home**: un riquadro "OpenAI non configurata / verifica fallita", così il consulente lo vede senza entrare nelle impostazioni (arriva con la dashboard, fase 5).
-6. **Verifica WhatsApp**: si aggiunge con il canale WhatsApp (fase 5), dopo aver verificato la documentazione Meta.
-7. **Rotazione della SECRET_KEY**: oggi cambiarla obbliga a reinserire le chiavi e riconfigurare la 2FA. Con MultiFernet si può ruotare senza perdere nulla.
-8. **Ambiente locale senza Docker**: per provare l'app in locale si usa `pgserver` (Postgres 16 + pgvector via pip). Va documentato nel README, oppure Docker va reinstallato quando c'è spazio su disco.
+1. **Copertura regionale (fase 2, promessa al cliente)**: servono le regioni dei clienti del consulente. Il dataset nazionale contiene già 545 bandi regionali e 139 comunali attivi, ma va confrontato con i portali delle regioni prioritarie (es. il Lazio ne ha solo 18 propri).
+2. **Codici ISTAT dei comuni**: oggi i comuni dei bandi sono nomi testuali. Servono la tabella ISTAT e la normalizzazione per il matching per sede.
+3. **Avvisi email sulle fonti** dopo 2 fallimenti consecutivi: il dato è già contato, l'invio arriva con l'SMTP (fase 5).
+4. **Avviso alla scadenza della sessione**: se la sessione scade mentre si compila un form, i dati inseriti si perdono.
+5. **Verifica WhatsApp**: con il canale WhatsApp (fase 5), dopo aver verificato la documentazione Meta.
+6. **Rotazione della SECRET_KEY** con MultiFernet.
+7. **Ricerca testuale migliore** (accenti, più parole): con `unaccent` e un indice trigram quando i dati crescono.

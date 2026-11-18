@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     sessione_durata_max_ore: int = Field(default=12, ge=1)
     login_max_tentativi: int = Field(default=5, ge=1)
     login_blocco_minuti: int = Field(default=15, ge=1)
+    # Tentativi falliti dallo stesso IP (su qualsiasi account) entro login_blocco_minuti
+    login_max_tentativi_ip: int = Field(default=20, ge=5)
 
 
 @lru_cache

@@ -13,6 +13,6 @@
   <ul class="codici">
     {% for c in codici %}<li>{{ c }}</li>{% endfor %}
   </ul>
-  <a href="/" role="button">Ho salvato i codici, continua</a>
+  <a href="{{ torna or '/' }}" role="button">Ho salvato i codici, continua</a>
 </article>
 {% endblock %}

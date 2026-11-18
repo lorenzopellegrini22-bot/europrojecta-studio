@@ -7,7 +7,33 @@ Ha tre parti:
 2. **Motore di matching**: ogni notte raccoglie i bandi nazionali e regionali, li struttura con l'LLM e segnala per quali aziende sono compatibili, spiegando il perché.
 3. **Comunicazione**: email del mattino al consulente e aggiornamenti ai suoi clienti, ognuno approvato da lui.
 
-> Stato: **fase 0 completata** più accesso sicuro (password + 2FA) e **Impostazioni → Integrazioni** (chiavi API di OpenAI, SMTP e WhatsApp, cifrate). Le fasi sono descritte nel brief di progetto; le scelte in `docs/decisioni.md`.
+> **Stato attuale:**
+> - fase 0 completata;
+> - accesso sicuro (password + 2FA) e pagina *Il mio account*;
+> - **Impostazioni → Integrazioni** (chiavi API cifrate);
+> - **raccolta dei bandi nazionali da Incentivi Italia, ogni notte**, con pagine Bandi e Fonti.
+>
+> Le scelte sono in `docs/decisioni.md`, i prossimi passi in `docs/da-migliorare.md`.
+
+## Raccolta dei bandi
+
+Il **worker** (`python -m app.jobs.worker`, servizio `worker` in Docker Compose) raccoglie i bandi **ogni notte alle 02:30**. L'orario si cambia con `RACCOLTA_ORARIO=HH:MM`.
+
+Come lavora:
+- scarica il file solo se la versione è cambiata;
+- riprende i download troncati;
+- salva lo storico delle modifiche;
+- chiude i bandi scaduti o spariti dalla fonte;
+- si ferma senza toccare nulla se il file sembra incompleto.
+
+Se il server era spento all'ora prevista, la raccolta parte appena il worker riparte (entro 6 ore). Ogni esecuzione è visibile nella pagina **Fonti** e nella tabella `job_run`.
+
+Per lanciarla subito: il pulsante "Esegui la raccolta adesso" in **Fonti**, oppure:
+
+```bash
+uv run python -m app.cli raccogli-bandi            # come di notte
+uv run python -m app.cli raccogli-bandi --forza    # riscarica e ricalcola tutti i requisiti
+```
 
 ## Primo accesso
 
@@ -37,7 +63,14 @@ docker compose up -d --build  # db + app (migrazioni automatiche) + worker
 curl http://localhost:8000/health
 ```
 
-Senza Docker per l'app (solo il db in container):
+Senza Docker, con un PostgreSQL + pgvector installato via pip (`pgserver`, utile su Windows):
+
+```bash
+uv run --no-project --with pgserver python -c "import pgserver; print(pgserver.get_server('dati/pg', cleanup_mode=None).get_uri())"
+# poi DATABASE_URL=postgresql+psycopg://postgres@127.0.0.1:<porta>/europrojecta
+```
+
+Solo il db in container:
 
 ```bash
 docker compose up -d db
@@ -57,6 +90,9 @@ uv run python -m app.jobs.worker
 | `uv run alembic upgrade head` | Applica le migrazioni |
 | `uv run python -m app.cli crea-utente --email ... --nome ... [--ruolo collaboratore]` | Crea un utente (la password viene chiesta) |
 | `uv run python -m app.cli reimposta-2fa --email ...` | Azzera la 2FA di un utente |
+| `uv run python -m app.cli raccogli-bandi [--forza]` | Raccolta dei bandi immediata |
+| `uv run python -m app.cli pulizia` | Elimina le sessioni scadute e i log vecchi |
+| `uv run python -m app.jobs.worker` | Avvia il worker con i job notturni |
 
 I test di integrazione creano un database con nome casuale a partire da `TEST_DATABASE_URL`, applicano le migrazioni e lo eliminano alla fine.
 
@@ -67,14 +103,16 @@ app/
   main.py        FastAPI, router, /health
   config.py      Settings da variabili d'ambiente
   db.py          engine, sessioni, Base dei modelli e mixin dei timestamp
-  cli.py         comandi: crea-utente, reimposta-2fa
-  models/        modelli SQLAlchemy (auth, impostazioni, …)
+  cli.py         comandi: crea-utente, reimposta-2fa, raccogli-bandi, pulizia
+  models/        modelli SQLAlchemy (auth, impostazioni, bandi, jobs)
+  sources/       fonti dei bandi: download robusto, parser, runner comune
+  bandi/         stato dei bandi, pagine Bandi e Fonti
   auth/          password argon2id, TOTP, sessioni, CSRF, pagine di login
   sicurezza/     cifratura dei segreti (Fernet + HKDF da SECRET_KEY)
   integrazioni/  Impostazioni → Integrazioni: registro, salvataggio, verifiche
   templates/     Jinja2 + HTMX
   static/        Pico.css e htmx salvati nel repository (nessun CDN)
-  jobs/          worker APScheduler e advisory lock di Postgres
+  jobs/          worker APScheduler (raccolta notturna, pulizia), lock, registro job_run
 migrations/      Alembic (una migrazione per fase)
 tests/unit       funzioni pure, nessuna rete né database
 tests/integration  Postgres + pgvector reale

@@ -23,4 +23,6 @@ RUN useradd --system --uid 10001 europrojecta
 USER europrojecta
 
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# --proxy-headers: dietro Caddy l'IP reale del client arriva in X-Forwarded-For
+# (la porta 8000 non è esposta su Internet, solo a Caddy)
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips=*"]

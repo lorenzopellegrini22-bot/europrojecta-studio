@@ -70,6 +70,23 @@ Gli utenti si creano con `python -m app.cli crea-utente`.
 ## 2026-11-18 — Docker non installato sul PC di sviluppo
 Il disco C: si è riempito durante la build dell'immagine. Docker Desktop è stato disinstallato su indicazione del committente. I test di integrazione (Postgres + pgvector) girano nella CI di GitHub. In locale vengono saltati se manca `TEST_DATABASE_URL`, oppure si possono puntare a un Postgres raggiungibile.
 
+## 2026-11-18 — Raccolta dei bandi: pianificazione e regole
+- **Pianificazione:** job `raccolta_bandi` nel worker, ogni notte alle `RACCOLTA_ORARIO` (default 02:30, Europe/Rome).
+  - Se il worker era spento, recupera entro 6 ore (`misfire_grace_time`); più esecuzioni perse diventano una sola (`coalesce`).
+  - All'avvio, se nessuna raccolta è mai riuscita, ne parte subito una.
+  - Advisory lock di Postgres e una riga in `job_run` per ogni esecuzione.
+  - Si può lanciare anche a mano: `python -m app.cli raccogli-bandi` oppure il pulsante in Fonti.
+- **File invariato:** la fonte non supporta ETag né richieste condizionali (risponde sempre 200). Si fa prima una HEAD e si confronta `Last-Modified` con l'ultima versione elaborata.
+- **Scomparsa:** un bando viene chiuso se manca in 2 versioni consecutive del file. Se ricompare viene riaperto.
+- **ID reimpostati:** un record con un ID nuovo ma lo stesso `idBando` (RNA) di un bando non più presente viene riconciliato, invece di creare un duplicato.
+- **Importi:** 0 significa "non indicato". Oltre 100 miliardi di euro è un refuso: il valore viene scartato e segnalato come da verificare.
+- **Enti locali "nazionali":** se l'ente è un Comune, una Regione, una Provincia o una Camera di Commercio e la fonte elenca tutte le regioni, il territorio diventa "sconosciuto" (da verificare), non "nazionale".
+- **Ricalcolo:** `raccogli-bandi --forza` riscarica il file e ricalcola i requisiti di tutti i bandi. Serve dopo una correzione del parser.
+- **Requisiti:** per ora `bando_requisiti` contiene solo i dati della fonte. In fase 3 la risoluzione completa (correzione manuale > fonte > LLM) sostituirà la scrittura diretta. `regime`, `modalita` e `categorie_spesa` restano NULL e "da verificare" finché non c'è l'estrazione LLM.
+
+## 2026-11-18 — Sviluppo locale senza Docker: pgserver
+Per provare l'app sul PC di sviluppo si usa `pgserver` (PostgreSQL 16.2 + pgvector 0.6.2 installabili via pip), in un ambiente separato dal progetto. Non include `unaccent`: è un motivo in più per aggiungere quell'estensione solo quando servirà, verificando che ci sia nell'immagine di produzione. In CI e in produzione resta `pgvector/pgvector:pg16`.
+
 ---
 
 ## Decisioni dal brief (riassunto)
