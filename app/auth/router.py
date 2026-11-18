@@ -20,6 +20,7 @@ from app.auth.sessioni import (
     imposta_cookie,
     promuovi_sessione,
 )
+from app.config import get_settings
 from app.db import get_db
 from app.models import Sessione
 from app.web import render
@@ -71,7 +72,15 @@ def login_invio(
             status_code=400,
         )
     utente = esito.utente
-    _, token = crea_sessione(db, utente, request)
+    sessione, token = crea_sessione(db, utente, request)
+    if not get_settings().verifica_due_passaggi:
+        # Installazione senza 2FA: la password basta, la sessione è subito completa
+        servizio.completa_accesso(db, utente, ip, ua)
+        token = promuovi_sessione(sessione)
+        db.commit()
+        risposta = _vai("/")
+        imposta_cookie(risposta, token)
+        return risposta
     db.commit()
     risposta = _vai("/login/2fa" if utente.totp_attivo else "/2fa/configura")
     imposta_cookie(risposta, token)

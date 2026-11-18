@@ -353,6 +353,15 @@ sito dell'ente. Fonti verificate sulle gare aperte del 18/11/2026:
   robots.txt (portali «PortaleAppalti» di MIT e RAI) restano con il link alla pagina.
 I file non si scaricano sul server: si leggono solo le pagine, i documenti li apre chi clicca.
 
+## 2026-11-18 — Pubblicazione su Vercel (installazione NuvioLab)
+L'istanza NuvioLab gira su Vercel (`europrojecta-studio.vercel.app`, funzioni a Francoforte) con database Neon in UE, per scelta del titolare. `.vercelignore` esclude segreti e dati locali; Vercel installa le dipendenze da `uv.lock`.
+**Limiti noti su Vercel:** il worker non gira (niente raccolta notturna né email del mattino automatiche), i PDF dei report non si generano (WeasyPrint senza librerie di sistema), gli allegati finiscono in `/tmp` e si perdono, niente ClamAV né backup restic. La guida `docs/messa-in-produzione.md` (VPS + Docker Compose) resta il modo completo.
+Le migrazioni su Neon si lanciano da un computer con `DATABASE_URL` del database (non pooled) e `alembic upgrade head`.
+
+## 2026-11-18 — Verifica in due passaggi disattivabile
+Nuova impostazione `VERIFICA_DUE_PASSAGGI` (predefinita `true`). Con `false` il login con la password apre subito la sessione completa. Spenta solo sull'istanza Vercel di NuvioLab, su richiesta del titolare; le altre installazioni restano con la 2FA obbligatoria.
+**Rischio accettato:** l'app è raggiungibile da Internet e contiene dati dei clienti; senza 2FA la protezione è solo la password (con blocco dopo 5 tentativi).
+
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.
 - Jinja2 + HTMX salvati nel repository, nessuna risorsa da CDN (Pico.css sostituito da uno stile proprio, vedi sopra).

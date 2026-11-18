@@ -84,6 +84,18 @@ def test_accesso_con_codice_di_recupero_monouso(client, crea_utente, accedi):
     assert prova(codici[0]) == 400  # già usato
 
 
+def test_senza_verifica_in_due_passaggi_basta_la_password(client, crea_utente, monkeypatch):
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "verifica_due_passaggi", False)
+    utente = crea_utente()
+    r = client.post("/login", data={"email": utente.email, "password": "sbagliata"})
+    assert r.status_code == 400
+    r = client.post("/login", data={"email": utente.email, "password": PASSWORD})
+    assert r.status_code == 303 and r.headers["location"] == "/"
+    assert client.get("/clienti").status_code == 200
+
+
 def test_blocco_dopo_cinque_tentativi(client, crea_utente, db):
     utente = crea_utente()
     for _ in range(5):

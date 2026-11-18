@@ -71,6 +71,9 @@ class Settings(BaseSettings):
         return valore
 
     # Sessioni e login
+    # Verifica in due passaggi (app di autenticazione) obbligatoria. Si spegne solo per scelta
+    # del titolare dell'installazione (VERIFICA_DUE_PASSAGGI=false): allora basta la password.
+    verifica_due_passaggi: bool = True
     cookie_secure: bool = True
     sessione_inattivita_minuti: int = Field(default=60, ge=5)
     sessione_durata_max_ore: int = Field(default=12, ge=1)
