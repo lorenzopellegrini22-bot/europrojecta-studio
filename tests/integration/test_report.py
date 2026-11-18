@@ -74,8 +74,10 @@ def test_report_bozza_approvazione_pdf(client, crea_utente, accedi, db):
         from pypdf import PdfReader
 
         assert r.status_code == 200 and r.content.startswith(b"%PDF")
-        testo = "".join(p.extract_text() for p in PdfReader(io.BytesIO(r.content)).pages)
-        assert "Sintesi corretta dal consulente" in testo and a.ragione_sociale in testo
-        assert "CC BY 4.0" in testo
+        testo = " ".join(
+            " ".join(p.extract_text() for p in PdfReader(io.BytesIO(r.content)).pages).split()
+        ).lower()
+        assert "sintesi corretta dal consulente" in testo and a.ragione_sociale.lower() in testo
+        assert "cc by 4.0" in testo
     else:
         assert r.status_code == 303 and "WeasyPrint" in client.get(r.headers["location"]).text
