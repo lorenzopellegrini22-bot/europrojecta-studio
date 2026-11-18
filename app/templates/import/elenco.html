@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block titolo %}Import dei clienti · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<hgroup>
+  <h1>Import dei clienti</h1>
+  <p>Carica l'export del programma che usavi prima (file CSV, anche salvato da Excel). Prima vedi un'anteprima e fai una prova a vuoto: niente viene salvato finché non premi «Importa».</p>
+</hgroup>
+{% set msg = request.query_params.get("msg") %}
+{% if msg %}<div class="messaggio errore" role="alert">{{ msg }}</div>{% endif %}
+
+<details class="guida">
+  <summary><span class="icona-info" aria-hidden="true">i</span> Come preparare il file</summary>
+  <ul>
+    <li>Una riga per cliente, con la riga delle intestazioni in cima. Il separatore (; o ,) e la codifica si riconoscono da soli.</li>
+    <li>La <strong>partita IVA</strong> è obbligatoria: serve a riconoscere i clienti. Reimportare lo stesso file aggiorna i clienti, non crea doppioni.</li>
+    <li>I referenti possono stare nella stessa riga (colonne nome, cognome, email, telefono del referente). Se un cliente ha più referenti, ripeti la riga con la stessa partita IVA, oppure carica un secondo file di tipo «Solo referenti».</li>
+    <li>Le celle vuote non cancellano i dati già presenti.</li>
+  </ul>
+</details>
+
+<article>
+  <form method="post" action="/import" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="grid">
+      <label>File CSV<input type="file" name="file" accept=".csv,text/csv,text/plain" required></label>
+      <label>Cosa contiene
+        <select name="tipo">{% for k, e in tipi.items() %}<option value="{{ k }}">{{ e }}</option>{% endfor %}</select>
+      </label>
+      {% if mappature %}<label>Mappatura salvata
+        <select name="mappatura_id"><option value="">Riconosci le colonne in automatico</option>{% for mp in mappature %}<option value="{{ mp.id }}">{{ mp.nome }}</option>{% endfor %}</select>
+      </label>{% endif %}
+    </div>
+    <button type="submit">Carica e mostra l'anteprima</button>
+  </form>
+</article>
+
+{% if jobs %}
+<h2>Import precedenti</h2>
+<div class="overflow-auto">
+<table class="striped">
+  <thead><tr><th>File</th><th>Caricato il</th><th>Stato</th><th>Righe</th><th>Importate</th><th>Con errori</th></tr></thead>
+  <tbody>
+  {% for j in jobs %}
+  <tr><td><a href="/import/{{ j.id }}">{{ j.nome_file }}</a></td><td>{{ j.creato_il | data_ora }}</td><td>{{ j.stato }}</td><td>{{ j.righe_totali }}</td><td>{{ j.righe_importate }}</td><td>{{ j.righe_scartate }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

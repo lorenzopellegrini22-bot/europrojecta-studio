@@ -29,7 +29,9 @@ from app.clienti.segnalatori import router as segnalatori_router
 from app.db import get_db
 from app.documenti.router import router as documenti_router
 from app.documenti.servizio import da_caricare as documenti_da_caricare
+from app.esportazione import router as export_router
 from app.extraction.router import router as estrazione_router
+from app.importer.router import router as import_router
 from app.integrazioni import servizio as servizio_integrazioni
 from app.integrazioni.router import router as integrazioni_router
 from app.models import Bando, Fonte, FonteRun, Opportunita, Pratica, Utente
@@ -108,6 +110,8 @@ app.include_router(account_router)
 app.include_router(integrazioni_router)
 app.include_router(bandi_router)
 app.include_router(crm_router)
+app.include_router(import_router)
+app.include_router(export_router)
 app.include_router(clienti_router)
 app.include_router(pratiche_router)
 app.include_router(segnalatori_router)

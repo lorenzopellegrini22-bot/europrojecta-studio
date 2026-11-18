@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block titolo %}Import {{ j.nome_file }} · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<nav aria-label="breadcrumb"><ul><li><a href="/import">Import dei clienti</a></li><li>{{ j.nome_file }}</li></ul></nav>
+<hgroup>
+  <h1>{{ j.nome_file }}</h1>
+  <p>{{ j.righe_totali }} righe · separatore «{{ "tab" if j.separatore == "\t" else j.separatore }}» · codifica {{ j.codifica }} · stato: {{ j.stato }}</p>
+</hgroup>
+{% if msg %}<div class="messaggio {{ 'ok' if esito == 'ok' else 'errore' }}" role="status">{{ msg }}</div>{% endif %}
+
+<form method="post" action="/import/{{ j.id }}/mappatura">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <article>
+    <header><strong>1. Collega le colonne ai campi</strong> <small>(proposta automatica dalle intestazioni: controllala)</small></header>
+    <label>Cosa contiene il file
+      <select name="tipo">{% for k, e in tipi.items() %}<option value="{{ k }}" {% if tipo == k %}selected{% endif %}>{{ e }}</option>{% endfor %}</select>
+    </label>
+    <div class="overflow-auto">
+    <table>
+      <thead><tr><th>Colonna del file</th><th>Esempio</th><th>Campo di Europrojecta</th></tr></thead>
+      <tbody>
+      {% for h in intestazioni %}
+      {% set i = loop.index0 %}
+      <tr>
+        <td><strong>{{ h }}</strong></td>
+        <td><small>{{ (righe[0][0][i] if righe and righe[0][0] | length > i else "") | truncate(40) }}</small></td>
+        <td>
+          <select name="col_{{ i }}" aria-label="Campo per {{ h }}">
+            <option value="">— non importare —</option>
+            {% for campo, (etichetta, _s) in campi.items() %}<option value="{{ campo }}" {% if mappa.get(h) == campo %}selected{% endif %}>{{ etichetta }}</option>{% endfor %}
+          </select>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    <div class="grid">
+      <input name="nome_mappatura" placeholder="Salva questa mappatura con un nome (facoltativo)" aria-label="Nome della mappatura">
+      <button type="submit" class="secondary">Aggiorna l'anteprima</button>
+    </div>
+  </article>
+</form>
+
+<article id="anteprima">
+  <header><strong>2. Anteprima delle prime righe</strong></header>
+  <div class="overflow-auto">
+  <table class="striped">
+    <thead><tr><th>Riga</th>{% for h in intestazioni %}{% if mappa.get(h) %}<th>{{ campi[mappa[h]][0] }}</th>{% endif %}{% endfor %}<th>Esito</th></tr></thead>
+    <tbody>
+    {% for grezza, r in righe %}
+    <tr {% if r.errori %}class="riga-errore"{% endif %}>
+      <td>{{ r.numero }}</td>
+      {% for h in intestazioni %}{% if mappa.get(h) %}<td><small>{{ grezza[loop.index0] if grezza | length > loop.index0 else "" }}</small></td>{% endif %}{% endfor %}
+      <td>{% if r.errori %}<small class="errore-campo">{{ r.errori | join("; ") }}</small>{% else %}<small class="motivo-ok">✓ ok</small>{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</article>
+
+<article>
+  <header><strong>3. Prova a vuoto, poi importa</strong></header>
+  <form method="post" action="/import/{{ j.id }}/esegui" class="gruppo-pulsanti">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button name="modo" value="prova" class="secondary">Prova a vuoto</button>
+    {% if j.stato in ("provato", "importato") %}<button name="modo" value="importa">Importa {{ j.righe_importate }} righe valide</button>{% endif %}
+  </form>
+  {% if j.stato == "caricato" %}<small>Il pulsante «Importa» compare dopo la prova a vuoto.</small>{% endif %}
+  {% if j.errori %}
+  <p>{{ j.errori | length }} righe con errori. <a href="/import/{{ j.id }}/errori.csv">Scarica il report degli errori (CSV)</a></p>
+  <ul>{% for e in j.errori[:20] %}<li><small>Riga {{ e.riga }}: {{ e.errori | join("; ") }}</small></li>{% endfor %}</ul>
+  {% endif %}
+</article>
+{% endblock %}

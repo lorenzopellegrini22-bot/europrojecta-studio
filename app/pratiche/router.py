@@ -195,7 +195,7 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
 
 
 @router.get("/pratiche/export.csv")
-def esporta(request: Request, db: Db, utente: Autenticato) -> Response:
+def esporta(request: Request, db: Db, utente: Titolare) -> Response:
     """CSV per Excel: separatore ";" e BOM UTF-8, così le lettere accentate restano corrette."""
     query, _ = _query_elenco(request)
     buffer = io.StringIO()

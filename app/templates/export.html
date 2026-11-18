@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block titolo %}Esporta i dati · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<hgroup>
+  <h1>Esporta tutti i dati</h1>
+  <p>I dati sono tuoi: qui scarichi in un unico file zip tutto quello che hai inserito, più gli allegati delle pratiche.</p>
+</hgroup>
+<article>
+  <p>Lo zip contiene un file CSV (apribile con Excel) per ciascuna di queste tabelle:</p>
+  <p><small>{{ tabelle | join(", ") }}</small></p>
+  <p>Non contiene password, codici della 2FA e chiavi API, né i bandi pubblici (si riscaricano dalle fonti).</p>
+  <a href="/export/completo.zip" role="button">Scarica l'export completo</a>
+  <p><small>Ogni export viene registrato nel registro delle attività. Per i singoli elenchi ci sono anche gli export CSV nelle pagine Pratiche e Opportunità.</small></p>
+</article>
+{% endblock %}
