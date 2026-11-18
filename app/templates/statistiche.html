@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block titolo %}Statistiche · {{ NOME_APP }}{% endblock %}
+{% macro tabella(righe, titolo) %}
+<article>
+  <header><strong>{{ titolo }}</strong></header>
+  {% if righe %}
+  <table>
+    <thead><tr><th></th><th>Pratiche</th><th>Richiesto</th><th>Concesso</th></tr></thead>
+    <tbody>{% for r in righe %}<tr><td>{{ r.nome }}</td><td>{{ r.pratiche }}</td><td>{{ r.richiesto | euro }}</td><td>{{ r.concesso | euro }}</td></tr>{% endfor %}</tbody>
+  </table>
+  {% else %}<p>Nessun dato.</p>{% endif %}
+</article>
+{% endmacro %}
+{% block contenuto %}
+<div class="intestazione">
+  <hgroup>
+    <h1>Statistiche</h1>
+    <p>{{ "Anno %d" % anno if anno else "Tutti gli anni" }} · pratiche per data di apertura.</p>
+  </hgroup>
+  <form method="get" action="/statistiche" class="gruppo-pulsanti">
+    <select name="anno" aria-label="Anno">
+      <option value="">Tutti gli anni</option>
+      {% for a in anni %}<option value="{{ a }}" {% if anno == a %}selected{% endif %}>{{ a }}</option>{% endfor %}
+    </select>
+    <button type="submit" class="piccolo">Mostra</button>
+  </form>
+</div>
+
+<div class="grid">
+  <article><header>Pratiche</header><p class="numero">{{ s.totale }}</p></article>
+  <article><header>Importo richiesto</header><p class="numero">{{ s.richiesto | euro }}</p></article>
+  <article><header>Importo concesso</header><p class="numero">{{ s.concesso | euro }}</p></article>
+  <article><header>Tasso di successo</header><p class="numero">{% if s.tasso is not none %}{{ s.tasso }}%{% else %}—{% endif %}</p><small>su {{ s.concluse }} pratiche con esito</small></article>
+</div>
+
+<div class="grid">
+  <article>
+    <header><strong>Pratiche per stato</strong></header>
+    <table class="barre">
+      <tbody>
+      {% for k, e in etichette_stato.items() %}
+        {% set n = s.per_stato.get(k, 0) %}
+        <tr><td>{{ e }}</td><td class="valore">{{ n }}</td><td class="barra"><progress value="{{ n }}" max="{{ s.totale or 1 }}"></progress></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </article>
+  <article>
+    <header><strong>Pratiche aperte per mese</strong> <small>(ultimi 12 mesi con dati)</small></header>
+    {% if s.per_mese %}
+    <table class="barre">
+      <tbody>
+      {% for m in s.per_mese %}
+        <tr><td>{{ m.mese.strftime("%m/%Y") }}</td><td class="valore">{{ m.pratiche }}</td><td class="barra"><progress value="{{ m.pratiche }}" max="{{ s.massimo_mese or 1 }}"></progress></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p>Nessun dato.</p>{% endif %}
+  </article>
+</div>
+
+<div class="grid">
+  {{ tabella(s.per_responsabile, "Per responsabile") }}
+  {{ tabella(s.per_modello, "Per modello di pratica") }}
+</div>
+<div class="grid">
+  {{ tabella(s.per_segnalatore, "Per segnalatore") }}
+  <article>
+    <header><strong>Prefattibilità</strong></header>
+    {% if s.pf_totale %}
+    <table>
+      <tbody>
+      {% for k, e in etichette_pf.items() %}<tr><td>{{ e }}</td><td>{{ s.prefattibilita.get(k, 0) }}</td></tr>{% endfor %}
+      <tr><td><strong>Diventate pratiche</strong></td><td><strong>{{ s.pf_convertite }}</strong> su {{ s.pf_totale }}</td></tr>
+      </tbody>
+    </table>
+    {% else %}<p>Nessuna verifica di prefattibilità.</p>{% endif %}
+  </article>
+</div>
+{% endblock %}

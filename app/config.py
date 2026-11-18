@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     # Orari dei job notturni (HH:MM, nel fuso orario sopra)
     raccolta_orario: str = Field(default="02:30", pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
     pulizia_orario: str = Field(default="04:00", pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+    promemoria_orario: str = Field(default="07:30", pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+    appalti_orario: str = Field(default="03:15", pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+    # Allegati delle pratiche: cartella sul server (volume Docker in produzione) e limite
+    cartella_allegati: str = "dati/allegati"
+    allegato_max_mb: int = 20
 
     # Sessioni e login
     cookie_secure: bool = True

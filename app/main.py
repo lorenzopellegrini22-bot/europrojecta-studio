@@ -18,18 +18,22 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app import NOME_APP
+from app.appalti.router import router as appalti_router
 from app.auth.account import router as account_router
 from app.auth.dipendenze import CsrfNonValido, NonAutenticato, Proibito, utente_corrente
 from app.auth.router import router as auth_router
 from app.bandi.router import router as bandi_router
 from app.clienti.router import router as clienti_router
+from app.clienti.segnalatori import router as segnalatori_router
 from app.db import get_db
 from app.integrazioni import servizio as servizio_integrazioni
 from app.integrazioni.router import router as integrazioni_router
 from app.models import Bando, Fonte, FonteRun, Pratica, Utente
 from app.models.pratiche import STATI_PRATICA_CONCLUSI
+from app.pratiche.prefattibilita import router as prefattibilita_router
 from app.pratiche.router import router as pratiche_router
 from app.pratiche.servizio import scadenze
+from app.pratiche.statistiche import router as statistiche_router
 from app.web import render
 
 log = logging.getLogger(__name__)
@@ -100,6 +104,10 @@ app.include_router(integrazioni_router)
 app.include_router(bandi_router)
 app.include_router(clienti_router)
 app.include_router(pratiche_router)
+app.include_router(segnalatori_router)
+app.include_router(prefattibilita_router)
+app.include_router(statistiche_router)
+app.include_router(appalti_router)
 
 
 @app.get("/")

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block titolo %}Prefattibilità · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<div class="intestazione">
+  <hgroup>
+    <h1>Prefattibilità</h1>
+    <p>Prima di aprire una pratica: il cliente ha i requisiti per il bando?</p>
+  </hgroup>
+  <a href="/prefattibilita/nuova" role="button">Nuova verifica</a>
+</div>
+{% if not elenco %}
+<article><p>Nessuna verifica. Puoi partire anche dalla scheda di un cliente o di un bando.</p></article>
+{% else %}
+<div class="overflow-auto">
+<table class="striped">
+  <thead><tr><th>Cliente</th><th>Bando</th><th>Esito</th><th>Contributo stimato</th><th>Creata</th><th>Pratica</th></tr></thead>
+  <tbody>
+  {% for p in elenco %}
+    <tr>
+      <td><a href="/prefattibilita/{{ p.id }}">{{ p.azienda.ragione_sociale }}</a></td>
+      <td>{{ p.nome_bando | truncate(70) }}</td>
+      <td><span class="esito esito-{{ p.esito }}">{{ etichette[p.esito] }}</span></td>
+      <td>{{ p.contributo_stimato | euro }}</td>
+      <td>{{ p.creato_il | data_ora }}{% if p.utente %}<br><small>{{ p.utente.nome }}</small>{% endif %}</td>
+      <td>{% if p.pratica_id %}<a href="/pratiche/{{ p.pratica_id }}">Aperta</a>{% else %}—{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

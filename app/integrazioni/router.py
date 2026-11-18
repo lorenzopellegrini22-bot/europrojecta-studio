@@ -84,6 +84,49 @@ def salva(
     return RedirectResponse(f"/impostazioni/integrazioni/{codice}?salvato=1", status_code=303)
 
 
+@router.post("/integrazioni/{codice}/attiva", dependencies=[Depends(verifica_csrf)])
+def attiva(
+    db: Db,
+    utente: Titolare,
+    codice: str,
+    form: Annotated[FormData, Depends(_form)],
+) -> Response:
+    _tipo(codice)
+    servizio.imposta_attiva(db, codice, form.get("attiva") == "1", utente)
+    if form.get("torna") == "elenco":
+        return RedirectResponse("/impostazioni/integrazioni", status_code=303)
+    return RedirectResponse(f"/impostazioni/integrazioni/{codice}", status_code=303)
+
+
+@router.post("/integrazioni/smtp/prova", dependencies=[Depends(verifica_csrf)])
+def email_di_prova(request: Request, db: Db, utente: Titolare) -> Response:
+    """Invia un'email di prova all'utente collegato e registra l'esito."""
+    from app.comunicazioni import invia_registrando
+
+    ok, messaggio = invia_registrando(
+        db,
+        tipo="prova",
+        destinatario=utente.email,
+        oggetto="Email di prova da Europrojecta Studio",
+        testo=(
+            f"Ciao {utente.nome},\n\nquesta è un'email di prova: se la leggi, le impostazioni "
+            "SMTP funzionano.\n\nEuroprojecta Studio"
+        ),
+        utente=utente,
+        anche_se_disattivata=True,
+    )
+    esito = {
+        "ok": ok,
+        "messaggio": f"Email di prova inviata a {utente.email}." if ok else messaggio,
+    }
+    return render(
+        request,
+        "impostazioni/integrazione.html",
+        {"stato": servizio.stato(db, "smtp"), "errori": {}, "salvato": False, "esito_prova": esito},
+        status_code=200 if ok else 400,
+    )
+
+
 @router.post("/integrazioni/{codice}/verifica", dependencies=[Depends(verifica_csrf)])
 def verifica(request: Request, db: Db, _: Titolare, codice: str) -> Response:
     """Chiamata da HTMX: restituisce solo il riquadro con l'esito."""

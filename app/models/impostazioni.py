@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
 
-CODICI_INTEGRAZIONE = ("openai", "smtp", "whatsapp")
+CODICI_INTEGRAZIONE = ("openai", "smtp", "whatsapp", "registro_imprese")
 
 
 class Integrazione(Base):
@@ -29,6 +29,8 @@ class Integrazione(Base):
     config: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     segreti: Mapped[dict[str, str]] = mapped_column(JSONB, default=dict, server_default="{}")
     anteprime: Mapped[dict[str, str]] = mapped_column(JSONB, default=dict, server_default="{}")
+    # Interruttore: un'integrazione disattivata non viene usata dall'app (le chiavi restano)
+    attiva: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     verificata_il: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     verifica_ok: Mapped[bool | None] = mapped_column(Boolean)
     verifica_messaggio: Mapped[str | None] = mapped_column(Text)

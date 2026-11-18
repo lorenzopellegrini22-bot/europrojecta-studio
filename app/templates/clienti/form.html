@@ -10,16 +10,31 @@
 <nav aria-label="breadcrumb"><ul><li><a href="/clienti">Clienti</a></li>{% if azienda %}<li><a href="/clienti/{{ azienda.id }}">{{ azienda.ragione_sociale }}</a></li>{% endif %}<li>{{ "Modifica" if azienda else "Nuovo" }}</li></ul></nav>
 <h1>{{ "Modifica cliente" if azienda else "Nuovo cliente" }}</h1>
 {% if errori %}<div class="messaggio errore" role="alert">Controlla i campi evidenziati.</div>{% endif %}
+{% if messaggio %}<div class="messaggio {{ messaggio[0] }}" role="status">{{ messaggio[1] }}</div>{% endif %}
 
-<form method="post">
+<form method="post" action="{{ '/clienti/%d/modifica' % azienda.id if azienda else '/clienti/nuovo' }}">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if azienda %}<input type="hidden" name="azienda_id" value="{{ azienda.id }}">{% endif %}
+  <input type="hidden" name="stato_attivita" value="{{ v.get('stato_attivita') or '' }}">
+  <input type="hidden" name="da_registro" value="{{ v.get('da_registro') or '' }}">
   <article>
     <header><strong>Dati dell'azienda</strong></header>
-    {{ campo("ragione_sociale", "Ragione sociale *", extra="required") }}
     <div class="grid">
       {{ campo("partita_iva", "Partita IVA", extra='inputmode="numeric" maxlength="13"') }}
       {{ campo("codice_fiscale", "Codice fiscale", extra='maxlength="16"') }}
     </div>
+    {% if registro_disponibile %}
+    <p>
+      <button type="submit" formaction="/clienti/compila" formnovalidate class="secondary piccolo">Compila dal Registro Imprese</button>
+      <small>Inserisci la partita IVA (o il codice fiscale) e premi: i campi si riempiono con i dati ufficiali. Niente viene salvato finché non premi Salva.</small>
+    </p>
+    {% elif utente.is_titolare %}
+    <p><small>Puoi compilare i dati in automatico collegando il <a href="/impostazioni/integrazioni/registro_imprese">Registro Imprese</a> nelle impostazioni.</small></p>
+    {% endif %}
+    {% if v.get("stato_attivita") and v.get("stato_attivita") | upper != "ATTIVA" %}
+    <div class="messaggio attenzione">Stato al Registro Imprese: {{ v.get("stato_attivita") }}</div>
+    {% endif %}
+    {{ campo("ragione_sociale", "Ragione sociale *", extra="required") }}
     <div class="grid">
       {{ campo("forma_giuridica", "Forma giuridica", extra='placeholder="es. S.r.l."') }}
       <label>Dimensione
@@ -34,6 +49,26 @@
         </select>
       </label>
     </div>
+  </article>
+
+  <article>
+    <header><strong>Attività e dimensione</strong></header>
+    <div class="grid">
+      {{ campo("ateco_codice", "Codice ATECO prevalente", extra='placeholder="es. 62.01"') }}
+      {{ campo("ateco_descrizione", "Descrizione ATECO") }}
+    </div>
+    <div class="grid">
+      {{ campo("dipendenti", "Dipendenti", "number", extra='min="0"') }}
+      {{ campo("fatturato", "Fatturato (€)", extra='inputmode="decimal"') }}
+      {{ campo("anno_dati", "Anno dei dati", "number", extra='min="1900" max="2100"') }}
+    </div>
+    <label>Segnalato da
+      <select name="segnalatore_id" {% if errori.get("segnalatore_id") %}aria-invalid="true"{% endif %}>
+        <option value="">Nessun segnalatore</option>
+        {% for s in segnalatori %}<option value="{{ s.id }}" {% if v.get("segnalatore_id") == s.id %}selected{% endif %}>{{ s.nome }}{% if s.organizzazione %} ({{ s.organizzazione }}){% endif %}</option>{% endfor %}
+      </select>
+      <small><a href="/segnalatori">Gestisci i segnalatori</a></small>
+    </label>
   </article>
 
   <article>

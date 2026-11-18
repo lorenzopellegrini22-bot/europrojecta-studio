@@ -10,6 +10,7 @@
 
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 
 from sqlalchemy import (
     BigInteger,
@@ -24,7 +25,7 @@ from sqlalchemy import (
     Text,
     func,
 )
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base, ConTimestamp
@@ -240,6 +241,7 @@ class PraticaDocumento(ConTimestamp, Base):
     nota: Mapped[str | None] = mapped_column(Text)
 
     operazione: Mapped[PraticaOperazione] = relationship(back_populates="documenti")
+    allegati: Mapped[list["Allegato"]] = relationship(order_by="Allegato.id", viewonly=True)
 
 
 class PraticaDato(ConTimestamp, Base):
@@ -271,3 +273,93 @@ class PraticaEvento(Base):
 
     pratica: Mapped[Pratica] = relationship(back_populates="eventi")
     utente: Mapped[Utente | None] = relationship()
+
+
+# --- Allegati, prefattibilità, email inviate ----------------------------------------------
+
+ESITI_PREFATTIBILITA = ("da_valutare", "fattibile", "fattibile_con_riserva", "non_fattibile")
+TIPI_NOTIFICA = ("comunicazione_pratica", "promemoria", "prova")
+
+
+class Allegato(ConTimestamp, Base):
+    """File caricato (schema F1). Il file sta su disco con un nome casuale; qui i metadati."""
+
+    __tablename__ = "allegato"
+
+    azienda_id: Mapped[int] = mapped_column(
+        ForeignKey("azienda.id", ondelete="CASCADE"), index=True
+    )
+    pratica_id: Mapped[int | None] = mapped_column(
+        ForeignKey("pratica.id", ondelete="CASCADE"), index=True
+    )
+    pratica_documento_id: Mapped[int | None] = mapped_column(
+        ForeignKey("pratica_documento.id", ondelete="SET NULL"), index=True
+    )
+    nome_originale: Mapped[str] = mapped_column(Text)
+    percorso: Mapped[str] = mapped_column(Text, unique=True)
+    mime: Mapped[str] = mapped_column(String(120))
+    dimensione: Mapped[int] = mapped_column(BigInteger)
+    sha256: Mapped[str] = mapped_column(String(64))
+    caricato_da: Mapped[int | None] = mapped_column(ForeignKey("utente.id", ondelete="SET NULL"))
+
+    utente: Mapped[Utente | None] = relationship()
+
+
+class Prefattibilita(ConTimestamp, Base):
+    """Verifica preliminare: il cliente può partecipare al bando? Voci in JSON:
+    [{"requisito", "esito": ok|ko|da_verificare, "nota", "automatica": bool}]."""
+
+    __tablename__ = "prefattibilita"
+    __table_args__ = (
+        _in("esito", ESITI_PREFATTIBILITA, "ck_prefattibilita_esito"),
+        CheckConstraint(
+            "bando_id IS NOT NULL OR bando_testo IS NOT NULL", name="ck_prefattibilita_bando"
+        ),
+    )
+
+    azienda_id: Mapped[int] = mapped_column(
+        ForeignKey("azienda.id", ondelete="CASCADE"), index=True
+    )
+    bando_id: Mapped[int | None] = mapped_column(ForeignKey("bando.id", ondelete="SET NULL"))
+    bando_testo: Mapped[str | None] = mapped_column(Text)
+    esito: Mapped[str] = mapped_column(String(30), default="da_valutare")
+    voci: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    importo_progetto: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
+    contributo_stimato: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
+    note: Mapped[str | None] = mapped_column(Text)
+    utente_id: Mapped[int | None] = mapped_column(ForeignKey("utente.id", ondelete="SET NULL"))
+    pratica_id: Mapped[int | None] = mapped_column(ForeignKey("pratica.id", ondelete="SET NULL"))
+
+    azienda: Mapped[Azienda] = relationship()
+    bando: Mapped[Bando | None] = relationship()
+    utente: Mapped[Utente | None] = relationship()
+    pratica: Mapped[Pratica | None] = relationship()
+
+    @property
+    def nome_bando(self) -> str:
+        return self.bando.titolo if self.bando else (self.bando_testo or "—")
+
+
+class NotificaEmail(Base):
+    """Registro di ogni email inviata (o tentata) dal server (schema F5)."""
+
+    __tablename__ = "notifica_email"
+    __table_args__ = (
+        _in("tipo", TIPI_NOTIFICA, "ck_notifica_email_tipo"),
+        _in("esito", ("ok", "errore"), "ck_notifica_email_esito"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    tipo: Mapped[str] = mapped_column(String(30))
+    destinatario: Mapped[str] = mapped_column(String(254))
+    oggetto: Mapped[str] = mapped_column(Text)
+    corpo: Mapped[str] = mapped_column(Text)
+    pratica_id: Mapped[int | None] = mapped_column(
+        ForeignKey("pratica.id", ondelete="SET NULL"), index=True
+    )
+    utente_id: Mapped[int | None] = mapped_column(ForeignKey("utente.id", ondelete="SET NULL"))
+    esito: Mapped[str] = mapped_column(String(10))
+    errore: Mapped[str | None] = mapped_column(Text)
+    inviata_il: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )

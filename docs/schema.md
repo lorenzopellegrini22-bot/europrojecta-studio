@@ -110,3 +110,13 @@ Anche le tabelle di accesso (`utente`, `codice_recupero`, `sessione`, `log_acces
   - `modello_pratica` (nome univoco, descrizione, attivo) → `modello_fase` (numero, nome, descrizione) → `modello_operazione` (numero, titolo, tipo ∈ attivita, documenti, dati, comunicazione; giorni_previsti; documenti[]; campi[]; oggetto_email; testo_email);
   - la pratica ne copia il contenuto in `pratica_fase` (stato ∈ da_iniziare, in_corso, completata, saltata), `pratica_operazione` (stato ∈ da_fare, fatta, non_applicabile; scadenza; assegnata_a), `pratica_documento` (stato ∈ mancante, richiesto, ricevuto, verificato) e `pratica_dato` (etichetta, valore);
   - `pratica` ha in più codice (es. 2026-0001), bando_testo (bando non raccolto), modello_id e responsabile_id.
+
+## Aggiunte del 18/11/2026 (migrazioni 0006 e 0007)
+- `integrazione.attiva`: interruttore; `codice` ammette anche `registro_imprese`.
+- `azienda`: dipendenti, fatturato, anno_dati, stato_attivita, registro_imprese_il, segnalatore_id → `segnalatore`.
+- `azienda_ateco` (schema F1): codice, descrizione, versione ∈ 2007, 2025, primario (al massimo uno per azienda, indice parziale).
+- `segnalatore`: nome, organizzazione, email, telefono, provvigione_percentuale (0–100), note, attivo.
+- `allegato` (schema F1): azienda_id, pratica_id?, pratica_documento_id?, nome_originale, percorso (casuale, univoco), mime, dimensione, sha256, caricato_da.
+- `prefattibilita`: azienda_id, bando_id o bando_testo, esito ∈ da_valutare, fattibile, fattibile_con_riserva, non_fattibile; voci (jsonb), importo_progetto, contributo_stimato, note, utente_id, pratica_id.
+- `notifica_email` (schema F5): tipo ∈ comunicazione_pratica, promemoria, prova; destinatario, oggetto, corpo, pratica_id?, utente_id?, esito ∈ ok, errore; errore, inviata_il.
+- `appalto`: fonte, id_esterno (univoco), titolo, stazione_appaltante, citta, nuts[], regioni[], province[], cpv[], divisioni_cpv[], natura[] (lavori, servizi, forniture), scadenza, pubblicazione, importo_stimato, link, raw, visto_il.

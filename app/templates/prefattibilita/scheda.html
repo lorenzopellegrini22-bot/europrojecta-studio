@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block titolo %}Prefattibilità · {{ pf.azienda.ragione_sociale }} · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<nav aria-label="breadcrumb"><ul><li><a href="/prefattibilita">Prefattibilità</a></li><li>{{ pf.azienda.ragione_sociale }}</li></ul></nav>
+<div class="intestazione">
+  <hgroup>
+    <h1>{{ pf.azienda.ragione_sociale }}</h1>
+    <p>{% if pf.bando %}<a href="/bandi/{{ pf.bando.id }}">{{ pf.bando.titolo }}</a>{% else %}{{ pf.bando_testo }}{% endif %}</p>
+  </hgroup>
+  <div class="gruppo-pulsanti">
+    <span class="esito esito-{{ pf.esito }}">{{ etichette[pf.esito] }}</span>
+    {% if pf.pratica_id %}
+    <a href="/pratiche/{{ pf.pratica_id }}" role="button" class="secondary outline">Vai alla pratica</a>
+    {% elif pf.esito in ("fattibile", "fattibile_con_riserva") %}
+    <a href="/pratiche/nuova?azienda_id={{ pf.azienda_id }}{% if pf.bando_id %}&bando_id={{ pf.bando_id }}{% endif %}&prefattibilita_id={{ pf.id }}" role="button">Apri la pratica</a>
+    {% endif %}
+  </div>
+</div>
+
+<form method="post" action="/prefattibilita/{{ pf.id }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <div class="overflow-auto">
+  <table class="checklist">
+    <thead><tr><th>Requisito</th><th>Esito</th><th>Nota</th><th></th></tr></thead>
+    <tbody>
+    {% for v in pf.voci %}
+      <tr class="voce-{{ v.esito }}">
+        <td>{{ v.requisito }}{% if v.automatica %} <small class="etichetta">automatica</small>{% endif %}</td>
+        <td><select name="esito_{{ loop.index0 }}" aria-label="Esito di {{ v.requisito }}">
+          {% for e in esiti_voce %}<option value="{{ e }}" {% if v.esito == e %}selected{% endif %}>{{ etichette_voce[e] }}</option>{% endfor %}
+        </select></td>
+        <td><input name="nota_{{ loop.index0 }}" value="{{ v.nota }}" aria-label="Nota"></td>
+        <td><label class="casella"><input type="checkbox" name="elimina_{{ loop.index0 }}" value="1"> Togli</label></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <fieldset class="grid">
+    <input name="nuovo_requisito" placeholder="Aggiungi un requisito da controllare" aria-label="Nuovo requisito">
+    <select name="nuovo_esito" aria-label="Esito">{% for e in esiti_voce %}<option value="{{ e }}" {% if e == "da_verificare" %}selected{% endif %}>{{ etichette_voce[e] }}</option>{% endfor %}</select>
+    <input name="nuova_nota" placeholder="Nota" aria-label="Nota">
+  </fieldset>
+
+  <div class="grid">
+    <label>Esito
+      <select name="esito">{% for e in esiti %}<option value="{{ e }}" {% if pf.esito == e %}selected{% endif %}>{{ etichette[e] }}</option>{% endfor %}</select>
+      <small>Suggerito dalle voci: <strong>{{ etichette[suggerito] }}</strong></small>
+    </label>
+    <label>Importo del progetto (€)<input name="importo_progetto" inputmode="decimal" value="{{ pf.importo_progetto if pf.importo_progetto is not none else '' }}"></label>
+    <label>Contributo stimato (€)<input name="contributo_stimato" inputmode="decimal" value="{{ pf.contributo_stimato if pf.contributo_stimato is not none else '' }}"></label>
+  </div>
+  <label>Note<textarea name="note" rows="3">{{ pf.note or '' }}</textarea></label>
+  <button type="submit">Salva</button>
+</form>
+
+<div class="gruppo-pulsanti">
+  <form method="post" action="/prefattibilita/{{ pf.id }}/ricalcola">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="secondary outline piccolo">Ricalcola le voci automatiche</button>
+  </form>
+  <a href="/clienti/{{ pf.azienda_id }}/modifica" class="piccolo">Completa i dati del cliente</a>
+</div>
+
+{% if utente.is_titolare %}
+<details class="zona-pericolo">
+  <summary>Elimina la verifica</summary>
+  <form method="post" action="/prefattibilita/{{ pf.id }}/elimina">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="pulsante-pericolo">Elimina</button>
+  </form>
+</details>
+{% endif %}
+{% endblock %}

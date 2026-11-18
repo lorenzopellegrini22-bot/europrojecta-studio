@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block titolo %}{{ s.nome }} · Segnalatori · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<nav aria-label="breadcrumb"><ul><li><a href="/segnalatori">Segnalatori</a></li><li>{{ s.nome }}</li></ul></nav>
+<hgroup>
+  <h1>{{ s.nome }}</h1>
+  <p>{{ s.organizzazione or "" }}{% if not s.attivo %} · non attivo{% endif %}</p>
+</hgroup>
+
+<div class="grid">
+  <article><header>Clienti segnalati</header><p class="numero">{{ dati.clienti if dati else 0 }}</p></article>
+  <article><header>Pratiche</header><p class="numero">{{ dati.pratiche if dati else 0 }}</p></article>
+  <article><header>Contributi concessi</header><p class="numero">{{ (dati.concesso if dati else none) | euro }}</p></article>
+  <article><header>Provvigione stimata</header><p class="numero">{{ (dati.provvigione if dati else none) | euro }}</p></article>
+</div>
+
+<section>
+  <h2>Clienti</h2>
+  {% if clienti %}
+  <ul>{% for a in clienti %}<li><a href="/clienti/{{ a.id }}">{{ a.ragione_sociale }}</a></li>{% endfor %}</ul>
+  {% else %}<p>Nessun cliente collegato. Si collega dalla scheda del cliente (campo «Segnalato da»).</p>{% endif %}
+</section>
+
+{% if pratiche %}
+<section>
+  <h2>Pratiche dei clienti segnalati</h2>
+  <div class="overflow-auto">
+  <table class="striped">
+    <thead><tr><th>Codice</th><th>Cliente</th><th>Bando</th><th>Stato</th><th>Concesso</th></tr></thead>
+    <tbody>
+    {% for p in pratiche %}
+      <tr><td><a href="/pratiche/{{ p.id }}">{{ p.codice }}</a></td><td>{{ p.azienda.ragione_sociale }}</td><td>{{ p.nome_bando | truncate(60) }}</td><td>{{ etichette_stato[p.stato] }}</td><td>{{ p.importo_concesso | euro }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endif %}
+
+<details>
+  <summary>Modifica i dati</summary>
+  <form method="post" action="/segnalatori/{{ s.id }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="grid">
+      <label>Nome<input name="nome" value="{{ s.nome }}" required></label>
+      <label>Organizzazione<input name="organizzazione" value="{{ s.organizzazione or '' }}"></label>
+    </div>
+    <div class="grid">
+      <label>Email<input type="email" name="email" value="{{ s.email or '' }}"></label>
+      <label>Telefono<input type="tel" name="telefono" value="{{ s.telefono or '' }}"></label>
+      <label>Provvigione %<input name="provvigione_percentuale" inputmode="decimal" value="{{ s.provvigione_percentuale if s.provvigione_percentuale is not none else '' }}"></label>
+    </div>
+    <label>Note<textarea name="note" rows="2">{{ s.note or '' }}</textarea></label>
+    <label><input type="checkbox" name="attivo" value="1" {% if s.attivo %}checked{% endif %}> Attivo</label>
+    <button type="submit">Salva</button>
+  </form>
+</details>
+
+{% if utente.is_titolare %}
+<details class="zona-pericolo">
+  <summary>Elimina il segnalatore</summary>
+  <form method="post" action="/segnalatori/{{ s.id }}/elimina">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <p>I clienti restano, senza il collegamento a questo segnalatore.</p>
+    <button type="submit" class="pulsante-pericolo">Elimina</button>
+  </form>
+</details>
+{% endif %}
+{% endblock %}

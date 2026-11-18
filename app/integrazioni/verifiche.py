@@ -2,6 +2,7 @@
 
 - OpenAI: elenca i modelli disponibili (chiamata gratuita, nessun token consumato).
 - SMTP: si collega, attiva TLS e fa il login, poi chiude. Nessuna email inviata.
+- Registro Imprese: cerca l'azienda indicata (in produzione la ricerca ha un costo).
 
 I messaggi sono pensati per il consulente, non per uno sviluppatore.
 """
@@ -101,4 +102,23 @@ def verifica_smtp(valori: dict[str, str | None]) -> EsitoVerifica:
     return EsitoVerifica(True, "Connessione e login riusciti. Nessuna email è stata inviata.")
 
 
-VERIFICHE = {"openai": verifica_openai, "smtp": verifica_smtp}
+def verifica_registro_imprese(valori: dict[str, str | None]) -> EsitoVerifica:
+    from app.integrazioni.registro_imprese import ErroreRegistro, cerca
+
+    piva = valori.get("partita_iva_verifica") or "12485671007"
+    try:
+        dati = cerca(valori, piva)
+    except ErroreRegistro as e:
+        return EsitoVerifica(False, str(e))
+    ambiente = "sandbox" if valori.get("ambiente") != "produzione" else "produzione"
+    return EsitoVerifica(
+        True,
+        f"Connessione riuscita ({ambiente}): trovata «{dati.ragione_sociale or piva}».",
+    )
+
+
+VERIFICHE = {
+    "openai": verifica_openai,
+    "smtp": verifica_smtp,
+    "registro_imprese": verifica_registro_imprese,
+}

@@ -6,18 +6,20 @@ Titolare e collaboratori lavorano sulle pratiche; solo il titolare può eliminar
 import csv
 import io
 from datetime import date, timedelta
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import RedirectResponse, Response
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app import audit
 from app.auth.dipendenze import richiede_titolare, utente_corrente, verifica_csrf
+from app.comunicazioni import email_disponibile, invia_registrando
 from app.db import get_db
 from app.models import (
+    Allegato,
     Azienda,
     Bando,
     ModelloFase,
@@ -26,6 +28,7 @@ from app.models import (
     PraticaDocumento,
     PraticaFase,
     PraticaOperazione,
+    Prefattibilita,
     Utente,
 )
 from app.models.pratiche import (
@@ -35,7 +38,9 @@ from app.models.pratiche import (
     STATI_PRATICA_CONCLUSI,
     TIPI_OPERAZIONE,
 )
+from app.pratiche import allegati as archivio
 from app.pratiche import servizio as s
+from app.utils.numeri import importo_italiano
 from app.web import leggi_form, render, testo
 
 router = APIRouter()
@@ -61,16 +66,8 @@ def _data(valore: str | None) -> date | None:
 
 
 def _importo(valore: str | None) -> Decimal | None:
-    if not valore:
-        return None
-    pulito = valore.replace("€", "").replace(" ", "")
-    if "," in pulito:
-        pulito = pulito.replace(".", "").replace(",", ".")
-    try:
-        d = Decimal(pulito)
-    except InvalidOperation:
-        return None
-    return d if 0 <= d < Decimal("1e12") else None
+    d = importo_italiano(valore)
+    return d if d is not None and 0 <= d < Decimal("1e12") else None
 
 
 def _intero(valore: str | None) -> int | None:
@@ -310,6 +307,7 @@ def nuova(request: Request, db: Db, utente: Autenticato) -> Response:
         {
             "azienda_id": _intero(p.get("azienda_id")),
             "bando_id": _intero(p.get("bando_id")),
+            "prefattibilita_id": _intero(p.get("prefattibilita_id")),
             "responsabile_id": utente.id,
         },
         {},
@@ -325,6 +323,7 @@ def crea(request: Request, db: Db, utente: Autenticato, form: Form) -> Response:
         "modello_id": _intero(testo(form, "modello_id")),
         "responsabile_id": _intero(testo(form, "responsabile_id")),
         "scadenza_presentazione": testo(form, "scadenza_presentazione"),
+        "prefattibilita_id": _intero(testo(form, "prefattibilita_id")),
     }
     errori: dict[str, str] = {}
     azienda = db.get(Azienda, v["azienda_id"]) if v["azienda_id"] else None
@@ -352,6 +351,14 @@ def crea(request: Request, db: Db, utente: Autenticato, form: Form) -> Response:
         scadenza_presentazione=scadenza,
     )
     db.flush()
+    pf_id = _intero(testo(form, "prefattibilita_id"))
+    if pf_id:
+        pf = db.get(Prefattibilita, pf_id)
+        if pf is not None and pf.azienda_id == pratica.azienda_id and pf.pratica_id is None:
+            pf.pratica_id = pratica.id
+            if pf.contributo_stimato is not None:
+                pratica.importo_richiesto = pf.contributo_stimato
+            s.evento(pratica, utente, "Aperta dalla verifica di prefattibilità")
     audit.registra(db, utente, "pratica", pratica.id, "crea", {"codice": pratica.codice})
     db.commit()
     return RedirectResponse(f"/pratiche/{pratica.id}", status_code=303)
@@ -388,6 +395,17 @@ def scheda(request: Request, pratica_id: int, db: Db, _: Autenticato) -> Respons
             "stati_documento": STATI_DOCUMENTO,
             "tipi_operazione": TIPI_OPERAZIONE,
             "oggi": _oggi(),
+            "email_disponibile": email_disponibile(db),
+            "allegati_pratica": list(
+                db.scalars(
+                    select(Allegato)
+                    .where(Allegato.pratica_id == p.id)
+                    .options(selectinload(Allegato.utente))
+                    .order_by(Allegato.creato_il.desc())
+                )
+            ),
+            "messaggio": request.query_params.get("msg"),
+            "esito": request.query_params.get("esito"),
         },
     )
 
@@ -777,3 +795,151 @@ def salva_operazione_modello(
             setattr(op, k, v)
     db.commit()
     return RedirectResponse(f"/modelli/{m.id}#fase-{fase.id}", status_code=303)
+
+
+# --- Invio delle comunicazioni ----------------------------------------------------------
+
+
+def _torna_con_messaggio(
+    p: Pratica, fase: PraticaFase | None, ancora: str, esito: str, messaggio: str
+) -> Response:
+    from urllib.parse import quote
+
+    url = f"/pratiche/{p.id}?"
+    if fase is not None:
+        url += f"fase={fase.numero}&"
+    url += f"esito={esito}&msg={quote(messaggio)}"
+    return RedirectResponse(url + (f"#{ancora}" if ancora else ""), status_code=303)
+
+
+@router.post("/pratiche/{pratica_id}/operazioni/{op_id}/invia", dependencies=CSRF)
+def invia_comunicazione(
+    pratica_id: int, op_id: int, db: Db, utente: Autenticato, form: Form
+) -> Response:
+    """Invia al referente principale l'email dell'operazione, compilata con i dati attuali."""
+    p = _pratica(db, pratica_id)
+    op = _operazione(p, op_id)
+    if op.tipo != "comunicazione":
+        raise HTTPException(400)
+    if "testo_email" in form:  # modifiche al testo fatte nella pagina prima di inviare
+        op.oggetto_email = testo(form, "oggetto_email")
+        op.testo_email = testo(form, "testo_email")
+        db.commit()
+    ref = p.azienda.referente_principale
+    destinatario = testo(form, "destinatario") or (ref.email if ref else None)
+    if not destinatario:
+        return _torna_con_messaggio(
+            p,
+            op.fase,
+            f"op-{op.id}",
+            "errore",
+            "Nessun destinatario: aggiungi un referente con email.",
+        )
+    valori = s.valori_segnaposto(p)
+    oggetto = s.componi(op.oggetto_email, valori) or f"Pratica {p.codice}"
+    corpo = s.componi(op.testo_email, valori)
+    ok, messaggio = invia_registrando(
+        db,
+        tipo="comunicazione_pratica",
+        destinatario=destinatario,
+        oggetto=oggetto,
+        testo=corpo,
+        utente=utente,
+        pratica_id=p.id,
+        rispondi_a=utente.email,
+    )
+    p = _pratica(db, pratica_id)
+    op = _operazione(p, op_id)
+    if ok:
+        s.evento(p, utente, f"Email «{oggetto}» inviata a {destinatario}")
+        s.imposta_stato_operazione(p, op, "fatta", utente)
+        audit.registra(db, utente, "pratica", p.id, "invia", {"destinatario": destinatario})
+        db.commit()
+    return _torna_con_messaggio(p, op.fase, f"op-{op.id}", "ok" if ok else "errore", messaggio)
+
+
+# --- Allegati ----------------------------------------------------------------------------
+
+
+@router.post("/pratiche/{pratica_id}/allegati", dependencies=CSRF)
+def carica_allegato(
+    pratica_id: int,
+    db: Db,
+    utente: Autenticato,
+    form: Form,
+    file: Annotated[UploadFile, File()],
+) -> Response:
+    p = _pratica(db, pratica_id)
+    documento_id = _intero(testo(form, "documento_id"))
+    documento = None
+    fase = None
+    if documento_id:
+        documento = next(
+            (d for f in p.fasi for o in f.operazioni for d in o.documenti if d.id == documento_id),
+            None,
+        )
+        if documento is None:
+            raise HTTPException(404)
+        fase = documento.operazione.fase
+    ancora = f"op-{documento.operazione_id}" if documento else "allegati"
+    nome = (file.filename or "documento").replace("\\", "/").rsplit("/", 1)[-1][:200]
+    try:
+        relativo, mime, dimensione, sha = archivio.salva(file.file, nome)
+    except archivio.ErroreAllegato as e:
+        return _torna_con_messaggio(p, fase, ancora, "errore", str(e))
+    db.add(
+        Allegato(
+            azienda_id=p.azienda_id,
+            pratica_id=p.id,
+            pratica_documento_id=documento.id if documento else None,
+            nome_originale=nome,
+            percorso=relativo,
+            mime=mime,
+            dimensione=dimensione,
+            sha256=sha,
+            caricato_da=utente.id,
+        )
+    )
+    if documento is not None and documento.stato in ("mancante", "richiesto"):
+        documento.stato = "ricevuto"
+    s.evento(
+        p, utente, f"Allegato «{nome}» caricato" + (f" per «{documento.nome}»" if documento else "")
+    )
+    audit.registra(db, utente, "pratica", p.id, "modifica", {"allegato": nome})
+    db.commit()
+    return _torna_con_messaggio(p, fase, ancora, "ok", f"File «{nome}» caricato.")
+
+
+def _allegato(db: Session, allegato_id: int) -> Allegato:
+    a = db.get(Allegato, allegato_id)
+    if a is None:
+        raise HTTPException(404)
+    return a
+
+
+@router.get("/allegati/{allegato_id}")
+def scarica_allegato(allegato_id: int, db: Db, _: Autenticato) -> Response:
+    a = _allegato(db, allegato_id)
+    try:
+        percorso = archivio.percorso_assoluto(a.percorso)
+    except archivio.ErroreAllegato as e:
+        raise HTTPException(404) from e
+    if not percorso.is_file():
+        raise HTTPException(404, "File non trovato sul server")
+    return FileResponse(
+        percorso,
+        media_type=a.mime,
+        filename=a.nome_originale,
+        content_disposition_type="attachment",
+    )
+
+
+@router.post("/allegati/{allegato_id}/elimina", dependencies=CSRF)
+def elimina_allegato(allegato_id: int, db: Db, utente: Autenticato) -> Response:
+    a = _allegato(db, allegato_id)
+    pratica_id = a.pratica_id
+    archivio.elimina_file(a.percorso)
+    audit.registra(db, utente, "pratica", pratica_id, "elimina", {"allegato": a.nome_originale})
+    db.delete(a)
+    db.commit()
+    return RedirectResponse(f"/pratiche/{pratica_id}#allegati", status_code=303)

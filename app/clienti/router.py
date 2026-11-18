@@ -1,8 +1,11 @@
-"""Clienti: elenco, scheda, inserimento e modifica, referenti.
+"""Clienti: elenco, scheda, inserimento e modifica, referenti, compilazione dal Registro
+Imprese (se l'integrazione è collegata e attiva).
 
 Titolare e collaboratori gestiscono i clienti; solo il titolare può eliminarli (e solo se non
 hanno pratiche)."""
 
+import re
+from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -13,9 +16,13 @@ from sqlalchemy.orm import Session, selectinload
 from app import audit
 from app.auth.dipendenze import richiede_titolare, utente_corrente, verifica_csrf
 from app.db import get_db
-from app.models import Azienda, Pratica, Referente, Sede, Utente
+from app.integrazioni import servizio as integrazioni
+from app.integrazioni.registro_imprese import ErroreRegistro, cerca
+from app.models import Azienda, AziendaAteco, Pratica, Referente, Sede, Segnalatore, Utente
 from app.models.crm import DIMENSIONI, STATI_CLIENTE
 from app.pratiche.servizio import ETICHETTE_STATO_PRATICA, partita_iva_valida
+from app.sicurezza.cifratura import ErroreCifratura
+from app.utils.numeri import importo_italiano
 from app.utils.territorio import REGIONI
 from app.web import leggi_form, render, testo
 
@@ -41,13 +48,32 @@ CAMPI_AZIENDA = (
     "note",
 )
 CAMPI_SEDE = ("indirizzo", "cap", "comune_testo", "provincia", "regione")
+CAMPI_NUMERICI = ("dipendenti", "fatturato", "anno_dati", "segnalatore_id")
+CAMPI_EXTRA = ("stato_attivita", "ateco_codice", "ateco_descrizione", "da_registro")
+_ATECO = re.compile(r"^\d{2}(\.\d{1,2}){0,2}$")
 
 
 def _azienda(db: Session, azienda_id: int) -> Azienda:
-    a = db.get(Azienda, azienda_id, options=[selectinload(Azienda.referenti)])
+    a = db.get(
+        Azienda,
+        azienda_id,
+        options=[selectinload(Azienda.referenti), selectinload(Azienda.ateco)],
+    )
     if a is None:
         raise HTTPException(404)
     return a
+
+
+def _numero(valore: str | None, decimale: bool = False) -> Any:
+    if not valore:
+        return None
+    if decimale:
+        d = importo_italiano(valore)
+        return d if d is not None else "non valido"
+    try:
+        return int(valore.replace(".", "").replace(" ", ""))
+    except ValueError:
+        return "non valido"
 
 
 def _valida(db: Session, valori: dict[str, Any], azienda_id: int | None) -> dict[str, str]:
@@ -77,22 +103,51 @@ def _valida(db: Session, valori: dict[str, Any], azienda_id: int | None) -> dict
         errori["dimensione_manuale"] = "Dimensione non valida."
     if valori.get("regione") and valori["regione"] not in REGIONI:
         errori["regione"] = "Regione non valida."
+    for c in CAMPI_NUMERICI:
+        v = valori.get(c)
+        if v == "non valido" or (v is not None and v < 0):
+            errori[c] = "Numero non valido."
+    if valori.get("ateco_codice") and not _ATECO.match(valori["ateco_codice"]):
+        errori["ateco_codice"] = "Codice ATECO nel formato 62.01 o 62.01.00."
+    sid = valori.get("segnalatore_id")
+    if isinstance(sid, int) and db.get(Segnalatore, sid) is None:
+        errori["segnalatore_id"] = "Segnalatore non trovato."
     return errori
 
 
 def _valori(form: dict[str, Any]) -> dict[str, Any]:
-    v: dict[str, Any] = {c: testo(form, c) for c in CAMPI_AZIENDA + CAMPI_SEDE}
+    v: dict[str, Any] = {c: testo(form, c) for c in CAMPI_AZIENDA + CAMPI_SEDE + CAMPI_EXTRA}
     for c in ("partita_iva", "codice_fiscale", "codice_sdi", "provincia"):
         if v[c]:
             v[c] = v[c].replace(" ", "").upper()
     if v["partita_iva"] and v["partita_iva"].startswith("IT"):
         v["partita_iva"] = v["partita_iva"][2:]
     v["stato_cliente"] = v["stato_cliente"] or "attivo"
+    v["dipendenti"] = _numero(testo(form, "dipendenti"))
+    v["anno_dati"] = _numero(testo(form, "anno_dati"))
+    v["fatturato"] = _numero(testo(form, "fatturato"), decimale=True)
+    v["segnalatore_id"] = _numero(testo(form, "segnalatore_id"))
+    return v
+
+
+def _valori_da_azienda(a: Azienda) -> dict[str, Any]:
+    sede = a.sede_legale
+    v: dict[str, Any] = {c: getattr(a, c) for c in CAMPI_AZIENDA + CAMPI_NUMERICI}
+    v.update({c: getattr(sede, c) if sede else None for c in CAMPI_SEDE})
+    v["stato_attivita"] = a.stato_attivita
+    if a.ateco_primario:
+        v["ateco_codice"] = a.ateco_primario.codice
+        v["ateco_descrizione"] = a.ateco_primario.descrizione
     return v
 
 
 def _form(
-    request: Request, azienda: Azienda | None, valori: dict[str, Any], errori: dict[str, str]
+    request: Request,
+    db: Session,
+    azienda: Azienda | None,
+    valori: dict[str, Any],
+    errori: dict[str, str],
+    messaggio: tuple[str, str] | None = None,
 ) -> Response:
     return render(
         request,
@@ -101,9 +156,14 @@ def _form(
             "azienda": azienda,
             "v": valori,
             "errori": errori,
+            "messaggio": messaggio,
             "regioni": REGIONI,
             "dimensioni": DIMENSIONI,
             "stati": STATI_CLIENTE,
+            "registro_disponibile": integrazioni.utilizzabile(db, "registro_imprese"),
+            "segnalatori": list(
+                db.scalars(select(Segnalatore).where(Segnalatore.attivo).order_by(Segnalatore.nome))
+            ),
         },
         400 if errori else 200,
     )
@@ -111,9 +171,9 @@ def _form(
 
 def _applica(azienda: Azienda, v: dict[str, Any]) -> dict[str, Any]:
     differenze: dict[str, Any] = {}
-    for c in CAMPI_AZIENDA:
+    for c in CAMPI_AZIENDA + CAMPI_NUMERICI:
         if getattr(azienda, c) != v[c]:
-            differenze[c] = v[c]
+            differenze[c] = str(v[c]) if v[c] is not None else None
             setattr(azienda, c, v[c])
     sede = azienda.sede_legale
     if sede is None and any(v[c] for c in CAMPI_SEDE):
@@ -124,6 +184,36 @@ def _applica(azienda: Azienda, v: dict[str, Any]) -> dict[str, Any]:
             if getattr(sede, c) != v[c]:
                 differenze[f"sede_{c}"] = v[c]
                 setattr(sede, c, v[c])
+    if v.get("stato_attivita") != azienda.stato_attivita:
+        azienda.stato_attivita = v.get("stato_attivita")
+    if v.get("da_registro"):
+        azienda.registro_imprese_il = datetime.now(UTC)
+        differenze["registro_imprese"] = "dati compilati dal Registro Imprese"
+    # ATECO primario (versione 2007: quella usata dal Registro Imprese tramite Openapi)
+    codice = v.get("ateco_codice")
+    attuale = azienda.ateco_primario
+    if codice and (attuale is None or attuale.codice != codice):
+        for a in azienda.ateco:
+            a.primario = False
+        esistente = next((a for a in azienda.ateco if a.codice == codice), None)
+        if esistente:
+            esistente.primario = True
+            esistente.descrizione = v.get("ateco_descrizione") or esistente.descrizione
+        else:
+            azienda.ateco.append(
+                AziendaAteco(
+                    codice=codice,
+                    descrizione=v.get("ateco_descrizione"),
+                    versione="2007",
+                    primario=True,
+                )
+            )
+        differenze["ateco_primario"] = codice
+    elif codice and attuale is not None and v.get("ateco_descrizione"):
+        attuale.descrizione = v["ateco_descrizione"]
+    elif not codice and attuale is not None:
+        attuale.primario = False
+        differenze["ateco_primario"] = None
     return differenze
 
 
@@ -161,8 +251,58 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
 
 
 @router.get("/clienti/nuovo")
-def nuovo(request: Request, _: Autenticato) -> Response:
-    return _form(request, None, {"stato_cliente": "attivo"}, {})
+def nuovo(request: Request, db: Db, _: Autenticato) -> Response:
+    return _form(request, db, None, {"stato_cliente": "attivo"}, {})
+
+
+@router.post("/clienti/compila", dependencies=CSRF)
+def compila_da_registro(request: Request, db: Db, utente: Autenticato, form: Form) -> Response:
+    """Pulsante "Compila dal Registro Imprese": cerca per partita IVA (o codice fiscale) e
+    riempie il form con i dati trovati. Niente viene salvato finché l'utente non preme Salva."""
+    azienda_id = _numero(testo(form, "azienda_id"))
+    azienda = _azienda(db, azienda_id) if isinstance(azienda_id, int) else None
+    v = _valori(form)
+    identificativo = v.get("partita_iva") or v.get("codice_fiscale") or ""
+    if not integrazioni.utilizzabile(db, "registro_imprese"):
+        return _form(
+            request,
+            db,
+            azienda,
+            v,
+            {},
+            ("errore", "Il Registro Imprese non è collegato o è disattivato nelle impostazioni."),
+        )
+    try:
+        dati = cerca(integrazioni.leggi_valori(db, "registro_imprese"), identificativo)
+    except ErroreRegistro as e:
+        return _form(request, db, azienda, v, {}, ("errore", str(e)))
+    except ErroreCifratura:
+        return _form(
+            request,
+            db,
+            azienda,
+            v,
+            {},
+            ("errore", "Il token salvato non si può decifrare: reinseriscilo nelle impostazioni."),
+        )
+    finally:
+        audit.registra(
+            db,
+            utente,
+            "registro_imprese",
+            identificativo[:60] or None,
+            "invia",
+            {"ricerca": identificativo},
+        )
+        db.commit()
+    for campo, valore in dati.campi_compilati().items():
+        if campo in v or campo in CAMPI_NUMERICI:
+            v[campo] = valore
+    v["da_registro"] = "1"
+    testo_esito = "Dati compilati dal Registro Imprese: controllali e premi Salva."
+    if dati.avvisi:
+        testo_esito += " " + " ".join(dati.avvisi)
+    return _form(request, db, azienda, v, {}, ("attenzione" if dati.avvisi else "ok", testo_esito))
 
 
 @router.post("/clienti/nuovo", dependencies=CSRF)
@@ -170,7 +310,7 @@ def crea(request: Request, db: Db, utente: Autenticato, form: Form) -> Response:
     v = _valori(form)
     errori = _valida(db, v, None)
     if errori:
-        return _form(request, None, v, errori)
+        return _form(request, db, None, v, errori)
     azienda = Azienda(ragione_sociale=v["ragione_sociale"])
     _applica(azienda, v)
     db.add(azienda)
@@ -207,17 +347,19 @@ def scheda(request: Request, azienda_id: int, db: Db, _: Autenticato) -> Respons
     return render(
         request,
         "clienti/scheda.html",
-        {"azienda": azienda, "pratiche": pratiche, "etichette_stato": ETICHETTE_STATO_PRATICA},
+        {
+            "azienda": azienda,
+            "pratiche": pratiche,
+            "etichette_stato": ETICHETTE_STATO_PRATICA,
+            "registro_disponibile": integrazioni.utilizzabile(db, "registro_imprese"),
+        },
     )
 
 
 @router.get("/clienti/{azienda_id}/modifica")
 def modifica(request: Request, azienda_id: int, db: Db, _: Autenticato) -> Response:
     a = _azienda(db, azienda_id)
-    sede = a.sede_legale
-    v = {c: getattr(a, c) for c in CAMPI_AZIENDA}
-    v.update({c: getattr(sede, c) if sede else None for c in CAMPI_SEDE})
-    return _form(request, a, v, {})
+    return _form(request, db, a, _valori_da_azienda(a), {})
 
 
 @router.post("/clienti/{azienda_id}/modifica", dependencies=CSRF)
@@ -226,7 +368,7 @@ def salva(request: Request, azienda_id: int, db: Db, utente: Autenticato, form: 
     v = _valori(form)
     errori = _valida(db, v, a.id)
     if errori:
-        return _form(request, a, v, errori)
+        return _form(request, db, a, v, errori)
     differenze = _applica(a, v)
     if differenze:
         audit.registra(db, utente, "azienda", a.id, "modifica", differenze)

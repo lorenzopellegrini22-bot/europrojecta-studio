@@ -3,32 +3,42 @@
 {% block contenuto %}
 <hgroup>
   <h1>Impostazioni · Integrazioni</h1>
-  <p>Collega i servizi esterni. Le chiavi sono cifrate e non vengono mai mostrate per intero.</p>
+  <p>Collega i servizi esterni. Le chiavi sono cifrate e non vengono mai mostrate per intero. Ogni integrazione si può attivare o disattivare; il pulsante <span class="icona-info" aria-hidden="true">i</span> spiega come collegarla.</p>
 </hgroup>
 
 <div class="griglia-integrazioni">
   {% for s in stati %}
+  {% set t = s.tipo %}
   <article>
     <header>
-      <strong>{{ s.tipo.nome }}</strong>
+      <strong>{{ t.nome }}</strong>
       {% if s.errori %}
         <span class="stato errore">Da reinserire</span>
       {% elif not s.configurata %}
         <span class="stato neutro">Non configurata</span>
+      {% elif not s.attiva %}
+        <span class="stato neutro">Disattivata</span>
       {% elif s.verifica_ok %}
-        <span class="stato ok">Verificata</span>
+        <span class="stato ok">Attiva e verificata</span>
       {% elif s.verifica_ok == false %}
         <span class="stato errore">Verifica fallita</span>
       {% else %}
-        <span class="stato neutro">Configurata</span>
+        <span class="stato ok">Attiva</span>
       {% endif %}
     </header>
-    <p>{{ s.tipo.descrizione }}</p>
+    <p>{{ t.descrizione }}</p>
+    {% include "impostazioni/_guida.html" %}
     {% if s.verificata_il %}<p class="provenienza">Ultima verifica: {{ s.verificata_il | data_ora }}</p>{% endif %}
-    <footer>
-      <a href="/impostazioni/integrazioni/{{ s.tipo.codice }}" role="button" class="outline">
+    <footer class="gruppo-pulsanti">
+      <a href="/impostazioni/integrazioni/{{ t.codice }}" role="button" class="outline">
         {% if s.configurata %}Modifica{% else %}Collega{% endif %}
       </a>
+      <form method="post" action="/impostazioni/integrazioni/{{ t.codice }}/attiva">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="attiva" value="{{ '0' if s.attiva else '1' }}">
+        <input type="hidden" name="torna" value="elenco">
+        <button type="submit" class="secondary outline">{{ "Disattiva" if s.attiva else "Attiva" }}</button>
+      </form>
     </footer>
   </article>
   {% endfor %}

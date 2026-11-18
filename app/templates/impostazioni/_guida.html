@@ -1,0 +1,15 @@
+{# Pulsante "i": come collegare l'integrazione, passo per passo #}
+{% if t.guida %}
+<details class="guida" id="guida-{{ t.codice }}">
+  <summary><span class="icona-info" aria-hidden="true">i</span> Come collegare {{ t.nome }}</summary>
+  <ol>
+    {% for passo in t.guida %}<li>{{ passo }}</li>{% endfor %}
+  </ol>
+  {% if t.link_guida %}
+  <p><strong>Link utili</strong></p>
+  <ul>
+    {% for testo, url in t.link_guida %}<li><a href="{{ url }}" target="_blank" rel="noopener noreferrer">{{ testo }}</a></li>{% endfor %}
+  </ul>
+  {% endif %}
+</details>
+{% endif %}

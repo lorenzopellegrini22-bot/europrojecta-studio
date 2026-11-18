@@ -50,3 +50,81 @@ def pulizia() -> str:
         ).rowcount
         db.commit()
     return f"Eliminate {sessioni} sessioni scadute e {log} log di accesso vecchi."
+
+
+GIORNI_PREAVVISO = 3
+
+
+def testo_promemoria(nome: str, voci: list, oggi) -> str:  # type: ignore[no-untyped-def,type-arg]
+    righe = [f"Buongiorno {nome},", "", "ecco le tue scadenze:", ""]
+    for v in voci:
+        quando = (
+            f"scaduta da {(oggi - v.data).days} giorni"
+            if v.data < oggi
+            else ("oggi" if v.data == oggi else f"il {v.data:%d/%m/%Y}")
+        )
+        righe.append(
+            f"- {v.titolo} · {v.pratica.azienda.ragione_sociale} "
+            f"(pratica {v.pratica.codice}) · {quando}"
+        )
+    righe += ["", "Le trovi tutte nello Scadenzario di Europrojecta Studio."]
+    return "\n".join(righe)
+
+
+def promemoria_scadenze(oggi=None) -> str:  # type: ignore[no-untyped-def]
+    """Ogni mattina: a ogni utente attivo l'elenco delle sue operazioni scadute o in scadenza
+    entro GIORNI_PREAVVISO giorni. Al massimo un promemoria al giorno per utente; niente email
+    se l'integrazione SMTP non è attiva o se non ci sono scadenze."""
+    from datetime import date
+
+    from app.comunicazioni import email_disponibile, invia_registrando
+    from app.models import NotificaEmail, Utente
+    from app.pratiche.servizio import scadenze
+
+    oggi = oggi or date.today()
+    inviati = saltati = errori = 0
+    with get_sessionmaker()() as db:
+        if not email_disponibile(db):
+            return "Email non configurata o disattivata: nessun promemoria inviato."
+        # "Uno al giorno": niente secondo promemoria se uno è partito nelle ultime 20 ore
+        soglia = datetime.now(UTC) - timedelta(hours=20)
+        for u in db.scalars(select(Utente).where(Utente.attivo)):
+            gia = db.scalar(
+                select(NotificaEmail.id).where(
+                    NotificaEmail.tipo == "promemoria",
+                    NotificaEmail.utente_id == u.id,
+                    NotificaEmail.esito == "ok",
+                    NotificaEmail.inviata_il >= soglia,
+                )
+            )
+            if gia:
+                saltati += 1
+                continue
+            voci = scadenze(
+                db, oggi - timedelta(days=60), oggi + timedelta(days=GIORNI_PREAVVISO), u.id
+            )
+            if not voci:
+                continue
+            ok, _ = invia_registrando(
+                db,
+                tipo="promemoria",
+                destinatario=u.email,
+                oggetto=f"Scadenze: {len(voci)} da gestire",
+                testo=testo_promemoria(u.nome, voci, oggi),
+                utente=u,
+            )
+            if ok:
+                inviati += 1
+            else:
+                errori += 1
+    if errori:
+        raise RuntimeError(f"Promemoria: {inviati} inviati, {errori} non riusciti.")
+    return f"Promemoria inviati: {inviati} (già inviati oggi: {saltati})."
+
+
+def raccolta_appalti() -> str:
+    """Bandi di gara italiani aperti da TED (vedi app/appalti/ted.py)."""
+    from app.appalti.ted import raccogli
+
+    with get_sessionmaker()() as db:
+        return raccogli(db)

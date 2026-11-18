@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block titolo %}Appalti pubblici · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<div class="intestazione">
+  <hgroup>
+    <h1>Appalti pubblici</h1>
+    <p>{{ totale }} bandi di gara aperti trovati.
+      {% if ultima %}Aggiornati il {{ ultima.fine | data_ora }}.{% else %}La raccolta non è ancora stata eseguita.{% endif %}
+      Ogni notte dalla piattaforma europea TED.</p>
+  </hgroup>
+  {% if utente.is_titolare %}
+  <form method="post" action="/appalti/aggiorna">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="secondary outline piccolo" {% if in_corso %}disabled{% endif %}>{{ "Aggiornamento in corso…" if in_corso else "Aggiorna adesso" }}</button>
+  </form>
+  {% endif %}
+</div>
+{% if request.query_params.get("aggiornamento") %}<div class="messaggio ok" role="status">Aggiornamento avviato: ricarica la pagina tra un minuto.</div>{% endif %}
+
+<form method="get" action="/appalti" class="filtri">
+  <input type="search" name="q" value="{{ filtri.q }}" placeholder="Cerca nell'oggetto, nella stazione appaltante o nel numero" aria-label="Cerca">
+  <div class="grid">
+    <select name="natura" aria-label="Tipo di appalto">
+      <option value="">Lavori, servizi e forniture</option>
+      {% for k, e in nature.items() %}<option value="{{ k }}" {% if filtri.natura == k %}selected{% endif %}>{{ e }}</option>{% endfor %}
+    </select>
+    <select name="cpv" aria-label="Categoria">
+      <option value="">Tutte le categorie</option>
+      {% for k, e in divisioni.items() %}<option value="{{ k }}" {% if filtri.cpv == k %}selected{% endif %}>{{ k }} · {{ e }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="grid">
+    <select name="regione" aria-label="Regione">
+      <option value="">Tutta Italia</option>
+      {% for r in regioni %}<option value="{{ r }}" {% if filtri.regione == r %}selected{% endif %}>{{ r }}</option>{% endfor %}
+    </select>
+    <select name="provincia" aria-label="Provincia">
+      <option value="">Tutte le province</option>
+      {% for pr in province %}<option value="{{ pr }}" {% if filtri.provincia == pr %}selected{% endif %}>{{ pr }}</option>{% endfor %}
+    </select>
+    <input name="comune" value="{{ filtri.comune }}" placeholder="Comune della stazione appaltante" aria-label="Comune">
+  </div>
+  <div class="grid">
+    <input name="importo_min" value="{{ filtri.importo_min }}" placeholder="Importo da (€)" inputmode="numeric" aria-label="Importo minimo">
+    <input name="importo_max" value="{{ filtri.importo_max }}" placeholder="Importo fino a (€)" inputmode="numeric" aria-label="Importo massimo">
+    <select name="scadenza" aria-label="Scadenza">
+      <option value="">Qualsiasi scadenza</option>
+      {% for g in (7, 15, 30, 60) %}<option value="{{ g }}" {% if filtri.scadenza == g | string %}selected{% endif %}>Scade entro {{ g }} giorni</option>{% endfor %}
+    </select>
+    <select name="ordine" aria-label="Ordina">
+      <option value="scadenza" {% if filtri.ordine == "scadenza" %}selected{% endif %}>Prima le scadenze vicine</option>
+      <option value="recenti" {% if filtri.ordine == "recenti" %}selected{% endif %}>Prima i più recenti</option>
+      <option value="importo" {% if filtri.ordine == "importo" %}selected{% endif %}>Prima gli importi più alti</option>
+    </select>
+  </div>
+  <div class="azioni-filtri">
+    <button type="submit">Cerca</button>
+    <a href="/appalti" class="secondary">Azzera filtri</a>
+  </div>
+</form>
+
+{% if not appalti %}
+<article><p>Nessun appalto aperto con questi filtri.{% if not ultima %} Premi «Aggiorna adesso» per la prima raccolta.{% endif %}</p></article>
+{% else %}
+<div class="overflow-auto">
+<table class="striped">
+  <thead><tr><th>Oggetto</th><th>Stazione appaltante</th><th>Luogo</th><th>Importo stimato</th><th>Scadenza offerte</th></tr></thead>
+  <tbody>
+  {% for a in appalti %}
+    {% set giorni = (a.scadenza - oggi).days %}
+    <tr>
+      <td>
+        {% if a.link %}<a href="{{ a.link }}" target="_blank" rel="noopener noreferrer">{{ a.titolo | truncate(140) }}</a>{% else %}{{ a.titolo | truncate(140) }}{% endif %}
+        <br><small>{{ (a.natura or []) | map("capitalize") | join(", ") }}{% if a.cpv %} · CPV {{ a.cpv[:2] | join(", ") }}{% endif %} · n. {{ a.id_esterno }}</small>
+      </td>
+      <td>{{ a.stazione_appaltante or "—" }}{% if a.citta %}<br><small>{{ a.citta }}</small>{% endif %}</td>
+      <td>{% if a.province %}{{ a.province[:2] | join(", ") }}{% if a.province | length > 2 %} e altre{% endif %}{% elif a.regioni %}{{ a.regioni[:2] | join(", ") }}{% else %}Italia{% endif %}</td>
+      <td>{{ a.importo_stimato | euro }}</td>
+      <td class="{% if giorni <= 7 %}scaduta{% endif %}">{{ a.scadenza | data }}<br><small>{% if giorni == 0 %}oggi{% else %}tra {{ giorni }} giorni{% endif %}</small></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% if pagine > 1 %}
+<nav class="paginazione">
+  {% if pagina > 1 %}<a href="/appalti?{{ filtri_url }}&pagina={{ pagina - 1 }}">← Precedente</a>{% endif %}
+  <span>Pagina {{ pagina }} di {{ pagine }}</span>
+  {% if pagina < pagine %}<a href="/appalti?{{ filtri_url }}&pagina={{ pagina + 1 }}">Successiva →</a>{% endif %}
+</nav>
+{% endif %}
+{% endif %}
+
+<p><small>{{ attribuzione }} TED contiene gli appalti sopra le soglie europee; per quelli sotto soglia usa le fonti qui sotto.</small></p>
+
+<details>
+  <summary>Altre fonti di appalti pubblici</summary>
+  <ul>
+    {% for nome, url, nota in fonti_esterne %}
+    <li><a href="{{ url }}" target="_blank" rel="noopener noreferrer">{{ nome }}</a> — <small>{{ nota }}</small></li>
+    {% endfor %}
+  </ul>
+</details>
+{% endblock %}

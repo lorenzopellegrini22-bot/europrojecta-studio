@@ -35,6 +35,7 @@ class StatoIntegrazione:
     campi: dict[str, StatoCampo]
     configurata: bool
     mancanti: list[str]
+    attiva: bool = True
     verificata_il: datetime | None = None
     verifica_ok: bool | None = None
     verifica_messaggio: str | None = None
@@ -103,6 +104,7 @@ def stato(db: Session, codice: str) -> StatoIntegrazione:
         campi=campi,
         configurata=not mancanti and not errori,
         mancanti=mancanti,
+        attiva=riga.attiva if riga is not None else tipo.attiva_predefinita,
         verificata_il=riga.verificata_il if riga else None,
         verifica_ok=riga.verifica_ok if riga else None,
         verifica_messaggio=riga.verifica_messaggio if riga else None,
@@ -132,10 +134,7 @@ def salva(
     """
     tipo = INTEGRAZIONI[codice]
     errori: dict[str, str] = {}
-    riga = _riga(db, codice)
-    if riga is None:
-        riga = Integrazione(codice=codice, config={}, segreti={}, anteprime={})
-        db.add(riga)
+    riga = _nuova_riga_se_manca(db, codice)
 
     config = dict(riga.config)
     segreti = dict(riga.segreti)
@@ -185,11 +184,38 @@ def salva(
     db.commit()
 
 
-def registra_verifica(db: Session, codice: str, ok: bool, messaggio: str) -> None:
+def _nuova_riga_se_manca(db: Session, codice: str) -> Integrazione:
     riga = _riga(db, codice)
     if riga is None:
-        riga = Integrazione(codice=codice, config={}, segreti={}, anteprime={})
+        riga = Integrazione(
+            codice=codice,
+            config={},
+            segreti={},
+            anteprime={},
+            attiva=INTEGRAZIONI[codice].attiva_predefinita,
+        )
         db.add(riga)
+    return riga
+
+
+def imposta_attiva(db: Session, codice: str, attiva: bool, utente: Utente) -> None:
+    """Interruttore: un'integrazione disattivata resta configurata ma l'app non la usa."""
+    riga = _nuova_riga_se_manca(db, codice)
+    if riga.attiva != attiva:
+        riga.attiva = attiva
+        riga.aggiornato_da = utente.id
+        audit.registra(db, utente, "integrazione", codice, "modifica", {"attiva": attiva})
+    db.commit()
+
+
+def utilizzabile(db: Session, codice: str) -> bool:
+    """Configurata (campi obbligatori presenti e leggibili) e attiva."""
+    s = stato(db, codice)
+    return s.configurata and s.attiva
+
+
+def registra_verifica(db: Session, codice: str, ok: bool, messaggio: str) -> None:
+    riga = _nuova_riga_se_manca(db, codice)
     riga.verificata_il = datetime.now(UTC)
     riga.verifica_ok = ok
     riga.verifica_messaggio = messaggio

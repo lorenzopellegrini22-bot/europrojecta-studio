@@ -1,23 +1,33 @@
 """Tutti i modelli: importarli qui li registra su Base.metadata (serve ad Alembic e ai test)."""
 
+from app.models.appalti import Appalto
 from app.models.auth import AuditLog, CodiceRecupero, LogAccesso, Sessione, Utente
 from app.models.bandi import Bando, BandoRequisiti, BandoVersione, Fonte, FonteRun
-from app.models.crm import Azienda, Referente, Sede
+from app.models.crm import Azienda, AziendaAteco, Referente, Sede, Segnalatore
 from app.models.impostazioni import Integrazione
 from app.models.jobs import JobRun
 from app.models.pratiche import (
+    Allegato,
     ModelloFase,
     ModelloOperazione,
     ModelloPratica,
+    NotificaEmail,
     Pratica,
     PraticaDato,
     PraticaDocumento,
     PraticaEvento,
     PraticaFase,
     PraticaOperazione,
+    Prefattibilita,
 )
 
 __all__ = [
+    "Appalto",
+    "Segnalatore",
+    "Prefattibilita",
+    "NotificaEmail",
+    "AziendaAteco",
+    "Allegato",
     "AuditLog",
     "Azienda",
     "Bando",

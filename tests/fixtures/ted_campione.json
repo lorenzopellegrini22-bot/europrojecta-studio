@@ -1,0 +1,226 @@
+[
+ {
+  "buyer-city": {
+   "mul": [
+    "Roma"
+   ]
+  },
+  "buyer-name": {
+   "ita": [
+    "Presidenza del Consiglio dei ministri - Dipartimento per i servizi strumentali"
+   ]
+  },
+  "notice-title": {
+   "bul": "Итaлия – Телевизионни и радиоприемници и устройства за запис или възпроизвеждане на звук или образ – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "ces": "Itálie – Televizní a rozhlasové přijímače, zařízení pro nahrávání zvuku nebo videa nebo duplikační přístroje – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "dan": "Italien – Fjernsyns- og radiomodtagere samt lyd- eller videooptagere eller -gengivere – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "deu": "Italien – Rundfunk- und Fernsehgeräte sowie Ton- und Bildaufnahme- und -wiedergabegeräte – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "ell": "Ιταλία – Τηλεοράσεις και ραδιόφωνα, συσκευές εγγραφής και αναπαραγωγής ήχου ή εικόνας – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "eng": "Italy – Television and radio receivers, and sound or video recording or reproducing apparatus – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "est": "Itaalia – Televisiooni- ja raadiovastuvõtjad, heli- või videosalvestus- ja taasesitusseadmed – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "fin": "Italia – Televisio- ja radiovastaanottimet, äänen tai kuvan tallennus- tai toistolaitteet – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "fra": "Italie – Récepteurs de télévision et de radio et appareils d'enregistrement ou de reproduction du son ou de l'image – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "gle": "An Iodáil – Television and radio receivers, and sound or video recording or reproducing apparatus – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "hrv": "Italija – Televizijski i radijski prijamnici te aparati za snimanje ili reprodukciju zvuka ili slike – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "hun": "Olaszország – Televízió- és rádió-vevőkészülék, valamint hang- és videofelvevő és -visszajátszó berendezések – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "ita": "Italia – Ricevitori radiofonici e televisivi e apparecchi per la registrazione o la riproduzione del suono o dell'immagine – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "lav": "Itāija – Televīzijas un radiouztvērēji, skaņas vai videoattēla ierakstīšanas vai reproducēšanas aparatūra – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "lit": "Italija – Televizijos ir radijo imtuvai ir garso ar vaizdo įrašymo arba atkūrimo aparatai – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "mlt": "L-Italja – Riċevituri tat-televiżjoni u tar-radjo, u apparat tar-reġistrazzjoni tal-ħoss u tal-video jew tar-riproduzzjoni – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "nld": "Italië – Televisie- en radio-ontvangers, audio- of video-opnameapparatuur of -reproductietoestellen – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "pol": "Włochy – Odbiorniki telewizyjne i radiowe oraz aparatura nagrywająca dźwięk lub obraz lub aparatura powielająca – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "por": "Itália – Aparelhos receptores de rádio e televisão e aparelhos para gravação ou reprodução de som e imagem – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "ron": "Italia – Receptoare de televiziune şi de radio şi aparate de înregistrare sau de redare a sunetului sau a imaginii – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "slk": "Taliansko – Televízne a rozhlasové prijímače a prístroje na záznam alebo reprodukciu zvuku alebo obrazu – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "slv": "Italija – Televizijski in radijski sprejemniki in aparati za snemanje ali reprodukcijo zvoka ali slike – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "spa": "Italia – Receptores de televisión y radio, y aparatos de grabación o reproducción de sonido o imagen – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023",
+   "swe": "Italien – TV- och radioapparater, ljud- eller videobandspelare eller videoavspelare – ISTITUZIONE DEL SISTEMA DINAMICO DI ACQUISIZIONE AI SENSI DELLART. 32 DEL D. LGS. N. 36/2023"
+  },
+  "contract-nature": [
+   "supplies",
+   "supplies"
+  ],
+  "publication-date": "2024-11-12+01:00",
+  "classification-cpv": [
+   "32300000",
+   "32300000",
+   "32300000",
+   "32412100",
+   "48440000",
+   "48311000",
+   "48311100",
+   "48730000",
+   "30213000",
+   "30213100",
+   "30213200",
+   "32250000",
+   "50300000",
+   "72110000",
+   "72611000",
+   "72400000",
+   "72413000",
+   "72415000",
+   "72212730",
+   "72317000",
+   "72200000",
+   "72100000",
+   "48430000",
+   "48900000",
+   "45314320"
+  ],
+  "publication-number": "688489-2024",
+  "estimated-value-lot": [
+   "30000000"
+  ],
+  "place-of-performance": [
+   "ITI43",
+   "ITA"
+  ],
+  "estimated-value-cur-lot": [
+   "EUR"
+  ],
+  "deadline-receipt-tender-date-lot": [
+   "2027-11-12+01:00"
+  ],
+  "links": {
+   "html": {
+    "ITA": "https://ted.europa.eu/it/notice/-/detail/688489-2024"
+   }
+  }
+ },
+ {
+  "buyer-city": {
+   "mul": [
+    "Roma"
+   ]
+  },
+  "buyer-name": {
+   "ita": [
+    "Banca d'Italia"
+   ]
+  },
+  "notice-title": {
+   "bul": "Итaлия – Машини за опаковане – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "ces": "Itálie – Baličky – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "dan": "Italien – Indpakningsmaskiner – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "deu": "Italien – Einpackmaschinen – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "ell": "Ιταλία – Μηχανήματα περιτυλίγματος – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "eng": "Italy – Wrapping machines – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "est": "Itaalia – Pakendamismasinad – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "fin": "Italia – Paketoimiskoneet – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "fra": "Italie – Machines de conditionnement – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "gle": "An Iodáil – Wrapping machines – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "hrv": "Italija – Strojevi za zamatanje – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "hun": "Olaszország – Bálázógép – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "ita": "Italia – Macchine confezionatrici – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "lav": "Itāija – Ietīšanas iekārtas – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "lit": "Italija – Vyniojimo mašinos – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "mlt": "L-Italja – Makkanarju tat-tkebbib – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "nld": "Italië – Inpakmachines – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "pol": "Włochy – Maszyny do pakowania jednostkowego – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "por": "Itália – Máquinas para embalar – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "ron": "Italia – Maşini de ambalare – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "slk": "Taliansko – Poťahovacie stroje – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "slv": "Italija – Stroji za zavijanje – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "spa": "Italia – Máquinas para envolver – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione",
+   "swe": "Italien – Inslagningsmaskiner – 23B37 - Fornitura dei moduli di confezionamento delle linee integrate e acquisizione della relativa manutenzione"
+  },
+  "contract-nature": [
+   "supplies",
+   "supplies"
+  ],
+  "publication-date": "2026-08-04+02:00",
+  "classification-cpv": [
+   "42921330",
+   "50530000",
+   "42921330",
+   "50530000"
+  ],
+  "publication-number": "540170-2026",
+  "estimated-value-lot": [
+   "26984180"
+  ],
+  "place-of-performance": [
+   "ITI43",
+   "ITA",
+   "ITI43",
+   "ITA"
+  ],
+  "estimated-value-cur-lot": [
+   "EUR"
+  ],
+  "deadline-receipt-tender-date-lot": [
+   "2026-11-30+01:00"
+  ],
+  "links": {
+   "html": {
+    "ITA": "https://ted.europa.eu/it/notice/-/detail/540170-2026"
+   }
+  }
+ },
+ {
+  "buyer-city": {
+   "mul": [
+    "roma"
+   ]
+  },
+  "buyer-name": {
+   "ita": [
+    "CONSIP S.P.A."
+   ]
+  },
+  "notice-title": {
+   "bul": "Итaлия – Инженерни услуги по проектиране и конструиране на строителни съоръжения – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "ces": "Itálie – Technické projekty pro provádění stavebně inženýrských prací – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "dan": "Italien – Fagmæssig projektering af ingeniørarbejder – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "deu": "Italien – Technische Planungsleistungen im Tief- und Hochbau – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "ell": "Ιταλία – Υπηρεσίες εκπόνησης τεχνικών μελετών για την κατασκευή έργων πολιτικού μηχανικού – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "eng": "Italy – Engineering design services for the construction of civil engineering works – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "est": "Itaalia – Tsiviilehitustööde tehnilise projekteerimise teenused – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "fin": "Italia – Maa-, tie- ja vesirakennustöiden tekninen suunnittelu – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "fra": "Italie – Services de conception technique pour la construction d'ouvrages de génie civil – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "gle": "An Iodáil – Engineering design services for the construction of civil engineering works – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "hrv": "Italija – Usluge tehničkog projektiranja u građevinarstvu za objekte niskogradnje – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "hun": "Olaszország – Mély- és magasépítési kivitelezéssel kapcsolatos mérnöki tervezési szolgáltatások – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "ita": "Italia – Servizi di progettazione tecnica per la costruzione di opere di ingegneria civile – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "lav": "Itāija – Inženiertehniskās projektēšanas pakalpojumi inženiertehniskajām būvēm – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "lit": "Italija – Civilinės inžinerijos statinių statybos inžinerinio projektavimo paslaugos – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "mlt": "L-Italja – Servizzi ta' l-inġinerija tad-disinn tax-xogħlijiet ta' kostruzzjoni u l-inġinerija ċivili – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "nld": "Italië – Technische ontwerpen voor constructie van civieltechnische werken – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "pol": "Włochy – Usługi inżynierii projektowej w zakresie inżynierii lądowej i wodnej – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "por": "Itália – Serviços de concepção técnica para a construção de obras de engenharia civil – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "ron": "Italia – Servicii de proiectare tehnică pentru construcţia de lucrări publice – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "slk": "Taliansko – Inžinierske projektovanie pre práce v civilnom stavebnom inžinierstve – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "slv": "Italija – Storitve gradbenega projektiranja za objekte nizke gradnje – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "spa": "Italia – Servicios de diseño técnico para la construcción de obras de ingeniería civil – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)",
+   "swe": "Italien – Ingenjörstjänster avseende väg- och vattenbyggnation – Sistema dinamico di acquisizione della Pubblica Amministrazione per l’affidamento dei Servizi di Ingegneria e Architettura (ID 2910)"
+  },
+  "contract-nature": [
+   "services",
+   "services"
+  ],
+  "publication-date": "2025-08-01+02:00",
+  "classification-cpv": [
+   "71322000",
+   "71322000"
+  ],
+  "publication-number": "505142-2025",
+  "estimated-value-lot": [
+   "2100000000"
+  ],
+  "place-of-performance": [
+   "00"
+  ],
+  "estimated-value-cur-lot": [
+   "EUR"
+  ],
+  "deadline-receipt-tender-date-lot": [
+   "2027-07-31Z"
+  ],
+  "links": {
+   "html": {
+    "ITA": "https://ted.europa.eu/it/notice/-/detail/505142-2025"
+   }
+  }
+ }
+]

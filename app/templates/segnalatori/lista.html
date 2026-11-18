@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block titolo %}Segnalatori · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<hgroup>
+  <h1>Segnalatori</h1>
+  <p>Chi porta clienti allo studio. La provvigione è una stima: contributo concesso × percentuale.</p>
+</hgroup>
+
+{% if not segnalatori %}
+<article><p>Nessun segnalatore. Aggiungine uno qui sotto, poi collegalo ai clienti dalla loro scheda.</p></article>
+{% else %}
+<div class="overflow-auto">
+<table class="striped">
+  <thead><tr><th>Nome</th><th>Clienti</th><th>Pratiche</th><th>Concesso</th><th>Provvigione</th><th>Provvigione stimata</th><th>Stato</th></tr></thead>
+  <tbody>
+  {% for s in segnalatori %}
+    {% set d = dati.get(s.id, {}) %}
+    <tr>
+      <td><a href="/segnalatori/{{ s.id }}">{{ s.nome }}</a>{% if s.organizzazione %}<br><small>{{ s.organizzazione }}</small>{% endif %}</td>
+      <td>{{ d.get("clienti", 0) }}</td>
+      <td>{{ d.get("pratiche", 0) }}</td>
+      <td>{{ d.get("concesso") | euro }}</td>
+      <td>{% if s.provvigione_percentuale is not none %}{{ s.provvigione_percentuale }}%{% else %}—{% endif %}</td>
+      <td>{{ d.get("provvigione") | euro }}</td>
+      <td>{{ "Attivo" if s.attivo else "Non attivo" }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+
+<article>
+  <header><strong>Nuovo segnalatore</strong></header>
+  {% if errori %}<div class="messaggio errore">{{ errori.values() | join(" ") }}</div>{% endif %}
+  <form method="post" action="/segnalatori">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="grid">
+      <input name="nome" placeholder="Nome e cognome" required aria-label="Nome" value="{{ v.get('nome') or '' }}">
+      <input name="organizzazione" placeholder="Studio o società (facoltativo)" aria-label="Organizzazione" value="{{ v.get('organizzazione') or '' }}">
+    </div>
+    <div class="grid">
+      <input type="email" name="email" placeholder="Email" aria-label="Email" value="{{ v.get('email') or '' }}">
+      <input type="tel" name="telefono" placeholder="Telefono" aria-label="Telefono" value="{{ v.get('telefono') or '' }}">
+      <input name="provvigione_percentuale" placeholder="Provvigione % (es. 10)" inputmode="decimal" aria-label="Provvigione percentuale">
+    </div>
+    <textarea name="note" rows="2" placeholder="Note" aria-label="Note">{{ v.get('note') or '' }}</textarea>
+    <button type="submit">Aggiungi</button>
+  </form>
+</article>
+{% endblock %}

@@ -5,7 +5,23 @@ dimensionali, de minimis, consensi, ISTAT) arrivano con la fase CRM completa, co
 migrazioni che aggiungono colonne senza cambiare queste.
 """
 
-from sqlalchemy import Boolean, CheckConstraint, ForeignKey, String, Text
+from datetime import datetime
+from decimal import Decimal
+
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base, ConTimestamp
@@ -39,6 +55,16 @@ class Azienda(ConTimestamp, Base):
     codice_sdi: Mapped[str | None] = mapped_column(String(7))
     stato_cliente: Mapped[str] = mapped_column(String(20), default="attivo")
     note: Mapped[str | None] = mapped_column(Text)
+    # Dati dimensionali (schema F1); dal Registro Imprese quando collegato
+    dipendenti: Mapped[int | None] = mapped_column(Integer)
+    fatturato: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
+    anno_dati: Mapped[int | None] = mapped_column(Integer)
+    # Stato dell'attività al Registro Imprese (es. ATTIVA, CESSATA) e data dell'ultima lettura
+    stato_attivita: Mapped[str | None] = mapped_column(String(40))
+    registro_imprese_il: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    segnalatore_id: Mapped[int | None] = mapped_column(
+        ForeignKey("segnalatore.id", ondelete="SET NULL"), index=True
+    )
 
     sedi: Mapped[list["Sede"]] = relationship(
         back_populates="azienda", cascade="all, delete-orphan", order_by="Sede.id"
@@ -48,6 +74,17 @@ class Azienda(ConTimestamp, Base):
         cascade="all, delete-orphan",
         order_by="(Referente.principale.desc(), Referente.cognome)",
     )
+
+    ateco: Mapped[list["AziendaAteco"]] = relationship(
+        back_populates="azienda",
+        cascade="all, delete-orphan",
+        order_by="(AziendaAteco.primario.desc(), AziendaAteco.codice)",
+    )
+    segnalatore: Mapped["Segnalatore | None"] = relationship(back_populates="aziende")
+
+    @property
+    def ateco_primario(self) -> "AziendaAteco | None":
+        return next((a for a in self.ateco if a.primario), None)
 
     @property
     def sede_legale(self) -> "Sede | None":
@@ -96,3 +133,53 @@ class Referente(ConTimestamp, Base):
     @property
     def nome_completo(self) -> str:
         return f"{self.nome} {self.cognome or ''}".strip()
+
+
+class AziendaAteco(Base):
+    """Codici ATECO dell'azienda (schema F1): al massimo un primario."""
+
+    __tablename__ = "azienda_ateco"
+    __table_args__ = (
+        UniqueConstraint("azienda_id", "codice", "versione", name="uq_azienda_ateco"),
+        CheckConstraint("versione IN ('2007', '2025')", name="ck_azienda_ateco_versione"),
+        Index(
+            "uq_azienda_ateco_primario",
+            "azienda_id",
+            unique=True,
+            postgresql_where=text("primario"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    azienda_id: Mapped[int] = mapped_column(
+        ForeignKey("azienda.id", ondelete="CASCADE"), index=True
+    )
+    codice: Mapped[str] = mapped_column(String(10))
+    descrizione: Mapped[str | None] = mapped_column(Text)
+    versione: Mapped[str] = mapped_column(String(4))
+    primario: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+
+    azienda: Mapped[Azienda] = relationship(back_populates="ateco")
+
+
+class Segnalatore(ConTimestamp, Base):
+    """Chi porta clienti allo studio, con l'eventuale provvigione sul contributo concesso."""
+
+    __tablename__ = "segnalatore"
+    __table_args__ = (
+        CheckConstraint(
+            "provvigione_percentuale IS NULL OR "
+            "(provvigione_percentuale >= 0 AND provvigione_percentuale <= 100)",
+            name="ck_segnalatore_provvigione",
+        ),
+    )
+
+    nome: Mapped[str] = mapped_column(Text)
+    organizzazione: Mapped[str | None] = mapped_column(Text)
+    email: Mapped[str | None] = mapped_column(String(254))
+    telefono: Mapped[str | None] = mapped_column(String(40))
+    provvigione_percentuale: Mapped[Decimal | None] = mapped_column(Numeric(5, 2))
+    note: Mapped[str | None] = mapped_column(Text)
+    attivo: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+
+    aziende: Mapped[list[Azienda]] = relationship(back_populates="segnalatore")

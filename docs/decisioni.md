@@ -113,6 +113,47 @@ Per provare l'app sul PC di sviluppo si usa `pgserver` (PostgreSQL 16.2 + pgvect
 - Permessi: titolare e collaboratori gestiscono clienti e pratiche. Solo il titolare modifica i modelli ed elimina clienti e pratiche.
 - 3 modelli di esempio scritti da zero (fondo perduto, voucher a sportello, finanziamento agevolato), da caricare con un clic o con `python -m app.cli modelli-esempio`.
 
+## 2026-11-18 — Integrazioni attivabili, guida "i" e Registro Imprese (Openapi)
+**Richiesta del committente:** compilare il cliente dal Registro Imprese, con la possibilità di attivarlo o disattivarlo dalle impostazioni e una guida al collegamento.
+**Decisione:**
+- Ogni integrazione ha un interruttore (`integrazione.attiva`). Una disattivata resta configurata ma l'app non la usa.
+- Ogni integrazione ha una guida passo passo (pulsante "i") con i soli link ufficiali, verificati uno per uno.
+- **Fornitore: Openapi S.p.A., servizio "Company".** Specifica OpenAPI ufficiale verificata: endpoint `IT-start` e `IT-advanced`, token Bearer, produzione `company.openapi.com` e sandbox `test.company.openapi.com`.
+- **Costi:** ogni ricerca in produzione costa, quindi l'integrazione parte **disattivata** e in **sandbox**. Anche "Verifica connessione" fa una ricerca vera (in sandbox è gratuita).
+- **Compilazione del cliente:** riempie solo il form e niente viene salvato finché l'utente non preme Salva. Ogni ricerca finisce nell'audit (azione `invia`).
+- **ATECO:** si usa la classificazione 2007 restituita da Openapi, l'unica con una versione esplicita. Viene salvata come ATECO primario (`azienda_ateco`).
+
+## 2026-11-18 — Allegati, invio email, promemoria, segnalatori, prefattibilità, statistiche
+- **Allegati:**
+  - salvati su disco con un nome casuale (`CARTELLA_ALLEGATI/AAAA/MM/`), con tipi ammessi in whitelist e limite di 20 MB;
+  - download solo da utenti con login, sempre come `attachment`;
+  - in Docker stanno in un volume dedicato `allegati`, da includere nel backup.
+- **Email:**
+  - un solo punto di invio (`app/comunicazioni.py`) che registra ogni tentativo in `notifica_email`;
+  - dalla pratica l'email va al referente principale, con "Rispondi a" dell'utente che invia;
+  - email di prova disponibile nelle impostazioni.
+- **Promemoria:** alle 07:30 ogni utente riceve le sue operazioni scadute o in scadenza entro 3 giorni. Al massimo uno ogni 20 ore; niente invio se l'email non è attiva.
+- **Segnalatori:** la provvigione è una stima (contributo concesso × percentuale), non un dato contabile.
+- **Prefattibilità:**
+  - voci automatiche dai requisiti noti del bando: territorio, dimensione, ATECO, stato dell'impresa e del bando, de minimis;
+  - ciò che non è noto resta "da verificare";
+  - l'esito lo decide il consulente; la pratica aperta dalla verifica resta collegata.
+- **Statistiche:** solo aggregati dal database. Tasso di successo = (ammesse + rendicontazione + chiuse) / (quelle + respinte).
+
+## 2026-11-18 — Appalti pubblici: TED sì, ANAC e MEPA solo come link
+**Richiesta del committente:** cercare appalti pubblici per categoria e territorio (comune, provincia, regione, Italia), indicando ANAC (BDNCP), MEPA, Portale Appalti MIT e InfoAppalti.
+**Verifica delle fonti (18/11/2026):**
+- **ANAC (dati.anticorruzione.it):** 70 dataset aperti (CC BY), ma il portale rifiuta ogni richiesta non proveniente da un browser ("Request Rejected", anche con user agent standard). Non si aggira una protezione del genere.
+- **MIT (dati.mit.gov.it):** catalogo non raggiungibile (errore 503).
+- **MEPA:** serve l'abilitazione e non c'è un accesso pubblico per programmi.
+- **InfoAppalti:** servizio privato in abbonamento, senza accesso pubblico per programmi.
+- **TED (Tenders Electronic Daily, UE):** API pubblica senza autenticazione, dichiarata per il riuso. Contiene i bandi italiani sopra soglia e quelli pubblicati volontariamente: il 18/11 erano 1.618 aperti.
+**Decisione:**
+- Raccolta notturna da TED (03:15): bandi di gara italiani con termine per le offerte non scaduto.
+- Le regioni e le province vengono dai codici NUTS ufficiali Eurostat (2021 e 2024). La categoria è la divisione CPV (prime due cifre); il comune è quello della stazione appaltante.
+- Le altre fonti sono nella pagina come link, con una spiegazione dei loro limiti.
+- Per gli appalti sotto soglia si potrà importare a mano il dataset ANAC scaricato dal browser (da valutare).
+
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.
 - Jinja2 + HTMX + Pico.css salvati nel repository, nessuna risorsa da CDN.

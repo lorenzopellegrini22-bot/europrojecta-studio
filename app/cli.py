@@ -92,6 +92,8 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.add_parser("pulizia", help="elimina sessioni scadute e log vecchi")
     sub.add_parser("modelli-esempio", help="crea i modelli di pratica di esempio mancanti")
+    sub.add_parser("promemoria", help="invia subito i promemoria delle scadenze")
+    sub.add_parser("raccogli-appalti", help="raccoglie subito i bandi di gara da TED")
 
     args = parser.parse_args(argv)
     if args.comando == "crea-utente":
@@ -118,6 +120,10 @@ def main(argv: list[str] | None = None) -> int:
         esito = esegui_job(
             "raccolta_bandi", lambda: attivita.raccolta_bandi(forza=args.forza, solo=args.fonte)
         )
+    elif args.comando == "raccogli-appalti":
+        esito = esegui_job("raccolta_appalti", attivita.raccolta_appalti)
+    elif args.comando == "promemoria":
+        esito = esegui_job("promemoria", attivita.promemoria_scadenze)
     else:
         esito = esegui_job("pulizia", attivita.pulizia)
     return 0 if esito == "ok" else 1

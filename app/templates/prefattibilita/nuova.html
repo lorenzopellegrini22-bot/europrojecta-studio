@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block titolo %}Nuova verifica di prefattibilità · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<nav aria-label="breadcrumb"><ul><li><a href="/prefattibilita">Prefattibilità</a></li><li>Nuova</li></ul></nav>
+<h1>Nuova verifica di prefattibilità</h1>
+{% if errore %}<div class="messaggio errore" role="alert">{{ errore }}</div>{% endif %}
+<form method="post" action="/prefattibilita/nuova">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>Cliente *
+    <select name="azienda_id" required>
+      <option value="">Scegli il cliente</option>
+      {% for a in aziende %}<option value="{{ a.id }}" {% if azienda_id == a.id %}selected{% endif %}>{{ a.ragione_sociale }}</option>{% endfor %}
+    </select>
+  </label>
+  <fieldset>
+    <legend>Bando *</legend>
+    <div>{% if bando %}<label><input type="radio" name="bando_id" value="{{ bando.id }}" checked> {{ bando.titolo }}</label>{% endif %}</div>
+    <input type="search" name="q" placeholder="Cerca il bando tra quelli raccolti (almeno 3 lettere)" aria-label="Cerca bando"
+           hx-get="/pratiche/cerca-bandi" hx-trigger="input changed delay:400ms, search" hx-target="#risultati-bandi" autocomplete="off">
+    <div id="risultati-bandi"></div>
+    <label>Oppure scrivi il nome del bando<input name="bando_testo" placeholder="es. Bando camerale 2026"></label>
+  </fieldset>
+  <p><small>Le voci automatiche confrontano i requisiti noti del bando con i dati del cliente (regione della sede, dimensione, ATECO). Più la scheda cliente è completa, più la verifica è utile.</small></p>
+  <button type="submit">Avvia la verifica</button>
+</form>
+{% endblock %}

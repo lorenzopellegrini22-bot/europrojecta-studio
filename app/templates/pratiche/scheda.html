@@ -21,6 +21,8 @@
   </div>
 </div>
 
+{% if messaggio %}<div class="messaggio {{ 'ok' if esito == 'ok' else 'errore' }}" role="status">{{ messaggio }}</div>{% endif %}
+
 <div class="pratica">
   <aside class="fasi" aria-label="Fasi della pratica">
     <ol>
@@ -74,7 +76,9 @@
             <tbody>
             {% for d in op.documenti %}
               <tr>
-                <td>{{ d.nome }}</td>
+                <td>{{ d.nome }}
+                  {% for a in d.allegati %}<br><small>📎 <a href="/allegati/{{ a.id }}">{{ a.nome_originale }}</a></small>{% endfor %}
+                </td>
                 <td><select name="documento_{{ d.id }}" aria-label="Stato di {{ d.nome }}" class="doc-{{ d.stato }}">
                   {% for st in stati_documento %}<option value="{{ st }}" {% if d.stato == st %}selected{% endif %}>{{ etichette_documento[st] }}</option>{% endfor %}
                 </select></td>
@@ -100,6 +104,9 @@
             <pre class="testo-email" id="email-{{ op.id }}">{{ em[1] }}</pre>
             <div class="gruppo-pulsanti">
               <button type="button" class="secondary outline piccolo" data-copia="email-{{ op.id }}">Copia il testo</button>
+              {% if referente and referente.email and email_disponibile %}
+              <button type="submit" class="piccolo" formaction="/pratiche/{{ p.id }}/operazioni/{{ op.id }}/invia" formnovalidate>Invia email a {{ referente.email }}</button>
+              {% endif %}
               {% if referente and referente.email %}
               <a role="button" class="secondary outline piccolo" href="mailto:{{ referente.email }}?subject={{ em[0] | urlencode }}&body={{ em[1] | urlencode }}">Apri nel programma di posta</a>
               {% endif %}
@@ -125,6 +132,19 @@
           <label>Note<textarea name="note" rows="2">{{ op.note or '' }}</textarea></label>
           <button type="submit" class="piccolo">Salva</button>
         </form>
+
+        {% if op.tipo == "documenti" and op.documenti %}
+        <form method="post" action="/pratiche/{{ p.id }}/allegati" enctype="multipart/form-data" class="carica-file">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <div class="grid">
+            <select name="documento_id" aria-label="Documento">
+              {% for d in op.documenti %}<option value="{{ d.id }}">{{ d.nome }}</option>{% endfor %}
+            </select>
+            <input type="file" name="file" required aria-label="File">
+            <button type="submit" class="secondary piccolo">Carica il file</button>
+          </div>
+        </form>
+        {% endif %}
 
         <div class="gruppo-pulsanti azioni-operazione">
           {% if op.stato != "fatta" %}
@@ -156,6 +176,30 @@
           <button type="submit" class="piccolo">Aggiungi</button>
         </form>
       </details>
+    </article>
+
+    <article id="allegati">
+      <header><strong>Allegati della pratica</strong></header>
+      {% if allegati_pratica %}
+      <table>
+        <tbody>
+        {% for a in allegati_pratica %}
+          <tr>
+            <td><a href="/allegati/{{ a.id }}">{{ a.nome_originale }}</a><br><small>{{ (a.dimensione / 1024) | round(0) | int }} KB · {{ a.creato_il | data_ora }}{% if a.utente %} · {{ a.utente.nome }}{% endif %}</small></td>
+            <td><form method="post" action="/allegati/{{ a.id }}/elimina"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Elimina</button></form></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}<p>Nessun allegato.</p>{% endif %}
+      <form method="post" action="/pratiche/{{ p.id }}/allegati" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="grid">
+          <input type="file" name="file" required aria-label="File">
+          <button type="submit" class="secondary piccolo">Carica un file nella pratica</button>
+        </div>
+        <small>PDF, P7M, Word, Excel, OpenDocument, immagini, ZIP, email. Massimo 20 MB.</small>
+      </form>
     </article>
 
     <article id="dati-pratica">

@@ -12,6 +12,9 @@ Ha tre parti:
 > - accesso sicuro (password + 2FA) e pagina *Il mio account*;
 > - **Impostazioni → Integrazioni** (chiavi API cifrate);
 > - **raccolta dei bandi nazionali da Incentivi Italia, ogni notte**, con pagine Bandi e Fonti.
+> - **appalti pubblici** italiani aperti da TED, ogni notte, con ricerca per categoria (CPV), tipo, regione, provincia, comune, importo e scadenza;
+> - **Registro Imprese (Openapi)** per compilare i clienti dalla partita IVA; integrazioni attivabili con guida al collegamento;
+> - allegati nelle pratiche, invio email dalla pratica, promemoria delle scadenze, segnalatori, prefattibilità e statistiche;
 > - **clienti, pratiche a fasi da modelli** (checklist documenti, dati, email al cliente con segnaposto), **scadenzario** ed export per Excel;
 > - **fonti regionali Toscana (Sviluppo Toscana) e Lazio (Lazio Innova + Lazio Europa)**, raccolte nella stessa notte; Umbria e Marche per ora dal dataset nazionale.
 >

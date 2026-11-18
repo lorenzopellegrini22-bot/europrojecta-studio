@@ -39,3 +39,17 @@ def test_sposta_e_rinumera():
     elementi.remove(b)
     s.rinumera(elementi)
     assert (a.numero, c.numero) == (1, 2)
+
+
+def test_importo_italiano():
+    from decimal import Decimal
+
+    from app.utils.numeri import importo_italiano
+
+    assert importo_italiano("45.000,50") == Decimal("45000.50")
+    assert importo_italiano("900.000") == Decimal("900000")
+    assert importo_italiano("1.234.567") == Decimal("1234567")
+    assert importo_italiano("1234.5") == Decimal("1234.5")
+    assert importo_italiano("€ 12 000") == Decimal("12000")
+    assert importo_italiano("") is None
+    assert importo_italiano("dieci") is None

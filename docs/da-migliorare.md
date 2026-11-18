@@ -36,8 +36,7 @@ Aggiornato il 18/11/2026, dopo la prova completa su dati reali:
 5. **Verifica WhatsApp**: con il canale WhatsApp (fase 5), dopo aver verificato la documentazione Meta.
 6. **Rotazione della SECRET_KEY** con MultiFernet.
 7. **Ricerca testuale migliore** (accenti, più parole): con `unaccent` e un indice trigram quando i dati crescono.
-8. **Allegati delle pratiche**: oggi la checklist registra lo stato dei documenti, non il file. Servono upload con nome casuale, limiti di dimensione e backup (tabella `allegato` dello schema).
-9. **Invio delle email dalla pratica** e promemoria automatici delle scadenze, con il canale SMTP (fase 5).
-10. **Ricerca dati dal Registro Imprese** nella scheda cliente: serve un fornitore di dati a pagamento, da scegliere e verificare.
-11. **Segnalatori, prefattibilità e statistiche** (presenti nel prodotto concorrente): da valutare con il committente.
+8. **Appalti sotto soglia**: importazione manuale del dataset ANAC scaricato dal browser (il portale non consente lo scarico automatico).
+9. **Antivirus sugli allegati** (es. ClamAV nel container) prima della messa in produzione.
+10. **Backup del volume `allegati`** insieme al database (fase 7).
 

@@ -9,14 +9,30 @@
   </ul>
 </nav>
 
-<hgroup>
-  <h1>{{ t.nome }}</h1>
-  <p>{{ t.descrizione }}</p>
-</hgroup>
+<div class="intestazione">
+  <hgroup>
+    <h1>{{ t.nome }}</h1>
+    <p>{{ t.descrizione }}</p>
+  </hgroup>
+  <form method="post" action="/impostazioni/integrazioni/{{ t.codice }}/attiva" class="gruppo-pulsanti">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="attiva" value="{{ '0' if stato.attiva else '1' }}">
+    <span class="stato {{ 'ok' if stato.attiva else 'neutro' }}">{{ "Attiva" if stato.attiva else "Disattivata" }}</span>
+    <button type="submit" class="{{ 'secondary outline ' if stato.attiva else '' }}piccolo">
+      {{ "Disattiva" if stato.attiva else "Attiva" }}
+    </button>
+  </form>
+</div>
 
+{% if not stato.attiva %}
+<div class="messaggio attenzione">Integrazione disattivata: le impostazioni restano salvate, ma l'app non la usa finché non la attivi.</div>
+{% endif %}
 {% if salvato %}<div class="messaggio ok" role="status">Impostazioni salvate.</div>{% endif %}
 {% for e in stato.errori %}<div class="messaggio errore">{{ e }}</div>{% endfor %}
 {% if errori %}<div class="messaggio errore" role="alert">Controlla i campi evidenziati.</div>{% endif %}
+
+{% include "impostazioni/_guida.html" %}
+
 {% for n in t.note %}<div class="messaggio attenzione">{{ n }}</div>{% endfor %}
 
 <form method="post" action="/impostazioni/integrazioni/{{ t.codice }}" autocomplete="off">
@@ -33,7 +49,7 @@
       {% elif c.tipo == "select" %}
         <select name="{{ c.nome }}" {% if err %}aria-invalid="true"{% endif %}>
           {% for o in c.opzioni %}
-          <option value="{{ o }}" {% if (dati and dati[c.nome] == o) or (not dati and sc.valore == o) %}selected{% endif %}>{{ o | upper }}</option>
+          <option value="{{ o }}" {% if (dati and dati[c.nome] == o) or (not dati and sc.valore == o) %}selected{% endif %}>{{ c.etichetta_opzione(o) }}</option>
           {% endfor %}
         </select>
       {% else %}
@@ -59,6 +75,18 @@
 {% if t.verificabile %}
 <article id="verifica">
   {% include "impostazioni/_esito_verifica.html" %}
+</article>
+{% endif %}
+
+{% if t.codice == "smtp" %}
+<article id="prova-email">
+  <header><strong>Email di prova</strong></header>
+  {% if esito_prova %}<div class="messaggio {{ 'ok' if esito_prova.ok else 'errore' }}" role="status">{{ esito_prova.messaggio }}</div>{% endif %}
+  <p>Invia un'email di prova al tuo indirizzo ({{ utente.email }}) per controllare che arrivi davvero.</p>
+  <form method="post" action="/impostazioni/integrazioni/smtp/prova">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="secondary" {% if not stato.configurata %}disabled{% endif %}>Invia email di prova</button>
+  </form>
 </article>
 {% endif %}
 {% endblock %}

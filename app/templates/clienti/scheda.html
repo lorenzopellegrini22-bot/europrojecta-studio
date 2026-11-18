@@ -10,7 +10,8 @@
   </hgroup>
   <div class="gruppo-pulsanti">
     <a href="/pratiche/nuova?azienda_id={{ azienda.id }}" role="button">Nuova pratica</a>
-    <a href="/clienti/{{ azienda.id }}/modifica" role="button" class="secondary outline">Modifica</a>
+    <a href="/prefattibilita/nuova?azienda_id={{ azienda.id }}" role="button" class="secondary outline">Verifica prefattibilità</a>
+    <a href="/clienti/{{ azienda.id }}/modifica" role="button" class="secondary outline">Modifica{% if registro_disponibile %} o aggiorna dal Registro Imprese{% endif %}</a>
   </div>
 </div>
 
@@ -19,6 +20,11 @@
     <header><strong>Dati</strong></header>
     <dl class="dati">
       <dt>Codice fiscale</dt><dd>{{ azienda.codice_fiscale or "—" }}</dd>
+      <dt>ATECO</dt><dd>{% if azienda.ateco_primario %}{{ azienda.ateco_primario.codice }}{% if azienda.ateco_primario.descrizione %} · {{ azienda.ateco_primario.descrizione }}{% endif %}{% else %}—{% endif %}</dd>
+      <dt>Dipendenti</dt><dd>{{ azienda.dipendenti if azienda.dipendenti is not none else "—" }}{% if azienda.anno_dati %} <small>({{ azienda.anno_dati }})</small>{% endif %}</dd>
+      <dt>Fatturato</dt><dd>{{ azienda.fatturato | euro }}</dd>
+      {% if azienda.segnalatore %}<dt>Segnalato da</dt><dd><a href="/segnalatori/{{ azienda.segnalatore.id }}">{{ azienda.segnalatore.nome }}</a></dd>{% endif %}
+      {% if azienda.stato_attivita %}<dt>Registro Imprese</dt><dd>{{ azienda.stato_attivita }}{% if azienda.registro_imprese_il %} <small>(letto il {{ azienda.registro_imprese_il | data_ora }})</small>{% endif %}</dd>{% endif %}
       <dt>Dimensione</dt><dd>{{ (azienda.dimensione_manuale or "—") | capitalize }}</dd>
       <dt>Email</dt><dd>{% if azienda.email %}<a href="mailto:{{ azienda.email }}">{{ azienda.email }}</a>{% else %}—{% endif %}</dd>
       <dt>PEC</dt><dd>{{ azienda.pec or "—" }}</dd>
