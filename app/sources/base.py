@@ -5,6 +5,9 @@ Ogni fonte è un modulo in app/sources/ che espone un oggetto con:
 - versione_remota(http) -> str | None   (es. Last-Modified, per saltare file invariati)
 - scarica(http) -> Path                  (file grezzo completo)
 - interpreta(percorso) -> list[RecordBando]
+Facoltativi (letti con getattr dal runner):
+- soglia_sanita: frazione minima di record rispetto alla versione precedente (default 0.8);
+- assenze_per_scomparsa: versioni consecutive senza il bando prima di chiuderlo (default 2).
 Il runner comune (app/sources/runner.py) fa il resto: confronto, versioni, chiusure, log.
 """
 
@@ -55,6 +58,7 @@ class RecordBando:
     data_apertura: date | None = None
     data_chiusura: date | None = None
     note_apertura_chiusura: str | None = None
+    stato_fonte: str | None = None  # "aperto" | "in_arrivo" | "chiuso", se la fonte lo dichiara
     requisiti: RequisitiFonte = field(default_factory=RequisitiFonte)
 
 

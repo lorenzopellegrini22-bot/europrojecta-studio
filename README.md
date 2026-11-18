@@ -12,6 +12,7 @@ Ha tre parti:
 > - accesso sicuro (password + 2FA) e pagina *Il mio account*;
 > - **Impostazioni → Integrazioni** (chiavi API cifrate);
 > - **raccolta dei bandi nazionali da Incentivi Italia, ogni notte**, con pagine Bandi e Fonti.
+> - **fonti regionali Toscana (Sviluppo Toscana) e Lazio (Lazio Innova + Lazio Europa)**, raccolte nella stessa notte; Umbria e Marche per ora dal dataset nazionale.
 >
 > Le scelte sono in `docs/decisioni.md`, i prossimi passi in `docs/da-migliorare.md`.
 
@@ -129,6 +130,7 @@ docker/          Dockerfile (app e worker usano la stessa immagine)
 - `docs/schema.md`: schema dati completo (confermato in fase 0, implementato fase per fase).
 - `docs/dati-in-uscita.md`: quali dati escono dal server e verso chi.
 - `docs/fonti/incentivi-italia.md`: com'è fatta davvero la fonte nazionale.
+- `docs/fonti/regioni.md`: fonti regionali verificate (Toscana, Lazio, Umbria, Marche).
 
 ## Fonte dei dati sui bandi
 

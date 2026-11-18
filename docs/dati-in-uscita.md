@@ -5,6 +5,7 @@ Elenco di tutti i dati che lasciano il server, verso chi e perché. Va aggiornat
 | Destinatario | Quando | Cosa esce | Cosa NON esce mai | Stato |
 |---|---|---|---|---|
 | Incentivi Italia (`www.incentivitalia.gov.it`) | Raccolta notturna (02:30) | Solo una richiesta HEAD e il download del dataset pubblico, con user agent identificabile | Qualsiasi dato del CRM | **Attiva** |
+| Portali regionali: Sviluppo Toscana, Lazio Innova, Lazio Europa | Raccolta notturna (02:30) | Richieste GET di pagine pubbliche e della REST API pubblica di WordPress (1 al secondo, user agent identificabile) | Qualsiasi dato del CRM | **Attiva** |
 | OpenAI: "Verifica connessione" | Solo quando il titolare preme il pulsante | La sola API key (elenco dei modelli disponibili, nessun token consumato) | Qualsiasi dato del CRM | **Attiva** |
 | Server SMTP configurato: "Verifica connessione" | Solo quando il titolare preme il pulsante | Utente e password SMTP per il login; nessuna email inviata | Qualsiasi dato del CRM | **Attiva** |
 | Siti degli enti (solo link diretti a PDF) | Raccolta | Richieste di download dei documenti pubblici dei bandi | Qualsiasi dato del CRM | Fase 2 |

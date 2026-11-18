@@ -147,9 +147,7 @@ def fonti(request: Request, db: Db, _: Autenticato) -> Response:
     jobs = db.scalars(
         select(JobRun).where(JobRun.job == "raccolta_bandi").order_by(JobRun.id.desc()).limit(10)
     ).all()
-    conteggi = dict(
-        db.execute(select(Bando.stato, func.count()).group_by(Bando.stato)).tuples().all()
-    )
+    conteggi = dict(db.execute(select(Bando.stato, func.count()).group_by(Bando.stato)).all())
     in_corso = any(j.esito == "in_corso" for j in jobs[:1])
     return render(
         request,

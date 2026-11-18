@@ -106,3 +106,30 @@ def scarica_completo(http: httpx.Client, url: str, destinazione: Path | None = N
         f"Download incompleto dopo {MAX_TENTATIVI} tentativi: "
         f"{destinazione.stat().st_size} byte su {attesi}"
     )
+
+
+TENTATIVI_PAGINA = 3
+
+
+def pagina(http: httpx.Client, url: str, params: dict[str, str] | None = None) -> httpx.Response:
+    """GET di una pagina o di una risposta API, rispettando l'intervallo per dominio.
+
+    Riprova fino a TENTATIVI_PAGINA volte su errori di rete e risposte 5xx; un 4xx è definitivo.
+    """
+    ultimo: Exception | None = None
+    for _ in range(TENTATIVI_PAGINA):
+        _attendi_turno(url)
+        try:
+            r = http.get(url, params=params)
+        except httpx.TransportError as e:
+            ultimo = e
+            continue
+        if r.status_code >= 500:
+            ultimo = httpx.HTTPStatusError(f"HTTP {r.status_code}", request=r.request, response=r)
+            continue
+        r.raise_for_status()
+        if r.url.host != httpx.URL(url).host:
+            # es. reindirizzamento a una verifica anti-bot: non si aggira, la fonte si ferma
+            raise ErroreDownload(f"{url}: reindirizzato a {r.url.host}, raccolta non consentita")
+        return r
+    raise ErroreDownload(f"{url}: {ultimo}")

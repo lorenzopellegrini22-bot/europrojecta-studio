@@ -87,6 +87,17 @@ Il disco C: si è riempito durante la build dell'immagine. Docker Desktop è sta
 ## 2026-11-18 — Sviluppo locale senza Docker: pgserver
 Per provare l'app sul PC di sviluppo si usa `pgserver` (PostgreSQL 16.2 + pgvector 0.6.2 installabili via pip), in un ambiente separato dal progetto. Non include `unaccent`: è un motivo in più per aggiungere quell'estensione solo quando servirà, verificando che ci sia nell'immagine di produzione. In CI e in produzione resta `pgvector/pgvector:pg16`.
 
+## 2026-11-18 — Fonti regionali: Toscana e Lazio attive, Umbria e Marche dal dataset nazionale
+**Richiesta del committente:** priorità a Toscana, Lazio, Umbria e Marche.
+**Decisione** (dettagli in `docs/fonti/regioni.md`):
+- Toscana da Sviluppo Toscana; Lazio da Lazio Innova + Lazio Europa, senza doppioni. In entrambi i casi elenchi filtrati per stato e REST API standard di WordPress.
+- Umbria: nessuna fonte regionale strutturata per i bandi di finanziamento, quindi solo il dataset nazionale.
+- Marche: portale protetto da un sistema anti-bot, che non si aggira. Solo il dataset nazionale.
+- Nuova colonna `bando.stato_fonte`: lo stato dichiarato dal portale vale quando mancano le date.
+- Per le fonti regionali si raccolgono solo i bandi aperti o in arrivo. L'uscita dalla lista chiude il bando. Al posto del controllo dell'80% ci sono controlli sulla struttura delle pagine.
+- I doppioni tra fonte nazionale e regionale restano due bandi distinti, ciascuno con la sua fonte. Il collegamento (`bando_canonico_id`) arriva con l'estrazione LLM (fase 3), che confronta titolo, ente e date.
+- Nuova dipendenza: `beautifulsoup4`, con il parser `html.parser` della libreria standard.
+
 ---
 
 ## Decisioni dal brief (riassunto)

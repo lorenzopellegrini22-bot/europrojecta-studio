@@ -203,3 +203,56 @@ def test_collaboratore_non_avvia_la_raccolta(client, crea_utente, accedi):
     accedi(crea_utente(ruolo="collaboratore"))
     r = client.post("/fonti/raccogli", data={"csrf_token": csrf(client, "/fonti")})
     assert r.status_code == 403
+
+
+class FonteRegionaleFinta:
+    """Pacchetto reale ridotto di Regione Lazio; il test toglie bandi dalla lista."""
+
+    soglia_sanita = 0.0
+    assenze_per_scomparsa = 1
+
+    def __init__(self, tmp_path: Path):
+        from app.sources.regioni.lazio import FONTE as LAZIO
+
+        self._lazio = LAZIO
+        self.codice = f"prova_regione_{uuid.uuid4().hex[:8]}"
+        self.nome = "Regione di prova"
+        self.url = "https://esempio.test/bandi/"
+        fixture = Path(__file__).parents[1] / "fixtures" / "regione_lazio_pacchetto.json"
+        self.pacchetto = json.loads(fixture.read_text(encoding="utf-8"))
+        self._tmp = tmp_path
+
+    def versione_remota(self, _client):
+        return None
+
+    def scarica(self, _client) -> Path:
+        p = self._tmp / f"{uuid.uuid4().hex}.json"
+        p.write_text(json.dumps(self.pacchetto, ensure_ascii=False), encoding="utf-8")
+        return p
+
+    def interpreta(self, percorso: Path):
+        return self._lazio.interpreta(percorso)
+
+
+def test_fonte_regionale_stato_dichiarato_e_uscita_dalla_lista(db, tmp_path):
+    fonte = FonteRegionaleFinta(tmp_path)
+    run = _esegui(db, fonte)
+    assert run.esito == "ok" and run.nuovi == 4
+    stati = {b.titolo: b.stato for b in _bandi(db, fonte)}
+    assert stati["Voucher Internazionalizzazione Pmi 2027"] == "in_arrivo"
+    assert stati["Basket Bond Lazio"] == "aperto"
+
+    # Il portale toglie il Basket Bond dalla lista dei bandi aperti: chiuso subito
+    sito = next(s for s in fonte.pacchetto["siti"].values() if "basket-bond-lazio" in s["stati"])
+    del sito["stati"]["basket-bond-lazio"]
+    run = _esegui(db, fonte)
+    assert run.esito == "ok" and run.scomparsi == 1
+    db.expire_all()
+    stati = {b.titolo: b.stato for b in _bandi(db, fonte)}
+    assert stati["Basket Bond Lazio"] == "chiuso"
+
+    # Lista vuota dove prima c'erano bandi: il run si ferma, niente viene chiuso
+    for s in fonte.pacchetto["siti"].values():
+        s["stati"] = {}
+    run = _esegui(db, fonte)
+    assert run.esito == "fermato_sanita"

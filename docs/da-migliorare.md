@@ -12,6 +12,8 @@ Aggiornato il 18/11/2026, dopo la prova completa su dati reali:
 - **Stato delle integrazioni e delle fonti in home**: avvisi se OpenAI o SMTP non sono collegati, o se una fonte fallisce da 2 raccolte.
 - Raccolta dei bandi **pianificata ogni notte** nel worker, con un test che lo verifica.
 
+- **Fonti regionali** Toscana (Sviluppo Toscana) e Lazio (Lazio Innova + Lazio Europa): 45 bandi attivi in più, molti assenti dal dataset nazionale. Umbria e Marche per ora solo dal dataset nazionale (vedi `docs/fonti/regioni.md`).
+
 ## Problemi trovati provando con i dati reali (già corretti)
 - Importi assurdi nella fonte (oltre mille miliardi) mandavano in errore il salvataggio: ora vengono scartati e segnalati come "da verificare".
 - Il job risultava "ok" anche se una fonte era in errore: ora risulta "errore".
@@ -20,7 +22,7 @@ Aggiornato il 18/11/2026, dopo la prova completa su dati reali:
 - La dashboard contava come "nuovi" tutti i bandi della prima importazione: ora conta solo quelli comparsi dopo.
 
 ## Da fare, in ordine di priorità
-1. **Copertura regionale (fase 2, promessa al cliente)**: servono le regioni dei clienti del consulente. Il dataset nazionale contiene già 545 bandi regionali e 139 comunali attivi, ma va confrontato con i portali delle regioni prioritarie (es. il Lazio ne ha solo 18 propri).
+1. **Doppioni tra fonte nazionale e regionale**: lo stesso bando può comparire due volte (es. un bando toscano sia in Incentivi Italia sia in Sviluppo Toscana). Il collegamento arriva con la fase 3.
 2. **Codici ISTAT dei comuni**: oggi i comuni dei bandi sono nomi testuali. Servono la tabella ISTAT e la normalizzazione per il matching per sede.
 3. **Avvisi email sulle fonti** dopo 2 fallimenti consecutivi: il dato è già contato, l'invio arriva con l'SMTP (fase 5).
 4. **Avviso alla scadenza della sessione**: se la sessione scade mentre si compila un form, i dati inseriti si perdono.

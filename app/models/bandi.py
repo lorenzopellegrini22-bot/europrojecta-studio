@@ -28,6 +28,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base, ConTimestamp
 
 STATI_BANDO = ("in_arrivo", "aperto", "chiuso", "sconosciuto")
+STATI_DICHIARABILI = ("aperto", "in_arrivo", "chiuso")  # stato_fonte
 ESITI_RUN = ("in_corso", "ok", "invariato", "fermato_sanita", "errore")
 TERRITORI = ("nazionale", "regionale", "provinciale", "comunale", "sconosciuto")
 REGIMI = ("de_minimis", "esenzione", "notificato", "altro", "sconosciuto")
@@ -96,6 +97,7 @@ class Bando(ConTimestamp, Base):
     __table_args__ = (
         UniqueConstraint("fonte_id", "id_esterno", name="uq_bando_fonte_id_esterno"),
         _in("stato", STATI_BANDO, "ck_bando_stato"),
+        _in("stato_fonte", STATI_DICHIARABILI, "ck_bando_stato_fonte"),
     )
 
     fonte_id: Mapped[int] = mapped_column(ForeignKey("fonte.id", ondelete="RESTRICT"))
@@ -110,6 +112,8 @@ class Bando(ConTimestamp, Base):
     data_chiusura: Mapped[date | None] = mapped_column(Date, index=True)
     note_apertura_chiusura: Mapped[str | None] = mapped_column(Text)
     stato: Mapped[str] = mapped_column(String(20), index=True)
+    # Stato dichiarato dalla fonte (portali regionali): vale solo se mancano le date
+    stato_fonte: Mapped[str | None] = mapped_column(String(20))
     raw: Mapped[dict[str, Any]] = mapped_column(JSONB)
     hash_contenuto: Mapped[str] = mapped_column(String(64))
     visto_la_prima_volta: Mapped[datetime] = mapped_column(

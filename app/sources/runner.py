@@ -103,6 +103,7 @@ def _applica_campi(bando: Bando, rec: RecordBando, h: str) -> None:
     bando.data_apertura = rec.data_apertura
     bando.data_chiusura = rec.data_chiusura
     bando.note_apertura_chiusura = rec.note_apertura_chiusura
+    bando.stato_fonte = rec.stato_fonte
     bando.raw = rec.raw
     bando.hash_contenuto = h
     scrivi_requisiti(bando, rec.requisiti)
@@ -113,7 +114,11 @@ def aggiorna_stati(bandi: list[Bando], oggi: date) -> int:
     chiusi = 0
     for b in bandi:
         nuovo = calcola_stato(
-            b.data_apertura, b.data_chiusura, oggi, scomparso=b.scomparso_dal_feed_il is not None
+            b.data_apertura,
+            b.data_chiusura,
+            oggi,
+            scomparso=b.scomparso_dal_feed_il is not None,
+            stato_fonte=b.stato_fonte,
         )
         if nuovo != b.stato:
             if nuovo == "chiuso":
@@ -129,6 +134,7 @@ def applica_record(
     run: FonteRun,
     oggi: date,
     ririsolvi: bool = False,
+    assenze_per_scomparsa: int = VERSIONI_ASSENTI_PER_SCOMPARSA,
 ) -> None:
     """Con ririsolvi=True i requisiti si ricalcolano anche per i record invariati
     (serve dopo una correzione del parser)."""
@@ -165,7 +171,9 @@ def applica_record(
         if bando is None:
             bando = Bando(fonte_id=fonte.id, visto_la_prima_volta=ora, stato="sconosciuto")
             _applica_campi(bando, rec, h)
-            bando.stato = calcola_stato(bando.data_apertura, bando.data_chiusura, oggi)
+            bando.stato = calcola_stato(
+                bando.data_apertura, bando.data_chiusura, oggi, stato_fonte=bando.stato_fonte
+            )
             db.add(bando)
             run.nuovi += 1
         elif bando.hash_contenuto != h or bando.id_esterno != rec.id_esterno:
@@ -191,7 +199,7 @@ def applica_record(
         if b.id in visti or b.id_esterno in elaborati or b.scomparso_dal_feed_il is not None:
             continue
         b.versioni_assenti += 1
-        if b.versioni_assenti >= VERSIONI_ASSENTI_PER_SCOMPARSA:
+        if b.versioni_assenti >= assenze_per_scomparsa:
             b.scomparso_dal_feed_il = ora
             run.scomparsi += 1
 
@@ -239,15 +247,26 @@ def esegui_raccolta(
 
         run.record_letti = len(records)
         precedente = fonte.ultimo_conteggio
-        if precedente and len(records) < SOGLIA_SANITA * precedente:
+        soglia = getattr(impl, "soglia_sanita", SOGLIA_SANITA)
+        if precedente and (not records or len(records) < soglia * precedente):
             run.esito = "fermato_sanita"
             run.messaggio = (
                 f"Il file contiene {len(records)} record contro {precedente} della versione "
-                f"precedente (meno dell'{int(SOGLIA_SANITA * 100)}%): nessun bando modificato."
+                f"precedente (meno dell'{int(soglia * 100)}%): nessun bando modificato."
             )
             fonte.fallimenti_consecutivi += 1
         else:
-            applica_record(db, fonte, records, run, oggi, ririsolvi=forza)
+            applica_record(
+                db,
+                fonte,
+                records,
+                run,
+                oggi,
+                ririsolvi=forza,
+                assenze_per_scomparsa=getattr(
+                    impl, "assenze_per_scomparsa", VERSIONI_ASSENTI_PER_SCOMPARSA
+                ),
+            )
             fonte.ultimo_last_modified = versione
             fonte.ultimo_conteggio = len(records)
             fonte.ultimo_successo = _adesso()
