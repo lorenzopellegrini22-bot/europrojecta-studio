@@ -20,8 +20,10 @@ from app.integrazioni import servizio as integrazioni
 from app.integrazioni.registro_imprese import ErroreRegistro, cerca
 from app.models import Azienda, AziendaAteco, Pratica, Referente, Sede, Segnalatore, Utente
 from app.models.crm import DIMENSIONI, STATI_CLIENTE
+from app.opportunita.abbinamento import CLASSIFICHE_SOA
 from app.pratiche.servizio import ETICHETTE_STATO_PRATICA, partita_iva_valida
 from app.sicurezza.cifratura import ErroreCifratura
+from app.utils.cpv import DIVISIONI_CPV
 from app.utils.numeri import importo_italiano
 from app.utils.ricerca import condizione
 from app.utils.territorio import REGIONI
@@ -110,6 +112,14 @@ def _valida(db: Session, valori: dict[str, Any], azienda_id: int | None) -> dict
             errori[c] = "Numero non valido."
     if valori.get("ateco_codice") and not _ATECO.match(valori["ateco_codice"]):
         errori["ateco_codice"] = "Codice ATECO nel formato 62.01 o 62.01.00."
+    soa, errore_soa = leggi_soa(valori.get("soa_testo") or "")
+    if errore_soa:
+        errori["soa_testo"] = errore_soa
+    valori["soa_possedute"] = soa
+    if any(r not in REGIONI for r in valori.get("regioni_interesse") or []):
+        errori["regioni_interesse"] = "Regione non valida."
+    if any(c not in DIVISIONI_CPV for c in valori.get("cpv_interesse") or []):
+        errori["cpv_interesse"] = "Categoria non valida."
     sid = valori.get("segnalatore_id")
     if isinstance(sid, int) and db.get(Segnalatore, sid) is None:
         errori["segnalatore_id"] = "Segnalatore non trovato."
@@ -128,7 +138,35 @@ def _valori(form: dict[str, Any]) -> dict[str, Any]:
     v["anno_dati"] = _numero(testo(form, "anno_dati"))
     v["fatturato"] = _numero(testo(form, "fatturato"), decimale=True)
     v["segnalatore_id"] = _numero(testo(form, "segnalatore_id"))
+    v["avvisi_attivi"] = form.get("avvisi_attivi") == "1"
+    v["soa_testo"] = testo(form, "soa_testo") or ""
+    regioni = form.get("regioni_interesse") or []
+    v["regioni_interesse"] = [regioni] if isinstance(regioni, str) else regioni
+    cpv = form.get("cpv_interesse") or []
+    v["cpv_interesse"] = [cpv] if isinstance(cpv, str) else cpv
     return v
+
+
+def leggi_soa(testo_soa: str) -> tuple[list[dict[str, str]] | None, str | None]:
+    """«OG6 III» / «OS22 II» (una per riga, o separate da virgola) → lista di attestazioni."""
+    from app.appalti.scheda import CATEGORIE_SOA
+
+    voci = []
+    for pezzo in re.split(r"[\n,;]+", testo_soa):
+        parti = pezzo.strip().upper().replace("BIS", "bis").split()
+        if not parti:
+            continue
+        codice = parti[0].replace(" ", "")
+        m = re.fullmatch(r"(O[GS])(\d{1,2})(?:-?([AB]))?", codice)
+        if m:
+            codice = f"{m.group(1)}{int(m.group(2))}" + (f"-{m.group(3)}" if m.group(3) else "")
+        if codice not in CATEGORIE_SOA:
+            return None, f"Categoria SOA sconosciuta: {parti[0]}."
+        classifica = parti[1] if len(parti) > 1 else None
+        if classifica and classifica not in CLASSIFICHE_SOA:
+            return None, f"Classifica non valida per {codice}: usa I, II, III, III-bis … VIII."
+        voci.append({"codice": codice, "classifica": classifica})
+    return voci or None, None
 
 
 def _valori_da_azienda(a: Azienda) -> dict[str, Any]:
@@ -136,6 +174,12 @@ def _valori_da_azienda(a: Azienda) -> dict[str, Any]:
     v: dict[str, Any] = {c: getattr(a, c) for c in CAMPI_AZIENDA + CAMPI_NUMERICI}
     v.update({c: getattr(sede, c) if sede else None for c in CAMPI_SEDE})
     v["stato_attivita"] = a.stato_attivita
+    v["avvisi_attivi"] = a.avvisi_attivi
+    v["soa_testo"] = "\n".join(
+        f"{s['codice']} {s.get('classifica') or ''}".strip() for s in a.soa_possedute or []
+    )
+    v["regioni_interesse"] = a.regioni_interesse or []
+    v["cpv_interesse"] = a.cpv_interesse or []
     if a.ateco_primario:
         v["ateco_codice"] = a.ateco_primario.codice
         v["ateco_descrizione"] = a.ateco_primario.descrizione
@@ -162,6 +206,8 @@ def _form(
             "dimensioni": DIMENSIONI,
             "stati": STATI_CLIENTE,
             "registro_disponibile": integrazioni.utilizzabile(db, "registro_imprese"),
+            "classifiche": list(CLASSIFICHE_SOA),
+            "divisioni_cpv": DIVISIONI_CPV,
             "segnalatori": list(
                 db.scalars(select(Segnalatore).where(Segnalatore.attivo).order_by(Segnalatore.nome))
             ),
@@ -185,6 +231,16 @@ def _applica(azienda: Azienda, v: dict[str, Any]) -> dict[str, Any]:
             if getattr(sede, c) != v[c]:
                 differenze[f"sede_{c}"] = v[c]
                 setattr(sede, c, v[c])
+    profilo = {
+        "avvisi_attivi": bool(v.get("avvisi_attivi")),
+        "soa_possedute": v.get("soa_possedute") or None,
+        "regioni_interesse": sorted(v.get("regioni_interesse") or []) or None,
+        "cpv_interesse": sorted(v.get("cpv_interesse") or []) or None,
+    }
+    for campo, valore in profilo.items():
+        if getattr(azienda, campo) != valore:
+            setattr(azienda, campo, valore)
+            differenze[campo] = valore
     if v.get("stato_attivita") != azienda.stato_attivita:
         azienda.stato_attivita = v.get("stato_attivita")
     if v.get("da_registro"):
@@ -340,10 +396,25 @@ def scheda(request: Request, azienda_id: int, db: Db, _: Autenticato) -> Respons
             .order_by(Pratica.creato_il.desc())
         )
     )
+    from app.models.opportunita import Opportunita
+
+    opportunita = list(
+        db.scalars(
+            select(Opportunita)
+            .where(
+                Opportunita.azienda_id == azienda_id,
+                Opportunita.stato.in_(("nuova", "vista", "interessante")),
+            )
+            .options(selectinload(Opportunita.bando), selectinload(Opportunita.appalto))
+            .order_by(Opportunita.punteggio.desc())
+            .limit(8)
+        )
+    )
     return render(
         request,
         "clienti/scheda.html",
         {
+            "opportunita": opportunita,
             "azienda": azienda,
             "pratiche": pratiche,
             "etichette_stato": ETICHETTE_STATO_PRATICA,

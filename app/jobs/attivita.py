@@ -139,3 +139,37 @@ def raccolta_appalti() -> str:
     if errori:
         raise RuntimeError(" | ".join(righe + errori))
     return " | ".join(righe)
+
+
+def opportunita() -> str:
+    """Ogni mattina: abbina clienti e bandi/appalti aperti, poi invia agli utenti attivi
+    l'email con le opportunità nuove (se l'email è attiva)."""
+    from app.comunicazioni import email_disponibile, invia_registrando
+    from app.models import Utente
+    from app.opportunita.abbinamento import abbina, da_notificare, testo_email
+
+    with get_sessionmaker()() as db:
+        esito = abbina(db)
+        nuove = da_notificare(db)
+        if not nuove:
+            return f"{esito} Nessuna email: niente di nuovo."
+        if not email_disponibile(db):
+            return f"{esito} Email non attiva: le novità sono nella pagina Opportunità."
+        testo = testo_email(nuove)
+        clienti = len({o.azienda_id for o in nuove})
+        inviate = 0
+        for u in db.scalars(select(Utente).where(Utente.attivo)):
+            ok, _ = invia_registrando(
+                db,
+                tipo="opportunita",
+                destinatario=u.email,
+                oggetto=f"{len(nuove)} nuove opportunità per {clienti} clienti",
+                testo=testo,
+                utente=u,
+            )
+            inviate += ok
+        ora = datetime.now(UTC)
+        for o in nuove:
+            o.notificata_il = ora
+        db.commit()
+        return f"{esito} Email inviate: {inviate}."

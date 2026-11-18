@@ -7,6 +7,7 @@ migrazioni che aggiungono colonne senza cambiare queste.
 
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 
 from sqlalchemy import (
     BigInteger,
@@ -22,6 +23,7 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base, ConTimestamp
@@ -41,6 +43,14 @@ class Azienda(ConTimestamp, Base):
         ),
         CheckConstraint(
             "partita_iva IS NULL OR partita_iva ~ '^[0-9]{11}$'", name="ck_azienda_partita_iva"
+        ),
+        CheckConstraint(
+            "regioni_interesse IS NULL OR cardinality(regioni_interesse) > 0",
+            name="ck_azienda_regioni_interesse",
+        ),
+        CheckConstraint(
+            "cpv_interesse IS NULL OR cardinality(cpv_interesse) > 0",
+            name="ck_azienda_cpv_interesse",
         ),
     )
 
@@ -65,6 +75,14 @@ class Azienda(ConTimestamp, Base):
     segnalatore_id: Mapped[int | None] = mapped_column(
         ForeignKey("segnalatore.id", ondelete="SET NULL"), index=True
     )
+    # Profilo per le opportunità (abbinamento automatico con bandi e appalti)
+    avvisi_attivi: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    # Attestazione SOA: [{"codice": "OG6", "classifica": "III"}]
+    soa_possedute: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB)
+    # Regioni in cui il cliente partecipa agli appalti (oltre a quella della sede)
+    regioni_interesse: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
+    # Divisioni CPV (2 cifre) di interesse per servizi e forniture
+    cpv_interesse: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
 
     sedi: Mapped[list["Sede"]] = relationship(
         back_populates="azienda", cascade="all, delete-orphan", order_by="Sede.id"

@@ -19,6 +19,7 @@ Aggiornato il 18/11/2026, dopo una nuova verifica su dati reali:
 - **Clienti:**
   - referenti, ATECO, dati dimensionali, segnalatori;
   - compilazione dal Registro Imprese (Openapi).
+- **Opportunità per cliente** ogni mattina (bandi e appalti, con punteggio e motivi) ed email delle novità;
 - **Prefattibilità** con voci automatiche; **statistiche** dello studio.
 - **Integrazioni:** interruttore attiva/disattiva e guida "i" per ognuna.
 - **Appalti:**
@@ -40,7 +41,7 @@ Aggiornato il 18/11/2026, dopo una nuova verifica su dati reali:
 - **Ricerca** con più parole, accenti o plurali (vedi sopra).
 
 ## Da fare, in ordine di priorità
-1. **Avvisi automatici per cliente (matching, fase 4).** Ogni mattina, i bandi e gli appalti nuovi adatti a ciascun cliente: regione, dimensione, ATECO, categorie SOA, CPV. È la funzione con più valore che manca. Oggi c'è solo la prefattibilità, fatta a mano per un bando alla volta.
+1. **Punteggio delle opportunità con l'AI.** Oggi l'abbinamento è a regole: territorio, dimensione, ATECO, settore, SOA, CPV. Con l'estrazione dei requisiti (fase 3) si aggiungono similarità e motivazione scritta.
 2. **Estrazione AI dei requisiti dei bandi (fase 3).** Molti campi sono ancora "da verificare" (regime, spese ammissibili, importi). Per il Lazio le date stanno solo nel testo.
 3. **Doppioni tra fonte nazionale e regionale.** Lo stesso bando può comparire due volte; il collegamento arriva con la fase 3.
 4. **Ordinamento per pertinenza** nella ricerca dei bandi. Oggi l'ordine è per scadenza; servirebbe prima il titolo che contiene le parole cercate.

@@ -5,7 +5,9 @@ Job:
   parte anche all'avvio se non è mai riuscita, così una nuova installazione ha subito i dati;
 - pulizia: ogni notte all'ora PULIZIA_ORARIO (default 04:00);
 - promemoria: ogni mattina all'ora PROMEMORIA_ORARIO (default 07:30), email delle scadenze;
-- raccolta_appalti: ogni notte all'ora APPALTI_ORARIO (default 03:15), bandi di gara da TED;
+- raccolta_appalti: ogni notte all'ora APPALTI_ORARIO (default 03:15), TED e Consip;
+- opportunita: ogni mattina all'ora OPPORTUNITA_ORARIO (default 07:00), abbinamento clienti
+  ↔ bandi/appalti ed email con le novità;
 - battito: ogni 15 minuti verifica il database (compare nei log).
 
 Ogni job gira sotto un advisory lock di Postgres e ogni esecuzione è registrata in job_run.
@@ -42,6 +44,10 @@ def job_raccolta() -> None:
 
 def job_pulizia() -> None:
     esegui_job("pulizia", attivita.pulizia)
+
+
+def job_opportunita() -> None:
+    esegui_job("opportunita", attivita.opportunita)
 
 
 def job_appalti() -> None:
@@ -84,6 +90,12 @@ def crea_scheduler() -> BlockingScheduler:
     scheduler.add_job(job_pulizia, _cron(settings.pulizia_orario, fuso), id="pulizia", **notturno)
     scheduler.add_job(
         job_appalti, _cron(settings.appalti_orario, fuso), id="raccolta_appalti", **notturno
+    )
+    scheduler.add_job(
+        job_opportunita,
+        _cron(settings.opportunita_orario, fuso),
+        id="opportunita",
+        **notturno,
     )
     scheduler.add_job(
         job_promemoria, _cron(settings.promemoria_orario, fuso), id="promemoria", **notturno

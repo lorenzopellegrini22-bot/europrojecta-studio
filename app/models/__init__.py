@@ -6,6 +6,7 @@ from app.models.bandi import Bando, BandoRequisiti, BandoVersione, Fonte, FonteR
 from app.models.crm import Azienda, AziendaAteco, Referente, Sede, Segnalatore
 from app.models.impostazioni import Integrazione
 from app.models.jobs import JobRun
+from app.models.opportunita import Opportunita
 from app.models.pratiche import (
     Allegato,
     ModelloFase,
@@ -22,6 +23,7 @@ from app.models.pratiche import (
 )
 
 __all__ = [
+    "Opportunita",
     "Appalto",
     "Segnalatore",
     "Prefattibilita",

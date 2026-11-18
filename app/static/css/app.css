@@ -304,3 +304,26 @@ tr.voce-ok td:first-child { color: var(--ep-ok); }
 /* Scheda appalto */
 table.scheda-gara th { width: 13rem; vertical-align: top; font-weight: 600; }
 table.scheda-gara td { vertical-align: top; }
+
+/* Opportunità */
+.opportunita { padding: 0.6rem 0; border-bottom: 1px solid var(--pico-muted-border-color); }
+.opportunita.stato-scartata { opacity: 0.55; }
+.punteggio {
+  display: inline-block;
+  min-width: 2.2rem;
+  text-align: center;
+  font-weight: 700;
+  border-radius: 0.4rem;
+  padding: 0 0.3rem;
+  background: color-mix(in srgb, var(--ep-ok) 15%, transparent);
+  color: var(--ep-ok);
+}
+.motivo-ok { color: var(--ep-ok); margin-right: 0.6rem; }
+.motivo-verifica { color: var(--ep-attenzione); margin-right: 0.6rem; }
+.griglia-caselle {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.2rem 1rem;
+  margin: 0.5rem 0;
+}
+.griglia-caselle label { margin: 0; font-size: 0.9rem; }

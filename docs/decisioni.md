@@ -182,6 +182,25 @@ Misurata sui dati reali:
 - una regione scritta nella ricerca diventa il filtro territoriale.
 Codice in `app/utils/ricerca.py`.
 
+## 2026-11-18 — Opportunità per cliente (abbinamento automatico, prima versione della fase 4)
+**Decisione:** abbinamento **a regole** ogni mattina (07:00) tra i clienti con avvisi attivi e i bandi e appalti aperti. Ogni opportunità ha un punteggio 0-100 e i motivi: requisiti soddisfatti e cose da verificare. Il punteggio con l'AI (similarità e motivazione) si aggiungerà dopo l'estrazione dei requisiti (fase 3).
+- **Profilo del cliente:**
+  - attestazione SOA (categoria e classifica);
+  - regioni di interesse per gli appalti;
+  - categorie CPV di interesse;
+  - interruttore "avvisi attivi".
+- **Bandi:** si escludono per tipo di soggetto, territorio (anche il comune della sede per i bandi comunali), dimensione, ATECO e settore. Un bando chiaramente di settore (cultura, agricoltura, turismo, pesca, sport) va solo a chi ha un ATECO di quel settore.
+- **Appalti:**
+  - territorio: sede più regioni di interesse; le gare nazionali vanno sempre bene;
+  - SOA prevalente posseduta con classifica sufficiente: importi dell'Allegato II.12 al d.lgs. 36/2023, con l'incremento di un quinto;
+  - oppure categoria CPV principale di interesse; se è solo secondaria resta "da verificare".
+- **Quantità e stato:**
+  - al massimo 30 bandi e 30 appalti per cliente, i più pertinenti;
+  - le opportunità già lavorate (interessante, scartata, pratica aperta) non vengono più toccate.
+- **Email del mattino** a tutti gli utenti attivi con le sole novità. "Segnala al cliente" invia al referente un'email scritta dal consulente.
+- Tabella `opportunita` invece di `match` dello schema: serve anche per gli appalti.
+- Provato sui dati reali con due clienti tipo (impresa edile del Lazio, software house di Firenze). Le prove hanno portato a togliere tre falsi positivi: bandi di un altro comune, bandi di settore, appalti con categoria solo secondaria.
+
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.
 - Jinja2 + HTMX + Pico.css salvati nel repository, nessuna risorsa da CDN.

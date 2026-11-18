@@ -28,8 +28,9 @@ from app.clienti.segnalatori import router as segnalatori_router
 from app.db import get_db
 from app.integrazioni import servizio as servizio_integrazioni
 from app.integrazioni.router import router as integrazioni_router
-from app.models import Bando, Fonte, FonteRun, Pratica, Utente
+from app.models import Bando, Fonte, FonteRun, Opportunita, Pratica, Utente
 from app.models.pratiche import STATI_PRATICA_CONCLUSI
+from app.opportunita.router import router as opportunita_router
 from app.pratiche.prefattibilita import router as prefattibilita_router
 from app.pratiche.router import router as pratiche_router
 from app.pratiche.servizio import scadenze
@@ -108,6 +109,7 @@ app.include_router(segnalatori_router)
 app.include_router(prefattibilita_router)
 app.include_router(statistiche_router)
 app.include_router(appalti_router)
+app.include_router(opportunita_router)
 
 
 @app.get("/")
@@ -162,6 +164,9 @@ def home(
             "ultima_raccolta": ultima,
             "integrazioni": integrazioni,
             "pratiche_attive": pratiche_attive,
+            "opportunita_nuove": db.scalar(
+                select(func.count()).select_from(Opportunita).where(Opportunita.stato == "nuova")
+            ),
             "scadenze_vicine": scadenze_vicine,
             "oggi": oggi,
         },

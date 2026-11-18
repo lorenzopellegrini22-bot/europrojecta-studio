@@ -472,3 +472,98 @@ def test_import_anac_scheda_e_filtro_soa(client, crea_utente, accedi, db):
     assert "Razionalizzazione" not in client.get("/appalti?soa=OG1").text
     assert "Razionalizzazione" in client.get("/appalti?q=depurativo+SASI").text
     assert "Razionalizzazione" not in client.get("/appalti?q=depurativo+Milano").text
+
+
+def test_opportunita_completo(client, crea_utente, accedi, db, monkeypatch):
+    from app.jobs import attivita
+    from app.models import BandoRequisiti, Opportunita
+
+    utente = crea_utente()
+    accedi(utente)
+    azienda = _cliente(
+        client,
+        db,
+        avvisi_attivi="1",
+        regione="Abruzzo",
+        dimensione_manuale="piccola",
+        soa_testo="OG6 III\nOS22 II",
+        cpv_interesse="45",
+    )
+    assert azienda.soa_possedute == [
+        {"codice": "OG6", "classifica": "III"},
+        {"codice": "OS22", "classifica": "II"},
+    ]
+    token = csrf(client, "/clienti/nuovo")
+    r = client.post(
+        "/clienti/nuovo",
+        data={"csrf_token": token, "ragione_sociale": "Errata", "soa_testo": "OG99 II"},
+    )
+    assert r.status_code == 400 and "Categoria SOA sconosciuta" in r.text
+
+    bando = _bando(db)
+    db.add(
+        BandoRequisiti(
+            bando_id=bando.id,
+            territorio="regionale",
+            regioni=["Abruzzo"],
+            dimensioni=["piccola"],
+            provenienza={},
+        )
+    )
+    appalto = Appalto(
+        fonte="ted",
+        id_esterno=f"prova-{uuid.uuid4().hex[:8]}",
+        titolo="Depuratore Lanciano",
+        regioni=["Abruzzo"],
+        categorie_soa=[{"codice": "OG6", "tipo": "prevalente", "importo": "900000"}],
+        codici_soa=["OG6"],
+        natura=["lavori"],
+        importo_stimato=Decimal("950000"),
+        scadenza=date.today() + timedelta(days=20),
+        raw={},
+    )
+    db.add(appalto)
+    db.commit()
+
+    r = client.post("/opportunita/aggiorna", data={"csrf_token": token})
+    assert r.status_code == 303
+    ops = list(db.scalars(select(Opportunita).where(Opportunita.azienda_id == azienda.id)))
+    tipi = {("bando" if o.bando_id else "appalto"): o for o in ops}
+    assert {"bando", "appalto"} <= set(tipi)
+    assert any("classifica III sufficiente" in m for m in tipi["appalto"].motivi["soddisfatti"])
+
+    pagina = client.get(f"/opportunita?cliente={azienda.id}").text
+    assert "Depuratore Lanciano" in pagina and bando.titolo in pagina
+    assert "Depuratore Lanciano" in client.get(f"/clienti/{azienda.id}").text
+
+    # Email del mattino (posta simulata), una sola volta
+    _configura_smtp(client)
+    inviate = []
+    monkeypatch.setattr(
+        "app.comunicazioni.invia",
+        lambda valori, a, oggetto, testo, rispondi_a=None: inviate.append((a, oggetto, testo)),
+    )
+    esito = attivita.opportunita()
+    mie = [x for x in inviate if x[0] == utente.email]
+    assert mie and "Depuratore Lanciano" in mie[0][2] and "Email inviate" in esito
+    inviate.clear()
+    attivita.opportunita()
+    assert not [x for x in inviate if x[0] == utente.email]
+
+    # Segnala al cliente, scarta, apri pratica
+    o_app = tipi["appalto"]
+    r = client.post(f"/opportunita/{o_app.id}/segnala", data={"csrf_token": token})
+    assert "esito=ok" in r.headers["location"]
+    a, oggetto, testo = inviate[-1]
+    assert a == "maria@esempio.it" and "Depuratore Lanciano" in testo
+    o_b = tipi["bando"]
+    client.post(f"/opportunita/{o_b.id}/stato", data={"csrf_token": token, "stato": "scartata"})
+    r = client.post(f"/opportunita/{o_app.id}/pratica", data={"csrf_token": token})
+    assert r.headers["location"].startswith(f"/pratiche/nuova?azienda_id={azienda.id}&bando_testo=")
+    db.expire_all()
+    assert db.get(Opportunita, o_b.id).stato == "scartata"
+    assert db.get(Opportunita, o_app.id).stato == "in_pratica"
+    # un nuovo abbinamento non resuscita le opportunità già lavorate
+    client.post("/opportunita/aggiorna", data={"csrf_token": token})
+    db.expire_all()
+    assert db.get(Opportunita, o_b.id).stato == "scartata"
