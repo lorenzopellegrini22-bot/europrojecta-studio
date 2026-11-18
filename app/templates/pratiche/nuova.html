@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block titolo %}Nuova pratica · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<nav aria-label="breadcrumb"><ul><li><a href="/pratiche">Pratiche</a></li><li>Nuova</li></ul></nav>
+<h1>Nuova pratica</h1>
+{% if errori %}<div class="messaggio errore" role="alert">{{ errori.values() | join(" ") }}</div>{% endif %}
+
+<form method="post" action="/pratiche/nuova">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+  <label>Cliente *
+    <select name="azienda_id" required {% if errori.azienda_id %}aria-invalid="true"{% endif %}>
+      <option value="">Scegli il cliente</option>
+      {% for a in aziende %}<option value="{{ a.id }}" {% if v.azienda_id == a.id %}selected{% endif %}>{{ a.ragione_sociale }}{% if a.partita_iva %} ({{ a.partita_iva }}){% endif %}</option>{% endfor %}
+    </select>
+    {% if not aziende %}<small>Non ci sono clienti: <a href="/clienti/nuovo">aggiungine uno</a>.</small>{% endif %}
+  </label>
+
+  <fieldset>
+    <legend>Bando *</legend>
+    <div id="bando-scelto">
+      {% if bando %}
+      <label><input type="radio" name="bando_id" value="{{ bando.id }}" checked> {{ bando.titolo }} <small>({{ bando.ente or "" }}, scadenza {{ bando.data_chiusura | data }})</small></label>
+      {% endif %}
+    </div>
+    <input type="search" name="q" placeholder="Cerca il bando tra quelli raccolti (almeno 3 lettere)" aria-label="Cerca bando"
+           hx-get="/pratiche/cerca-bandi" hx-trigger="input changed delay:400ms, search" hx-target="#risultati-bandi" autocomplete="off">
+    <div id="risultati-bandi"></div>
+    <label>Oppure scrivi il nome del bando, se non è tra quelli raccolti
+      <input type="text" name="bando_testo" value="{{ v.bando_testo or '' }}" placeholder="es. Bando camerale digitalizzazione 2026">
+    </label>
+  </fieldset>
+
+  <label>Modello di pratica
+    <select name="modello_id">
+      <option value="">Nessun modello (una sola fase, da riempire a mano)</option>
+      {% for m in modelli %}<option value="{{ m.id }}" {% if v.modello_id == m.id %}selected{% endif %}>{{ m.nome }} ({{ m.fasi | length }} fasi)</option>{% endfor %}
+    </select>
+    {% if not modelli %}<small>Non ci sono modelli: <a href="/modelli">creali o carica quelli di esempio</a>.</small>{% endif %}
+  </label>
+
+  <div class="grid">
+    <label>Responsabile
+      <select name="responsabile_id">
+        <option value="">Nessuno</option>
+        {% for u in utenti %}<option value="{{ u.id }}" {% if v.responsabile_id == u.id %}selected{% endif %}>{{ u.nome }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Scadenza di presentazione
+      <input type="date" name="scadenza_presentazione" value="{{ v.scadenza_presentazione or '' }}">
+      <small>Se vuota, si usa la data di chiusura del bando (quando c'è).</small>
+    </label>
+  </div>
+
+  <div class="azioni-filtri">
+    <button type="submit">Apri la pratica</button>
+    <a href="/pratiche" class="secondary">Annulla</a>
+  </div>
+</form>
+{% endblock %}

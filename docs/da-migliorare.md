@@ -14,6 +14,13 @@ Aggiornato il 18/11/2026, dopo la prova completa su dati reali:
 
 - **Fonti regionali** Toscana (Sviluppo Toscana) e Lazio (Lazio Innova + Lazio Europa): 45 bandi attivi in più, molti assenti dal dataset nazionale. Umbria e Marche per ora solo dal dataset nazionale (vedi `docs/fonti/regioni.md`).
 
+- **Pratiche a fasi**:
+  - modelli con fasi e operazioni (checklist, dati, email con segnaposto);
+  - scadenzario;
+  - clienti con referenti;
+  - export CSV;
+  - riepilogo stampabile.
+
 ## Problemi trovati provando con i dati reali (già corretti)
 - Importi assurdi nella fonte (oltre mille miliardi) mandavano in errore il salvataggio: ora vengono scartati e segnalati come "da verificare".
 - Il job risultava "ok" anche se una fonte era in errore: ora risulta "errore".
@@ -29,3 +36,8 @@ Aggiornato il 18/11/2026, dopo la prova completa su dati reali:
 5. **Verifica WhatsApp**: con il canale WhatsApp (fase 5), dopo aver verificato la documentazione Meta.
 6. **Rotazione della SECRET_KEY** con MultiFernet.
 7. **Ricerca testuale migliore** (accenti, più parole): con `unaccent` e un indice trigram quando i dati crescono.
+8. **Allegati delle pratiche**: oggi la checklist registra lo stato dei documenti, non il file. Servono upload con nome casuale, limiti di dimensione e backup (tabella `allegato` dello schema).
+9. **Invio delle email dalla pratica** e promemoria automatici delle scadenze, con il canale SMTP (fase 5).
+10. **Ricerca dati dal Registro Imprese** nella scheda cliente: serve un fornitore di dati a pagamento, da scegliere e verificare.
+11. **Segnalatori, prefattibilità e statistiche** (presenti nel prodotto concorrente): da valutare con il committente.
+

@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block titolo %}{{ azienda.ragione_sociale }} · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+{% set sede = azienda.sede_legale %}
+<nav aria-label="breadcrumb"><ul><li><a href="/clienti">Clienti</a></li><li>{{ azienda.ragione_sociale }}</li></ul></nav>
+<div class="intestazione">
+  <hgroup>
+    <h1>{{ azienda.ragione_sociale }}</h1>
+    <p>{{ azienda.forma_giuridica or "" }}{% if azienda.partita_iva %} · P.IVA {{ azienda.partita_iva }}{% endif %} · Cliente {{ azienda.stato_cliente }}</p>
+  </hgroup>
+  <div class="gruppo-pulsanti">
+    <a href="/pratiche/nuova?azienda_id={{ azienda.id }}" role="button">Nuova pratica</a>
+    <a href="/clienti/{{ azienda.id }}/modifica" role="button" class="secondary outline">Modifica</a>
+  </div>
+</div>
+
+<div class="grid">
+  <article>
+    <header><strong>Dati</strong></header>
+    <dl class="dati">
+      <dt>Codice fiscale</dt><dd>{{ azienda.codice_fiscale or "—" }}</dd>
+      <dt>Dimensione</dt><dd>{{ (azienda.dimensione_manuale or "—") | capitalize }}</dd>
+      <dt>Email</dt><dd>{% if azienda.email %}<a href="mailto:{{ azienda.email }}">{{ azienda.email }}</a>{% else %}—{% endif %}</dd>
+      <dt>PEC</dt><dd>{{ azienda.pec or "—" }}</dd>
+      <dt>Telefono</dt><dd>{{ azienda.telefono or "—" }}</dd>
+      <dt>Codice SDI</dt><dd>{{ azienda.codice_sdi or "—" }}</dd>
+      <dt>Sede legale</dt><dd>{% if sede %}{{ sede.indirizzo or "" }} {{ sede.cap or "" }} {{ sede.comune_testo or "" }}{% if sede.provincia %} ({{ sede.provincia }}){% endif %}{% if sede.regione %}, {{ sede.regione }}{% endif %}{% else %}—{% endif %}</dd>
+    </dl>
+    {% if azienda.note %}<p class="note-testo">{{ azienda.note }}</p>{% endif %}
+  </article>
+
+  <article id="referenti">
+    <header><strong>Referenti</strong></header>
+    {% for r in azienda.referenti %}
+    <div class="referente">
+      <div>
+        <strong>{{ r.nome_completo }}</strong>{% if r.principale %} <span class="etichetta">principale</span>{% endif %}
+        {% if r.ruolo %}<br><small>{{ r.ruolo }}</small>{% endif %}
+        <br><small>{% if r.email %}<a href="mailto:{{ r.email }}">{{ r.email }}</a>{% endif %}{% if r.telefono %} · {{ r.telefono }}{% endif %}</small>
+      </div>
+      <div class="gruppo-pulsanti">
+        {% if not r.principale %}
+        <form method="post" action="/clienti/{{ azienda.id }}/referenti/{{ r.id }}/principale"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Rendi principale</button></form>
+        {% endif %}
+        <form method="post" action="/clienti/{{ azienda.id }}/referenti/{{ r.id }}/elimina"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Elimina</button></form>
+      </div>
+    </div>
+    {% else %}
+    <p>Nessun referente.</p>
+    {% endfor %}
+    <details>
+      <summary>Aggiungi un referente</summary>
+      <form method="post" action="/clienti/{{ azienda.id }}/referenti">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="grid"><input name="nome" placeholder="Nome" required aria-label="Nome"><input name="cognome" placeholder="Cognome" aria-label="Cognome"></div>
+        <div class="grid"><input name="ruolo" placeholder="Ruolo" aria-label="Ruolo"><input type="email" name="email" placeholder="Email" aria-label="Email"><input type="tel" name="telefono" placeholder="Telefono" aria-label="Telefono"></div>
+        <label><input type="checkbox" name="principale" value="1"> Referente principale</label>
+        <button type="submit">Aggiungi</button>
+      </form>
+    </details>
+  </article>
+</div>
+
+<section>
+  <h2>Pratiche</h2>
+  {% if not pratiche %}
+  <p>Nessuna pratica. <a href="/pratiche/nuova?azienda_id={{ azienda.id }}">Apri la prima pratica</a>.</p>
+  {% else %}
+  <div class="overflow-auto">
+  <table class="striped">
+    <thead><tr><th>Codice</th><th>Bando</th><th>Fase in corso</th><th>Stato</th><th>Aperta il</th></tr></thead>
+    <tbody>
+    {% for p in pratiche %}
+      {% set f = p.fase_attiva %}
+      <tr>
+        <td><a href="/pratiche/{{ p.id }}">{{ p.codice }}</a></td>
+        <td>{{ p.nome_bando }}</td>
+        <td>{% if f %}{{ f.numero }}. {{ f.nome }}{% else %}—{% endif %}</td>
+        <td>{{ etichette_stato[p.stato] }}</td>
+        <td>{{ p.creato_il | data_ora }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
+</section>
+
+{% if utente.is_titolare and not pratiche %}
+<details class="zona-pericolo">
+  <summary>Elimina il cliente</summary>
+  <form method="post" action="/clienti/{{ azienda.id }}/elimina">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <p>Il cliente e i suoi referenti verranno eliminati definitivamente.</p>
+    <button type="submit" class="pulsante-pericolo">Elimina definitivamente</button>
+  </form>
+</details>
+{% endif %}
+{% endblock %}

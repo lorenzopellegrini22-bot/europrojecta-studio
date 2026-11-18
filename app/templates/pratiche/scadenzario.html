@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block titolo %}Scadenzario · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<hgroup>
+  <h1>Scadenzario</h1>
+  <p>{{ totale }} scadenze dal {{ dal | data }} al {{ al | data }}: operazioni da fare e presentazioni delle domande.</p>
+</hgroup>
+
+<form method="get" action="/scadenzario" class="filtri">
+  <div class="grid">
+    <label>Dal<input type="date" name="dal" value="{{ dal.isoformat() }}"></label>
+    <label>Al<input type="date" name="al" value="{{ al.isoformat() }}"></label>
+    <label class="casella"><input type="checkbox" name="mie" value="1" {% if mie %}checked{% endif %}> Solo le mie</label>
+  </div>
+  <div class="azioni-filtri">
+    <button type="submit">Mostra</button>
+    <a href="/scadenzario" class="secondary">Ultimi 30 giorni e prossimi 60</a>
+  </div>
+</form>
+
+{% if not giorni %}
+<article><p>Nessuna scadenza nel periodo.</p></article>
+{% endif %}
+
+{% for giorno, voci in giorni.items() %}
+{% set diff = (giorno - oggi).days %}
+<article class="giorno-scadenza {% if diff < 0 %}passato{% elif diff == 0 %}oggi{% endif %}">
+  <header class="intestazione">
+    <strong>{{ giorno | data }}</strong>
+    <small>{% if diff < 0 %}scaduto da {{ -diff }} giorn{{ "o" if diff == -1 else "i" }}{% elif diff == 0 %}oggi{% else %}mancano {{ diff }} giorn{{ "o" if diff == 1 else "i" }}{% endif %}</small>
+  </header>
+  <table>
+    <tbody>
+    {% for v in voci %}
+      <tr>
+        <td>
+          {% if v.tipo == "operazione" %}
+          <a href="/pratiche/{{ v.pratica.id }}?fase={{ v.fase.numero }}#op-{{ v.operazione.id }}">{{ v.titolo }}</a>
+          <br><small>Fase {{ v.fase.numero }} · {{ v.fase.nome }}</small>
+          {% else %}
+          <a href="/pratiche/{{ v.pratica.id }}"><strong>{{ v.titolo }}</strong></a>
+          {% endif %}
+        </td>
+        <td>{{ v.pratica.nome_bando | truncate(60) }}</td>
+        <td><a href="/clienti/{{ v.pratica.azienda_id }}">{{ v.pratica.azienda.ragione_sociale }}</a></td>
+        <td><a href="/pratiche/{{ v.pratica.id }}">{{ v.pratica.codice }}</a></td>
+        <td>{{ v.assegnata_a.nome if v.assegnata_a else "—" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</article>
+{% endfor %}
+{% endblock %}

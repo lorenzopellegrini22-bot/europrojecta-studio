@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block titolo %}Clienti · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<div class="intestazione">
+  <hgroup>
+    <h1>Clienti</h1>
+    <p>{{ aziende | length }} clienti{% if filtri.q or filtri.stato %} trovati{% endif %}.</p>
+  </hgroup>
+  <a href="/clienti/nuovo" role="button">Nuovo cliente</a>
+</div>
+
+<form method="get" action="/clienti" class="filtri">
+  <div class="grid">
+    <input type="search" name="q" value="{{ filtri.q }}" placeholder="Ragione sociale, partita IVA, codice fiscale o email" aria-label="Cerca">
+    <select name="stato" aria-label="Stato del cliente">
+      <option value="">Tutti gli stati</option>
+      {% for st in stati %}<option value="{{ st }}" {% if filtri.stato == st %}selected{% endif %}>{{ st | capitalize }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="azioni-filtri">
+    <button type="submit">Cerca</button>
+    <a href="/clienti" class="secondary">Azzera</a>
+  </div>
+</form>
+
+{% if not aziende %}
+<article><p>Nessun cliente{% if filtri.q or filtri.stato %} con questi filtri{% endif %}. <a href="/clienti/nuovo">Aggiungi un cliente</a>.</p></article>
+{% else %}
+<div class="overflow-auto">
+<table class="striped">
+  <thead><tr><th>Ragione sociale</th><th>Partita IVA</th><th>Sede</th><th>Email</th><th>Stato</th><th>Pratiche</th></tr></thead>
+  <tbody>
+  {% for a in aziende %}
+    {% set sede = a.sede_legale %}
+    <tr>
+      <td><a href="/clienti/{{ a.id }}">{{ a.ragione_sociale }}</a></td>
+      <td>{{ a.partita_iva or "—" }}</td>
+      <td>{% if sede and sede.comune_testo %}{{ sede.comune_testo }}{% if sede.provincia %} ({{ sede.provincia }}){% endif %}{% else %}—{% endif %}</td>
+      <td>{{ a.email or a.pec or "—" }}</td>
+      <td>{{ a.stato_cliente | capitalize }}</td>
+      <td>{{ conteggi.get(a.id, 0) }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

@@ -50,3 +50,25 @@ def render(
     }
     ctx.update(contesto or {})
     return templates.TemplateResponse(request, nome, ctx, status_code=status_code)
+
+
+async def leggi_form(request: Request) -> dict[str, Any]:
+    """Il form della richiesta come dizionario campo → valore (le liste per i campi ripetuti).
+
+    Si usa come dipendenza nelle route sincrone: Starlette mette in cache il form, quindi
+    anche verifica_csrf lo legge senza rileggere il body."""
+    form = await request.form()
+    dati: dict[str, Any] = {}
+    for chiave in form:
+        valori = [v for v in form.getlist(chiave) if isinstance(v, str)]
+        dati[chiave] = valori if len(valori) > 1 else (valori[0] if valori else "")
+    return dati
+
+
+def testo(form: dict[str, Any], campo: str) -> str | None:
+    """Valore di un campo di testo: spazi tolti, None se vuoto."""
+    valore = form.get(campo)
+    if isinstance(valore, list):
+        valore = valore[0] if valore else ""
+    valore = (valore or "").strip()
+    return valore or None

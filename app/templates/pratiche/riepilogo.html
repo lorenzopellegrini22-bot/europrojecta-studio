@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block titolo %}Riepilogo {{ p.codice }} · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<nav aria-label="breadcrumb" class="non-stampare"><ul><li><a href="/pratiche">Pratiche</a></li><li><a href="/pratiche/{{ p.id }}">{{ p.codice }}</a></li><li>Riepilogo</li></ul></nav>
+<hgroup>
+  <h1>Pratica {{ p.codice }}</h1>
+  <p>{{ p.azienda.ragione_sociale }} · {{ p.nome_bando }}</p>
+</hgroup>
+<p class="non-stampare"><small>Per salvarlo in PDF usa la stampa del browser (Ctrl+P → Salva come PDF).</small></p>
+
+<dl class="dati">
+  <dt>Stato</dt><dd>{{ etichette_stato[p.stato] }}</dd>
+  <dt>Responsabile</dt><dd>{{ p.responsabile.nome if p.responsabile else "—" }}</dd>
+  <dt>Scadenza di presentazione</dt><dd>{{ p.scadenza_presentazione | data }}</dd>
+  <dt>Importo richiesto</dt><dd>{{ p.importo_richiesto | euro }}</dd>
+  <dt>Importo concesso</dt><dd>{{ p.importo_concesso | euro }}</dd>
+  <dt>Protocollo</dt><dd>{{ p.protocollo or "—" }}</dd>
+  <dt>Avanzamento</dt><dd>{{ avanzamento[0] }} operazioni su {{ avanzamento[1] }} chiuse</dd>
+  <dt>Riepilogo al</dt><dd>{{ oggi | data }}</dd>
+</dl>
+{% if p.note %}<p class="note-testo">{{ p.note }}</p>{% endif %}
+
+{% for f in p.fasi %}
+<section class="fase-riepilogo">
+  <h2>{{ f.numero }}. {{ f.nome }} <small>· {{ {'da_iniziare': 'da iniziare', 'in_corso': 'in corso', 'completata': 'completata', 'saltata': 'saltata'}[f.stato] }}</small></h2>
+  {% for op in f.operazioni %}
+  <div class="op-riepilogo">
+    <strong>{% if op.stato == "fatta" %}✓{% elif op.stato == "non_applicabile" %}–{% else %}○{% endif %} {{ op.titolo }}</strong>
+    <small>({{ etichette_tipo[op.tipo] }}{% if op.scadenza %}, scadenza {{ op.scadenza | data }}{% endif %})</small>
+    {% if op.documenti %}
+    <ul>{% for d in op.documenti %}<li>{{ d.nome }}: {{ etichette_documento[d.stato] }}{% if d.nota %} ({{ d.nota }}){% endif %}</li>{% endfor %}</ul>
+    {% endif %}
+    {% if op.dati %}
+    <ul>{% for d in op.dati %}<li>{{ d.etichetta }}: {{ d.valore or "—" }}</li>{% endfor %}</ul>
+    {% endif %}
+    {% if op.note %}<p><small>{{ op.note }}</small></p>{% endif %}
+  </div>
+  {% else %}
+  <p><small>Nessuna operazione.</small></p>
+  {% endfor %}
+</section>
+{% endfor %}
+{% endblock %}

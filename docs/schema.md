@@ -106,4 +106,7 @@ Anche le tabelle di accesso (`utente`, `codice_recupero`, `sessione`, `log_acces
 - **Aggiunte:** `aree_speciali[]` e `tipologie_soggetto[]` in `bando_requisiti`; `massimale_de_minimis`; `duplicato_candidato`; `mappatura_import`; `collaudo_etichetta`; `job_run`; `token_disiscrizione` sul referente; `versioni_assenti`/`ultima_versione_vista` sul bando (scomparsa misurata in versioni del file, non in giorni); `ultimo_etag`/`ultimo_last_modified` sulla fonte.
 - **Vincoli:** liste mai vuote; `impostazioni_ai` a riga singola.
 - **Embeddings:** colonna `vector` senza dimensione (vedi `decisioni.md`).
-- **Rinviata a decisione:** modelli di pratica con fasi e checklist dei documenti (stile "template di flusso"). Non sono nel preventivo; si valutano dopo l'MVP.
+- **Pratiche a fasi (migrazione 0005, decisa il 18/11/2026):**
+  - `modello_pratica` (nome univoco, descrizione, attivo) → `modello_fase` (numero, nome, descrizione) → `modello_operazione` (numero, titolo, tipo ∈ attivita, documenti, dati, comunicazione; giorni_previsti; documenti[]; campi[]; oggetto_email; testo_email);
+  - la pratica ne copia il contenuto in `pratica_fase` (stato ∈ da_iniziare, in_corso, completata, saltata), `pratica_operazione` (stato ∈ da_fare, fatta, non_applicabile; scadenza; assegnata_a), `pratica_documento` (stato ∈ mancante, richiesto, ricevuto, verificato) e `pratica_dato` (etichetta, valore);
+  - `pratica` ha in più codice (es. 2026-0001), bando_testo (bando non raccolto), modello_id e responsabile_id.

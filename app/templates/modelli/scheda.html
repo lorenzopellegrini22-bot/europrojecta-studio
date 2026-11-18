@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block titolo %}{{ m.nome }} · {{ NOME_APP }}{% endblock %}
+{% macro campi_operazione(op=None) %}
+  {% set tipo = op.tipo if op else "attivita" %}
+  <div class="grid">
+    <label>Titolo<input name="titolo" value="{{ op.titolo if op else '' }}" required></label>
+    <label>Tipo
+      <select name="tipo">{% for t in tipi %}<option value="{{ t }}" {% if tipo == t %}selected{% endif %}>{{ etichette_tipo[t] }}</option>{% endfor %}</select>
+    </label>
+    <label>Scadenza: giorni dall'inizio della fase<input type="number" min="0" name="giorni_previsti" value="{{ op.giorni_previsti if op and op.giorni_previsti is not none else '' }}"></label>
+  </div>
+  <label>Descrizione<textarea name="descrizione" rows="2">{{ op.descrizione or '' if op else '' }}</textarea></label>
+  <label>Documenti della checklist <small>(solo per "Checklist documenti", uno per riga)</small>
+    <textarea name="documenti" rows="3">{{ (op.documenti or []) | join("\n") if op else '' }}</textarea></label>
+  <label>Dati da raccogliere <small>(solo per "Dati da raccogliere", uno per riga)</small>
+    <textarea name="campi" rows="3">{{ (op.campi or []) | join("\n") if op else '' }}</textarea></label>
+  <label>Oggetto dell'email <small>(solo per "Comunicazione")</small><input name="oggetto_email" value="{{ op.oggetto_email or '' if op else '' }}"></label>
+  <label>Testo dell'email<textarea name="testo_email" rows="6">{{ op.testo_email or '' if op else '' }}</textarea></label>
+{% endmacro %}
+{% block contenuto %}
+<nav aria-label="breadcrumb"><ul><li><a href="/modelli">Modelli</a></li><li>{{ m.nome }}</li></ul></nav>
+<div class="intestazione">
+  <hgroup>
+    <h1>{{ m.nome }}</h1>
+    <p>{{ m.fasi | length }} fasi{% if not m.attivo %} · non attivo (non proposto per le nuove pratiche){% endif %}</p>
+  </hgroup>
+  {% if utente.is_titolare %}
+  <div class="gruppo-pulsanti">
+    <form method="post" action="/modelli/{{ m.id }}/duplica"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline">Duplica</button></form>
+  </div>
+  {% endif %}
+</div>
+
+{% if utente.is_titolare %}
+<details>
+  <summary>Nome, descrizione e stato del modello</summary>
+  <form method="post" action="/modelli/{{ m.id }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Nome<input name="nome" value="{{ m.nome }}" required></label>
+    <label>Descrizione<textarea name="descrizione" rows="2">{{ m.descrizione or '' }}</textarea></label>
+    <label><input type="checkbox" name="attivo" value="1" {% if m.attivo %}checked{% endif %}> Attivo (proposto quando si apre una pratica)</label>
+    <button type="submit">Salva</button>
+  </form>
+</details>
+<p><small>Segnaposto utilizzabili nelle email:
+{% for k, d in segnaposto.items() %}<code>{{ "{" ~ k ~ "}" }}</code> {{ d | lower }}{% if not loop.last %}; {% endif %}{% endfor %}.</small></p>
+{% endif %}
+
+{% for f in m.fasi %}
+<article id="fase-{{ f.id }}">
+  <header class="intestazione">
+    <div><span class="numero-fase fase-in_corso">{{ f.numero }}</span> <strong>{{ f.nome }}</strong>{% if f.descrizione %}<br><small>{{ f.descrizione }}</small>{% endif %}</div>
+    {% if utente.is_titolare %}
+    <form method="post" action="/modelli/{{ m.id }}/fasi/{{ f.id }}" class="gruppo-pulsanti">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button name="azione" value="su" class="secondary outline piccolo" {% if loop.first %}disabled{% endif %} aria-label="Sposta su">↑</button>
+      <button name="azione" value="giu" class="secondary outline piccolo" {% if loop.last %}disabled{% endif %} aria-label="Sposta giù">↓</button>
+      <button name="azione" value="elimina" class="secondary outline piccolo">Elimina fase</button>
+    </form>
+    {% endif %}
+  </header>
+
+  {% for op in f.operazioni %}
+  <details class="operazione">
+    <summary>{{ op.numero }}. {{ op.titolo }} <small class="etichetta">{{ etichette_tipo[op.tipo] }}</small>{% if op.giorni_previsti is not none %} <small>· entro {{ op.giorni_previsti }} giorni</small>{% endif %}</summary>
+    {% if op.documenti %}<p><small>Documenti: {{ op.documenti | join(", ") }}</small></p>{% endif %}
+    {% if op.campi %}<p><small>Dati: {{ op.campi | join(", ") }}</small></p>{% endif %}
+    {% if utente.is_titolare %}
+    <form method="post" action="/modelli/{{ m.id }}/operazioni/{{ op.id }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {{ campi_operazione(op) }}
+      <div class="gruppo-pulsanti">
+        <button name="azione" value="salva" class="piccolo">Salva</button>
+        <button name="azione" value="su" class="secondary outline piccolo" formnovalidate {% if loop.first %}disabled{% endif %}>↑ Su</button>
+        <button name="azione" value="giu" class="secondary outline piccolo" formnovalidate {% if loop.last %}disabled{% endif %}>↓ Giù</button>
+        <button name="azione" value="elimina" class="secondary outline piccolo" formnovalidate>Elimina</button>
+      </div>
+    </form>
+    {% else %}
+    {% if op.descrizione %}<p>{{ op.descrizione }}</p>{% endif %}
+    {% endif %}
+  </details>
+  {% else %}
+  <p><small>Nessuna operazione.</small></p>
+  {% endfor %}
+
+  {% if utente.is_titolare %}
+  <details>
+    <summary>Aggiungi un'operazione</summary>
+    <form method="post" action="/modelli/{{ m.id }}/fasi/{{ f.id }}/operazioni">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {{ campi_operazione() }}
+      <button type="submit" class="piccolo">Aggiungi</button>
+    </form>
+  </details>
+  <details>
+    <summary>Rinomina la fase</summary>
+    <form method="post" action="/modelli/{{ m.id }}/fasi/{{ f.id }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Nome<input name="nome" value="{{ f.nome }}" required></label>
+      <label>Descrizione<textarea name="descrizione" rows="2">{{ f.descrizione or '' }}</textarea></label>
+      <button name="azione" value="salva" class="piccolo">Salva</button>
+    </form>
+  </details>
+  {% endif %}
+</article>
+{% endfor %}
+
+{% if utente.is_titolare %}
+<article>
+  <header><strong>Aggiungi una fase</strong></header>
+  <form method="post" action="/modelli/{{ m.id }}/fasi">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="grid">
+      <input name="nome" placeholder="Nome della fase" required aria-label="Nome della fase">
+      <input name="descrizione" placeholder="Descrizione (facoltativa)" aria-label="Descrizione">
+    </div>
+    <button type="submit">Aggiungi la fase</button>
+  </form>
+</article>
+
+<details class="zona-pericolo">
+  <summary>Elimina il modello</summary>
+  <form method="post" action="/modelli/{{ m.id }}/elimina">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <p>Le pratiche già aperte con questo modello restano intatte.</p>
+    <button type="submit" class="pulsante-pericolo">Elimina il modello</button>
+  </form>
+</details>
+{% endif %}
+{% endblock %}

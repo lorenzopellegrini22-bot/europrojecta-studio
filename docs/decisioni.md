@@ -100,6 +100,19 @@ Per provare l'app sul PC di sviluppo si usa `pgserver` (PostgreSQL 16.2 + pgvect
 
 ---
 
+## 2026-11-18 — Pratiche a fasi con modelli, clienti essenziali, scadenzario
+**Richiesta del committente:** avere le funzioni di gestione pratiche viste in un prodotto concorrente (modelli a fasi, checklist, comunicazioni, scadenzario). Non era nel preventivo: lo schema le indicava come "rinviate a decisione".
+**Decisione:**
+- `modello_pratica` → `modello_fase` → `modello_operazione`. L'operazione ha un tipo: attività, checklist documenti, dati da raccogliere o comunicazione al cliente (oggetto e testo con segnaposto). Ha anche una scadenza relativa: giorni dall'inizio della fase.
+- All'apertura la pratica **copia** fasi e operazioni (`pratica_fase`, `pratica_operazione`, `pratica_documento`, `pratica_dato`). Si può personalizzare senza toccare il modello, e cambiare il modello non tocca le pratiche già aperte.
+- Lo stato della pratica (individuato … chiusa, dallo schema) è separato dalla fase in corso. Ogni cambio finisce nel diario (`pratica_evento`).
+- Comunicazioni: per ora anteprima con i dati veri, pulsante "Copia" e apertura nel programma di posta (`mailto:`). Nessun invio dal server finché il canale email non è pronto (fase 5).
+- Scadenzario: operazioni da fare con scadenza e presentazioni delle domande, raggruppate per giorno, con filtro "solo le mie".
+- Export per Excel in CSV (`;` e BOM UTF-8), senza nuove dipendenze.
+- Clienti: sottoinsieme di `azienda`, `sede` e `referente` dello schema F1, più contatti di fatturazione (PEC, SDI). Il resto del CRM (ATECO, de minimis, consensi, import CSV) arriverà con nuove colonne.
+- Permessi: titolare e collaboratori gestiscono clienti e pratiche. Solo il titolare modifica i modelli ed elimina clienti e pratiche.
+- 3 modelli di esempio scritti da zero (fondo perduto, voucher a sportello, finanziamento agevolato), da caricare con un clic o con `python -m app.cli modelli-esempio`.
+
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.
 - Jinja2 + HTMX + Pico.css salvati nel repository, nessuna risorsa da CDN.

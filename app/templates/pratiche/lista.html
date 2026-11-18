@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block titolo %}Pratiche · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<div class="intestazione">
+  <hgroup>
+    <h1>Pratiche</h1>
+    <p>{{ totale }} pratiche{% if filtri.stato == "attive" %} attive{% endif %}.</p>
+  </hgroup>
+  <div class="gruppo-pulsanti">
+    <a href="/pratiche/nuova" role="button">Nuova pratica</a>
+    <a href="/pratiche/export.csv?{{ request.query_params }}" role="button" class="secondary outline">Esporta per Excel</a>
+  </div>
+</div>
+
+<form method="get" action="/pratiche" class="filtri">
+  <input type="search" name="q" value="{{ filtri.q }}" placeholder="Codice, cliente, bando o protocollo" aria-label="Cerca">
+  <div class="grid">
+    <select name="stato" aria-label="Stato">
+      <option value="attive" {% if filtri.stato == "attive" %}selected{% endif %}>Tutte le attive</option>
+      <option value="tutte" {% if filtri.stato == "tutte" %}selected{% endif %}>Tutte, anche concluse</option>
+      {% for k, e in etichette_stato.items() %}<option value="{{ k }}" {% if filtri.stato == k %}selected{% endif %}>{{ e }}</option>{% endfor %}
+    </select>
+    <select name="responsabile" aria-label="Responsabile">
+      <option value="">Tutti i responsabili</option>
+      {% for u in utenti %}<option value="{{ u.id }}" {% if filtri.responsabile == u.id %}selected{% endif %}>{{ u.nome }}</option>{% endfor %}
+    </select>
+    <select name="modello" aria-label="Modello">
+      <option value="">Tutti i modelli</option>
+      {% for m in modelli %}<option value="{{ m.id }}" {% if filtri.modello == m.id %}selected{% endif %}>{{ m.nome }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="azioni-filtri">
+    <button type="submit">Filtra</button>
+    <a href="/pratiche" class="secondary">Azzera</a>
+  </div>
+</form>
+
+{% if not pratiche %}
+<article><p>Nessuna pratica{% if filtri.q %} trovata{% endif %}. <a href="/pratiche/nuova">Apri una pratica</a>{% if not modelli %} (prima conviene creare i <a href="/modelli">modelli di pratica</a>){% endif %}.</p></article>
+{% else %}
+<div class="overflow-auto">
+<table class="striped">
+  <thead><tr><th>Codice</th><th>Cliente</th><th>Bando</th><th>Fase in corso</th><th>Avanzamento</th><th>Stato</th><th>Responsabile</th><th>Scadenza</th></tr></thead>
+  <tbody>
+  {% for p in pratiche %}
+    {% set f = p.fase_attiva %}
+    {% set av = avanzamento(p) %}
+    <tr>
+      <td><a href="/pratiche/{{ p.id }}">{{ p.codice }}</a></td>
+      <td><a href="/clienti/{{ p.azienda_id }}">{{ p.azienda.ragione_sociale }}</a></td>
+      <td>{{ p.nome_bando | truncate(70) }}</td>
+      <td>{% if f %}{{ f.numero }}. {{ f.nome }}{% else %}—{% endif %}</td>
+      <td><progress value="{{ av[0] }}" max="{{ av[1] or 1 }}" title="{{ av[0] }} su {{ av[1] }} operazioni"></progress></td>
+      <td>{{ etichette_stato[p.stato] }}</td>
+      <td>{{ p.responsabile.nome if p.responsabile else "—" }}</td>
+      <td class="{% if p.scadenza_presentazione and p.scadenza_presentazione < oggi and p.stato in ('individuato', 'proposto', 'in_preparazione') %}scaduta{% endif %}">{{ p.scadenza_presentazione | data }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% if pagine > 1 %}
+<nav class="paginazione">
+  {% if pagina > 1 %}<a href="?q={{ filtri.q | urlencode }}&stato={{ filtri.stato }}&responsabile={{ filtri.responsabile or '' }}&modello={{ filtri.modello or '' }}&pagina={{ pagina - 1 }}">← Precedente</a>{% endif %}
+  <span>Pagina {{ pagina }} di {{ pagine }}</span>
+  {% if pagina < pagine %}<a href="?q={{ filtri.q | urlencode }}&stato={{ filtri.stato }}&responsabile={{ filtri.responsabile or '' }}&modello={{ filtri.modello or '' }}&pagina={{ pagina + 1 }}">Successiva →</a>{% endif %}
+</nav>
+{% endif %}
+{% endif %}
+{% endblock %}

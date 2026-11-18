@@ -27,12 +27,33 @@
   <article><header>Nuovi negli ultimi 7 giorni</header><p class="numero">{{ nuovi }}</p></article>
 </div>
 
+<div class="grid">
+  <article>
+    <header><strong>Le mie scadenze</strong> <small>(scadute e prossimi 7 giorni)</small></header>
+    {% if not scadenze_vicine %}<p>Nessuna scadenza. <a href="/scadenzario">Apri lo scadenzario</a>.</p>{% else %}
+    <ul>
+      {% for v in scadenze_vicine[:8] %}
+      <li><span class="{% if v.data < oggi %}scaduta{% endif %}">{{ v.data | data }}</span> ·
+        {% if v.operazione %}<a href="/pratiche/{{ v.pratica.id }}?fase={{ v.fase.numero }}#op-{{ v.operazione.id }}">{{ v.titolo }}</a>{% else %}<a href="/pratiche/{{ v.pratica.id }}">{{ v.titolo }}</a>{% endif %}
+        <small>({{ v.pratica.azienda.ragione_sociale }}, {{ v.pratica.codice }})</small></li>
+      {% endfor %}
+    </ul>
+    <a href="/scadenzario?mie=1">Tutte le mie scadenze</a>{% endif %}
+  </article>
+  <article>
+    <header><strong>Pratiche attive</strong></header>
+    <p class="numero"><a href="/pratiche">{{ pratiche_attive }}</a></p>
+    <a href="/pratiche/nuova" role="button" class="piccolo">Nuova pratica</a>
+  </article>
+</div>
+
 <article>
   <header><strong>Prossimi passi</strong></header>
   <ul>
     <li><a href="/bandi">Consulta i bandi</a> per regione, forma di agevolazione e scadenza.</li>
     {% if utente.is_titolare %}<li><a href="/impostazioni/integrazioni">Collega le chiavi API</a> (OpenAI, email, WhatsApp).</li>{% endif %}
-    <li>Aziende clienti e matching automatico arrivano nelle prossime fasi.</li>
+    <li><a href="/clienti">Inserisci i clienti</a> e apri le <a href="/pratiche">pratiche</a> partendo dai <a href="/modelli">modelli</a>.</li>
+    <li>Il matching automatico tra clienti e bandi arriva nella fase 4.</li>
   </ul>
 </article>
 {% endblock %}

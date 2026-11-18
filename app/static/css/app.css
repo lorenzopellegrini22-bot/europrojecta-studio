@@ -132,3 +132,134 @@ nav .esci button {
 .testo-bando { white-space: pre-line; }
 .paginazione { display: flex; gap: 1.5rem; justify-content: center; align-items: center; }
 .attribuzione { opacity: 0.7; }
+
+/* --- Clienti, pratiche, modelli, scadenzario --- */
+.intestazione {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.gruppo-pulsanti {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.gruppo-pulsanti form { margin: 0; }
+button.piccolo, [role="button"].piccolo, .piccolo {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.85rem;
+  margin-bottom: 0;
+}
+.pulsante-pericolo {
+  background: var(--ep-errore);
+  border-color: var(--ep-errore);
+}
+.zona-pericolo { margin-top: 2rem; }
+.zona-pericolo summary { color: var(--ep-errore); }
+.errore-campo { color: var(--ep-errore); }
+.etichetta {
+  display: inline-block;
+  padding: 0 0.4rem;
+  border-radius: 0.4rem;
+  font-size: 0.75rem;
+  background: color-mix(in srgb, var(--pico-primary) 12%, transparent);
+}
+dl.dati {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+  margin: 0;
+}
+dl.dati dt { font-weight: 600; }
+dl.dati dd { margin: 0; }
+.note-testo { white-space: pre-wrap; }
+.referente {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--pico-muted-border-color);
+}
+.scaduta { color: var(--ep-errore); font-weight: 600; }
+.paginazione { display: flex; gap: 1rem; justify-content: center; }
+
+/* Pratica: fasi a sinistra, contenuto a destra */
+.pratica {
+  display: grid;
+  grid-template-columns: 16rem 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .pratica { grid-template-columns: 1fr; }
+}
+.fasi ol { list-style: none; padding: 0; margin: 0; }
+.fasi li { margin: 0 0 0.25rem; list-style: none; }
+.fasi a {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.4rem 0.5rem;
+  border-radius: var(--pico-border-radius);
+  text-decoration: none;
+  color: inherit;
+}
+.fasi li.corrente a { background: color-mix(in srgb, var(--pico-primary) 12%, transparent); font-weight: 600; }
+.numero-fase {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  background: #8a8f98;
+}
+.fase-in_corso { background: var(--ep-attenzione); }
+.fase-completata { background: var(--ep-ok); }
+.fase-saltata { background: #c4c7cc; }
+details.operazione {
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 0.75rem;
+}
+details.operazione summary { font-weight: 600; }
+details.operazione.op-fatta summary, details.operazione.op-non_applicabile summary { opacity: 0.65; }
+.spunta { display: inline-block; width: 1.2rem; }
+.op-fatta .spunta { color: var(--ep-ok); }
+.azioni-operazione { margin-top: 0.5rem; }
+table.checklist select, table.checklist input { margin: 0; }
+.doc-verificato, .doc-ricevuto { color: var(--ep-ok); }
+.doc-mancante { color: var(--ep-errore); }
+.testo-email {
+  white-space: pre-wrap;
+  font-family: inherit;
+  padding: 0.75rem;
+  background: var(--pico-code-background-color);
+  border-radius: var(--pico-border-radius);
+}
+.risultati-bandi {
+  max-height: 18rem;
+  overflow-y: auto;
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+}
+.diario { list-style: none; padding: 0; }
+.diario li { list-style: none; margin-bottom: 0.5rem; }
+.giorno-scadenza.passato header strong { color: var(--ep-errore); }
+.giorno-scadenza.oggi { border-left: 4px solid var(--ep-attenzione); }
+.casella { display: flex; align-items: center; gap: 0.5rem; }
+.fase-riepilogo { break-inside: avoid; }
+.op-riepilogo { margin-bottom: 0.75rem; }
+@media print {
+  header.container, .non-stampare { display: none; }
+}

@@ -91,12 +91,22 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--fonte", help="solo questa fonte (codice)")
 
     sub.add_parser("pulizia", help="elimina sessioni scadute e log vecchi")
+    sub.add_parser("modelli-esempio", help="crea i modelli di pratica di esempio mancanti")
 
     args = parser.parse_args(argv)
     if args.comando == "crea-utente":
         return crea_utente(args.email, args.nome, args.ruolo)
     if args.comando == "reimposta-2fa":
         return reimposta_2fa(args.email)
+    if args.comando == "modelli-esempio":
+        from app.db import get_sessionmaker
+        from app.pratiche.modelli_esempio import crea_modelli_esempio
+
+        with get_sessionmaker()() as db:
+            creati = crea_modelli_esempio(db)
+            db.commit()
+        print(f"Modelli di esempio creati: {creati}")
+        return 0
 
     import logging
 

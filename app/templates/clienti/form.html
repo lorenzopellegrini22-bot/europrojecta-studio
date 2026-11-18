@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% macro campo(nome, etichetta, tipo="text", extra="") -%}
+<label>{{ etichetta }}
+  <input type="{{ tipo }}" name="{{ nome }}" value="{{ v.get(nome) or '' }}" {{ extra | safe }} {% if errori.get(nome) %}aria-invalid="true"{% endif %}>
+  {% if errori.get(nome) %}<small class="errore-campo">{{ errori[nome] }}</small>{% endif %}
+</label>
+{%- endmacro %}
+{% block titolo %}{{ "Modifica cliente" if azienda else "Nuovo cliente" }} · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<nav aria-label="breadcrumb"><ul><li><a href="/clienti">Clienti</a></li>{% if azienda %}<li><a href="/clienti/{{ azienda.id }}">{{ azienda.ragione_sociale }}</a></li>{% endif %}<li>{{ "Modifica" if azienda else "Nuovo" }}</li></ul></nav>
+<h1>{{ "Modifica cliente" if azienda else "Nuovo cliente" }}</h1>
+{% if errori %}<div class="messaggio errore" role="alert">Controlla i campi evidenziati.</div>{% endif %}
+
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <article>
+    <header><strong>Dati dell'azienda</strong></header>
+    {{ campo("ragione_sociale", "Ragione sociale *", extra="required") }}
+    <div class="grid">
+      {{ campo("partita_iva", "Partita IVA", extra='inputmode="numeric" maxlength="13"') }}
+      {{ campo("codice_fiscale", "Codice fiscale", extra='maxlength="16"') }}
+    </div>
+    <div class="grid">
+      {{ campo("forma_giuridica", "Forma giuridica", extra='placeholder="es. S.r.l."') }}
+      <label>Dimensione
+        <select name="dimensione_manuale">
+          <option value="">Non indicata</option>
+          {% for d in dimensioni %}<option value="{{ d }}" {% if v.get("dimensione_manuale") == d %}selected{% endif %}>{{ d | capitalize }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Stato
+        <select name="stato_cliente">
+          {% for st in stati %}<option value="{{ st }}" {% if v.get("stato_cliente") == st %}selected{% endif %}>{{ st | capitalize }}</option>{% endfor %}
+        </select>
+      </label>
+    </div>
+  </article>
+
+  <article>
+    <header><strong>Contatti e fatturazione</strong></header>
+    <div class="grid">
+      {{ campo("email", "Email", "email") }}
+      {{ campo("pec", "PEC", "email") }}
+    </div>
+    <div class="grid">
+      {{ campo("telefono", "Telefono", "tel") }}
+      {{ campo("codice_sdi", "Codice SDI", extra='maxlength="7"') }}
+    </div>
+  </article>
+
+  <article>
+    <header><strong>Sede legale</strong></header>
+    {{ campo("indirizzo", "Indirizzo") }}
+    <div class="grid">
+      {{ campo("cap", "CAP", extra='inputmode="numeric" maxlength="5"') }}
+      {{ campo("comune_testo", "Comune") }}
+      {{ campo("provincia", "Provincia (sigla)", extra='maxlength="2"') }}
+      <label>Regione
+        <select name="regione" {% if errori.get("regione") %}aria-invalid="true"{% endif %}>
+          <option value="">—</option>
+          {% for r in regioni %}<option value="{{ r }}" {% if v.get("regione") == r %}selected{% endif %}>{{ r }}</option>{% endfor %}
+        </select>
+      </label>
+    </div>
+  </article>
+
+  {% if not azienda %}
+  <article>
+    <header><strong>Referente principale</strong> <small>(facoltativo)</small></header>
+    <div class="grid">
+      {{ campo("referente_nome", "Nome") }}
+      {{ campo("referente_cognome", "Cognome") }}
+    </div>
+    <div class="grid">
+      {{ campo("referente_email", "Email", "email") }}
+      {{ campo("referente_telefono", "Telefono", "tel") }}
+    </div>
+  </article>
+  {% endif %}
+
+  <label>Note
+    <textarea name="note" rows="3">{{ v.get("note") or "" }}</textarea>
+  </label>
+  <div class="azioni-filtri">
+    <button type="submit">Salva</button>
+    <a href="{{ '/clienti/%d' % azienda.id if azienda else '/clienti' }}" class="secondary">Annulla</a>
+  </div>
+</form>
+{% endblock %}

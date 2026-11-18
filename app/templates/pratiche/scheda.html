@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block titolo %}Pratica {{ p.codice }} · {{ NOME_APP }}{% endblock %}
+{% macro badge_fase(f) -%}
+<span class="numero-fase fase-{{ f.stato }}" title="{{ {'da_iniziare': 'Da iniziare', 'in_corso': 'In corso', 'completata': 'Completata', 'saltata': 'Saltata'}[f.stato] }}">{% if f.stato == "completata" %}✓{% elif f.stato == "saltata" %}–{% else %}{{ f.numero }}{% endif %}</span>
+{%- endmacro %}
+{% block contenuto %}
+<nav aria-label="breadcrumb"><ul><li><a href="/pratiche">Pratiche</a></li><li>{{ p.codice }}</li></ul></nav>
+
+<div class="intestazione">
+  <hgroup>
+    <h1>{{ p.codice }} · {{ p.azienda.ragione_sociale }}</h1>
+    <p>
+      {% if p.bando %}<a href="/bandi/{{ p.bando.id }}">{{ p.bando.titolo }}</a>{% else %}{{ p.bando_testo }}{% endif %}
+      · {{ etichette_stato[p.stato] }}
+      · {{ avanzamento[0] }} operazioni su {{ avanzamento[1] }} chiuse
+    </p>
+  </hgroup>
+  <div class="gruppo-pulsanti">
+    <a href="/pratiche/{{ p.id }}/riepilogo" role="button" class="secondary outline">Riepilogo</a>
+    <a href="/clienti/{{ p.azienda_id }}" role="button" class="secondary outline">Scheda cliente</a>
+  </div>
+</div>
+
+<div class="pratica">
+  <aside class="fasi" aria-label="Fasi della pratica">
+    <ol>
+      {% for f in p.fasi %}
+      <li class="{% if f.id == fase.id %}corrente{% endif %}">
+        <a href="?fase={{ f.numero }}">{{ badge_fase(f) }} <span>{{ f.nome }}</span></a>
+      </li>
+      {% endfor %}
+    </ol>
+  </aside>
+
+  <section class="contenuto-fase">
+    <article>
+      <header class="intestazione">
+        <div>
+          <strong>Fase {{ fase.numero }} · {{ fase.nome }}</strong>
+          <br><small>
+            {{ {'da_iniziare': 'Da iniziare', 'in_corso': 'In corso', 'completata': 'Completata', 'saltata': 'Saltata'}[fase.stato] }}
+            {% if fase.iniziata_il %} · iniziata il {{ fase.iniziata_il | data }}{% endif %}
+            {% if fase.completata_il %} · completata il {{ fase.completata_il | data }}{% endif %}
+          </small>
+        </div>
+        <div class="gruppo-pulsanti">
+          {% if fase.stato == "in_corso" %}
+          <form method="post" action="/pratiche/{{ p.id }}/fasi/{{ fase.id }}/azione/completa"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="piccolo">Completa la fase</button></form>
+          <form method="post" action="/pratiche/{{ p.id }}/fasi/{{ fase.id }}/azione/salta"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Salta</button></form>
+          {% else %}
+          <form method="post" action="/pratiche/{{ p.id }}/fasi/{{ fase.id }}/azione/attiva"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Rendi attiva questa fase</button></form>
+          {% endif %}
+        </div>
+      </header>
+      {% if fase.descrizione %}<p>{{ fase.descrizione }}</p>{% endif %}
+
+      {% for op in fase.operazioni %}
+      <details class="operazione op-{{ op.stato }}" id="op-{{ op.id }}" {% if op.stato == "da_fare" %}open{% endif %}>
+        <summary>
+          <span class="spunta">{% if op.stato == "fatta" %}✓{% elif op.stato == "non_applicabile" %}–{% else %}○{% endif %}</span>
+          {{ op.numero }}. {{ op.titolo }}
+          <small class="etichetta">{{ etichette_tipo[op.tipo] }}</small>
+          {% if op.scadenza and op.stato == "da_fare" %}<small class="{% if op.scadenza < oggi %}scaduta{% endif %}"> · scadenza {{ op.scadenza | data }}</small>{% endif %}
+        </summary>
+
+        {% if op.descrizione %}<p>{{ op.descrizione }}</p>{% endif %}
+
+        <form method="post" action="/pratiche/{{ p.id }}/operazioni/{{ op.id }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+          {% if op.tipo == "documenti" %}
+          <table class="checklist">
+            <thead><tr><th>Documento</th><th>Stato</th><th>Nota</th></tr></thead>
+            <tbody>
+            {% for d in op.documenti %}
+              <tr>
+                <td>{{ d.nome }}</td>
+                <td><select name="documento_{{ d.id }}" aria-label="Stato di {{ d.nome }}" class="doc-{{ d.stato }}">
+                  {% for st in stati_documento %}<option value="{{ st }}" {% if d.stato == st %}selected{% endif %}>{{ etichette_documento[st] }}</option>{% endfor %}
+                </select></td>
+                <td><input name="documento_nota_{{ d.id }}" value="{{ d.nota or '' }}" aria-label="Nota su {{ d.nome }}"></td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          <input name="nuovo_documento" placeholder="Aggiungi un documento alla checklist" aria-label="Nuovo documento">
+          {% endif %}
+
+          {% if op.tipo == "dati" %}
+          {% for dato in op.dati %}
+          <label>{{ dato.etichetta }}<input name="dato_{{ dato.id }}" value="{{ dato.valore or '' }}"></label>
+          {% endfor %}
+          {% endif %}
+
+          {% if op.tipo == "comunicazione" %}
+          {% set em = email.get(op.id) %}
+          <div class="comunicazione">
+            <p><small>Anteprima con i dati della pratica. Destinatario: {% if referente and referente.email %}{{ referente.nome_completo }} &lt;{{ referente.email }}&gt;{% else %}<em>nessun referente con email, aggiungilo nella scheda cliente</em>{% endif %}</small></p>
+            <p><strong>{{ em[0] }}</strong></p>
+            <pre class="testo-email" id="email-{{ op.id }}">{{ em[1] }}</pre>
+            <div class="gruppo-pulsanti">
+              <button type="button" class="secondary outline piccolo" data-copia="email-{{ op.id }}">Copia il testo</button>
+              {% if referente and referente.email %}
+              <a role="button" class="secondary outline piccolo" href="mailto:{{ referente.email }}?subject={{ em[0] | urlencode }}&body={{ em[1] | urlencode }}">Apri nel programma di posta</a>
+              {% endif %}
+            </div>
+            <details>
+              <summary>Modifica il testo per questa pratica</summary>
+              <label>Oggetto<input name="oggetto_email" value="{{ op.oggetto_email or '' }}"></label>
+              <label>Testo<textarea name="testo_email" rows="8">{{ op.testo_email or '' }}</textarea></label>
+              <small>Segnaposto: {ragione_sociale}, {referente}, {bando}, {codice_pratica}, {scadenza_presentazione}, {documenti_mancanti}, {responsabile}, {protocollo}.</small>
+            </details>
+          </div>
+          {% endif %}
+
+          <div class="grid">
+            <label>Scadenza<input type="date" name="scadenza" value="{{ op.scadenza.isoformat() if op.scadenza else '' }}"></label>
+            <label>Assegnata a
+              <select name="assegnata_a">
+                <option value="">Responsabile della pratica</option>
+                {% for u in utenti %}<option value="{{ u.id }}" {% if op.assegnata_a == u.id %}selected{% endif %}>{{ u.nome }}</option>{% endfor %}
+              </select>
+            </label>
+          </div>
+          <label>Note<textarea name="note" rows="2">{{ op.note or '' }}</textarea></label>
+          <button type="submit" class="piccolo">Salva</button>
+        </form>
+
+        <div class="gruppo-pulsanti azioni-operazione">
+          {% if op.stato != "fatta" %}
+          <form method="post" action="/pratiche/{{ p.id }}/operazioni/{{ op.id }}/stato"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="stato" value="fatta"><button class="piccolo">Segna come fatta</button></form>
+          {% endif %}
+          {% if op.stato != "da_fare" %}
+          <form method="post" action="/pratiche/{{ p.id }}/operazioni/{{ op.id }}/stato"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="stato" value="da_fare"><button class="secondary outline piccolo">Riapri</button></form>
+          {% endif %}
+          {% if op.stato != "non_applicabile" %}
+          <form method="post" action="/pratiche/{{ p.id }}/operazioni/{{ op.id }}/stato"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="stato" value="non_applicabile"><button class="secondary outline piccolo">Non applicabile</button></form>
+          {% endif %}
+          <form method="post" action="/pratiche/{{ p.id }}/operazioni/{{ op.id }}/elimina"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Elimina</button></form>
+        </div>
+        {% if op.completata_il %}<p><small>Completata il {{ op.completata_il | data_ora }}</small></p>{% endif %}
+      </details>
+      {% else %}
+      <p>Nessuna operazione in questa fase.</p>
+      {% endfor %}
+
+      <details>
+        <summary>Aggiungi un'operazione a questa fase</summary>
+        <form method="post" action="/pratiche/{{ p.id }}/fasi/{{ fase.id }}/operazioni">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <div class="grid">
+            <input name="titolo" placeholder="Titolo" required aria-label="Titolo">
+            <select name="tipo" aria-label="Tipo">{% for t in tipi_operazione %}<option value="{{ t }}">{{ etichette_tipo[t] }}</option>{% endfor %}</select>
+            <input type="date" name="scadenza" aria-label="Scadenza">
+          </div>
+          <button type="submit" class="piccolo">Aggiungi</button>
+        </form>
+      </details>
+    </article>
+
+    <article id="dati-pratica">
+      <header><strong>Dati della pratica</strong></header>
+      <form method="post" action="/pratiche/{{ p.id }}/dati">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="grid">
+          <label>Stato
+            <select name="stato">{% for st in stati_pratica %}<option value="{{ st }}" {% if p.stato == st %}selected{% endif %}>{{ etichette_stato[st] }}</option>{% endfor %}</select>
+          </label>
+          <label>Responsabile
+            <select name="responsabile_id">
+              <option value="">Nessuno</option>
+              {% for u in utenti %}<option value="{{ u.id }}" {% if p.responsabile_id == u.id %}selected{% endif %}>{{ u.nome }}</option>{% endfor %}
+            </select>
+          </label>
+          <label>Scadenza di presentazione<input type="date" name="scadenza_presentazione" value="{{ p.scadenza_presentazione.isoformat() if p.scadenza_presentazione else '' }}"></label>
+        </div>
+        <div class="grid">
+          <label>Importo richiesto (€)<input name="importo_richiesto" inputmode="decimal" value="{{ p.importo_richiesto if p.importo_richiesto is not none else '' }}"></label>
+          <label>Importo concesso (€)<input name="importo_concesso" inputmode="decimal" value="{{ p.importo_concesso if p.importo_concesso is not none else '' }}"></label>
+          <label>Protocollo<input name="protocollo" value="{{ p.protocollo or '' }}"></label>
+        </div>
+        <label>Nota sul cambio di stato <small>(finisce nel diario)</small><input name="nota_stato"></label>
+        <label>Note<textarea name="note" rows="3">{{ p.note or '' }}</textarea></label>
+        <button type="submit">Salva</button>
+      </form>
+    </article>
+
+    <article>
+      <header><strong>Diario</strong></header>
+      <ul class="diario">
+        {% for e in p.eventi[:30] %}
+        <li><small>{{ e.creato_il | data_ora }}{% if e.utente %} · {{ e.utente.nome }}{% endif %}</small><br>{{ e.nota }}</li>
+        {% endfor %}
+      </ul>
+    </article>
+
+    {% if utente.is_titolare %}
+    <details class="zona-pericolo">
+      <summary>Elimina la pratica</summary>
+      <form method="post" action="/pratiche/{{ p.id }}/elimina">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <p>La pratica, le sue fasi e il diario verranno eliminati definitivamente.</p>
+        <button type="submit" class="pulsante-pericolo">Elimina definitivamente</button>
+      </form>
+    </details>
+    {% endif %}
+  </section>
+</div>
+<script src="{{ url_for('static', path='js/app.js') }}" defer></script>
+{% endblock %}

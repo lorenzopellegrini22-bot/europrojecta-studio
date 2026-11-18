@@ -40,6 +40,7 @@
       {% if bando.link_domande %}<li><a href="{{ bando.link_domande }}" target="_blank" rel="noopener noreferrer">Piattaforma per le domande</a></li>{% endif %}
       {% if bando.id_rna %}<li>ID nel Registro Nazionale Aiuti: {{ bando.id_rna }}</li>{% endif %}
     </ul>
+    <a href="/pratiche/nuova?bando_id={{ bando.id }}" role="button" class="piccolo">Apri una pratica per questo bando</a>
   </article>
 </div>
 

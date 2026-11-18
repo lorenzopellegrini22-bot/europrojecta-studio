@@ -22,10 +22,14 @@ from app.auth.account import router as account_router
 from app.auth.dipendenze import CsrfNonValido, NonAutenticato, Proibito, utente_corrente
 from app.auth.router import router as auth_router
 from app.bandi.router import router as bandi_router
+from app.clienti.router import router as clienti_router
 from app.db import get_db
 from app.integrazioni import servizio as servizio_integrazioni
 from app.integrazioni.router import router as integrazioni_router
-from app.models import Bando, Fonte, FonteRun, Utente
+from app.models import Bando, Fonte, FonteRun, Pratica, Utente
+from app.models.pratiche import STATI_PRATICA_CONCLUSI
+from app.pratiche.router import router as pratiche_router
+from app.pratiche.servizio import scadenze
 from app.web import render
 
 log = logging.getLogger(__name__)
@@ -94,6 +98,8 @@ app.include_router(auth_router)
 app.include_router(account_router)
 app.include_router(integrazioni_router)
 app.include_router(bandi_router)
+app.include_router(clienti_router)
+app.include_router(pratiche_router)
 
 
 @app.get("/")
@@ -124,6 +130,12 @@ def home(
             )
         )
     fonti_in_errore = db.scalars(select(Fonte).where(Fonte.fallimenti_consecutivi >= 2)).all()
+    pratiche_attive = db.scalar(
+        select(func.count())
+        .select_from(Pratica)
+        .where(Pratica.stato.not_in(STATI_PRATICA_CONCLUSI))
+    )
+    scadenze_vicine = scadenze(db, oggi - timedelta(days=30), oggi + timedelta(days=7), utente.id)
     ultima = db.scalar(select(func.max(Fonte.ultimo_successo)))
     integrazioni = (
         [servizio_integrazioni.stato(db, c) for c in ("openai", "smtp")]
@@ -141,6 +153,9 @@ def home(
             "fonti_in_errore": fonti_in_errore,
             "ultima_raccolta": ultima,
             "integrazioni": integrazioni,
+            "pratiche_attive": pratiche_attive,
+            "scadenze_vicine": scadenze_vicine,
+            "oggi": oggi,
         },
     )
 

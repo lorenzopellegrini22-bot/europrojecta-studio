@@ -12,6 +12,7 @@ Ha tre parti:
 > - accesso sicuro (password + 2FA) e pagina *Il mio account*;
 > - **Impostazioni → Integrazioni** (chiavi API cifrate);
 > - **raccolta dei bandi nazionali da Incentivi Italia, ogni notte**, con pagine Bandi e Fonti.
+> - **clienti, pratiche a fasi da modelli** (checklist documenti, dati, email al cliente con segnaposto), **scadenzario** ed export per Excel;
 > - **fonti regionali Toscana (Sviluppo Toscana) e Lazio (Lazio Innova + Lazio Europa)**, raccolte nella stessa notte; Umbria e Marche per ora dal dataset nazionale.
 >
 > Le scelte sono in `docs/decisioni.md`, i prossimi passi in `docs/da-migliorare.md`.

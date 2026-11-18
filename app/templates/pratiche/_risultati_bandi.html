@@ -1,0 +1,14 @@
+{% if q | length < 3 %}
+{% elif not bandi %}
+<p><small>Nessun bando trovato per «{{ q }}». Puoi scriverne il nome qui sotto.</small></p>
+{% else %}
+<div class="risultati-bandi">
+  {% for b in bandi %}
+  <label>
+    <input type="radio" name="bando_id" value="{{ b.id }}">
+    {{ b.titolo }}
+    <small>— {{ b.ente or "ente non indicato" }} · {{ {"aperto": "aperto", "in_arrivo": "in arrivo", "chiuso": "chiuso", "sconosciuto": "date non note"}[b.stato] }}{% if b.data_chiusura %} · scade il {{ b.data_chiusura | data }}{% endif %}</small>
+  </label>
+  {% endfor %}
+</div>
+{% endif %}

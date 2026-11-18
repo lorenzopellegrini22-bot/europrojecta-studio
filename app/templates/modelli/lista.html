@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block titolo %}Modelli di pratica · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<hgroup>
+  <h1>Modelli di pratica</h1>
+  <p>Percorsi tipo, con fasi e operazioni, da cui nascono le pratiche. Una pratica copia il modello al momento dell'apertura: cambiare un modello non cambia le pratiche già aperte.</p>
+</hgroup>
+
+{% if not modelli %}
+<article>
+  <p>Non ci sono ancora modelli.</p>
+  {% if utente.is_titolare %}
+  <form method="post" action="/modelli/esempio">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit">Carica i 3 modelli di esempio</button>
+    <small>Contributo a fondo perduto, voucher a sportello e finanziamento agevolato. Poi puoi modificarli.</small>
+  </form>
+  {% endif %}
+</article>
+{% else %}
+<div class="overflow-auto">
+<table class="striped">
+  <thead><tr><th>Nome</th><th>Fasi</th><th>Operazioni</th><th>Pratiche</th><th>Stato</th></tr></thead>
+  <tbody>
+  {% for m in modelli %}
+    <tr>
+      <td><a href="/modelli/{{ m.id }}">{{ m.nome }}</a>{% if m.descrizione %}<br><small>{{ m.descrizione | truncate(120) }}</small>{% endif %}</td>
+      <td>{{ m.fasi | length }}</td>
+      <td>{{ m.fasi | map(attribute="operazioni") | map("length") | sum }}</td>
+      <td>{{ uso.get(m.id, 0) }}</td>
+      <td>{{ "Attivo" if m.attivo else "Non attivo" }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+
+{% if utente.is_titolare %}
+<details>
+  <summary>Nuovo modello vuoto</summary>
+  <form method="post" action="/modelli/nuovo">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input name="nome" placeholder="Nome del modello (es. Bando Digitalizzazione 2026)" required aria-label="Nome">
+    <textarea name="descrizione" placeholder="Descrizione (facoltativa)" rows="2" aria-label="Descrizione"></textarea>
+    <button type="submit">Crea</button>
+  </form>
+</details>
+{% if modelli %}
+<form method="post" action="/modelli/esempio">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <button type="submit" class="secondary outline piccolo">Aggiungi i modelli di esempio mancanti</button>
+</form>
+{% endif %}
+{% endif %}
+{% endblock %}
