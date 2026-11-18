@@ -27,6 +27,10 @@ class Settings(BaseSettings):
 
     log_level: str = "INFO"
 
+    # Indirizzo pubblico dell'app (link nelle email: disiscrizione, schede). In produzione
+    # https://<dominio>.
+    url_pubblico: str = "http://localhost:8000"
+
     # Fuso orario per i job pianificati (raccolta notturna, email del mattino).
     fuso_orario: str = "Europe/Rome"
 

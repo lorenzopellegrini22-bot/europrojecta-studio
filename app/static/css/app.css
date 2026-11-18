@@ -342,3 +342,8 @@ form.feedback { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap
 .avviso-sessione[hidden] { display: none; }
 
 .riga-errore td { background: color-mix(in srgb, var(--ep-errore) 8%, transparent); }
+
+.testo-messaggio { white-space: pre-wrap; font-family: inherit; background: none; padding: 0; }
+.pagina-stretta { max-width: 36rem; margin: 3rem auto; }
+nav.schede { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+nav.schede a[aria-current] { font-weight: bold; text-decoration: underline; }

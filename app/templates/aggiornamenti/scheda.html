@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block titolo %}Aggiornamento per {{ ag.azienda.ragione_sociale }} · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<nav aria-label="breadcrumb"><ul><li><a href="/aggiornamenti">Aggiornamenti</a></li><li><a href="/clienti/{{ ag.azienda_id }}">{{ ag.azienda.ragione_sociale }}</a></li><li>{{ etichette[ag.stato] }}</li></ul></nav>
+<h1>Aggiornamento per {{ ag.azienda.ragione_sociale }}</h1>
+{% if msg %}<div class="messaggio {{ 'ok' if esito == 'ok' else 'errore' }}" role="status">{{ msg }}</div>{% endif %}
+{% if ag.errore %}<div class="messaggio errore">Ultimo tentativo non riuscito: {{ ag.errore }}</div>{% endif %}
+
+<div class="grid">
+{% if ag.stato == "inviato" %}
+  <article>
+    <header>Inviato il {{ ag.inviato_il | data_ora }} via {{ "email" if ag.canale == "email" else "WhatsApp" }} a {{ ag.referente.nome_completo if ag.referente else "—" }}</header>
+    <p><strong>{{ anteprima_oggetto }}</strong></p>
+    <pre class="testo-messaggio">{{ anteprima }}</pre>
+  </article>
+{% else %}
+  <form method="post" action="/aggiornamenti/{{ ag.id }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Destinatario
+      <select name="referente_canale">
+        {% for r in referenti %}
+          {% if r.consenso_email and r.email %}<option value="{{ r.id }}:email" {% if ag.referente_id == r.id and ag.canale == "email" %}selected{% endif %}>{{ r.nome_completo }} · email {{ r.email }}</option>{% endif %}
+          {% if r.consenso_whatsapp and r.telefono %}<option value="{{ r.id }}:whatsapp" {% if ag.referente_id == r.id and ag.canale == "whatsapp" %}selected{% endif %}>{{ r.nome_completo }} · WhatsApp {{ r.telefono }}</option>{% endif %}
+        {% endfor %}
+      </select>
+    </label>
+    <label>Oggetto (solo email)<input name="oggetto" value="{{ ag.oggetto }}"></label>
+    <label>Testo
+      <textarea name="testo" rows="16">{{ ag.testo }}</textarea>
+      <small>Puoi usare {nome_referente}, {ragione_sociale} e {nome_consulente}: vengono sostituiti al momento dell'invio. Per WhatsApp il testo va nel modello approvato da Meta.</small>
+    </label>
+    <div class="gruppo-pulsanti">
+      <button name="azione" value="invia">Approva e invia</button>
+      <button name="azione" value="salva" class="secondary">Salva la bozza</button>
+      <button name="azione" value="scarta" class="secondary outline">Scarta</button>
+    </div>
+  </form>
+  <article>
+    <header>Anteprima di come arriva</header>
+    <p><strong>{{ anteprima_oggetto }}</strong></p>
+    <pre class="testo-messaggio">{{ anteprima }}</pre>
+  </article>
+{% endif %}
+</div>
+{% endblock %}

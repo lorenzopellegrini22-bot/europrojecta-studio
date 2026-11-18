@@ -68,3 +68,17 @@ def engine_test(url_db_test: str) -> Iterator[Engine]:
     yield engine
     engine.dispose()
     get_engine().dispose()
+
+
+@pytest.fixture(autouse=True)
+def niente_smtp_reale(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Nessun test deve aprire connessioni SMTP vere (brief: nessuna chiamata di rete).
+    I test che inviano email sostituiscono app.comunicazioni.invia; se qualcosa arriva fin
+    qui, la connessione fallisce subito invece di aspettare il timeout."""
+    import smtplib
+
+    def rifiuta(*_a: object, **_k: object) -> None:
+        raise OSError("connessione SMTP bloccata nei test")
+
+    monkeypatch.setattr(smtplib, "SMTP", rifiuta)
+    monkeypatch.setattr(smtplib, "SMTP_SSL", rifiuta)

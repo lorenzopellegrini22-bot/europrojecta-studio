@@ -10,7 +10,8 @@ from tests.integration.conftest import PASSWORD, codice_totp, csrf
 
 pytestmark = pytest.mark.integration
 
-ROUTE_PUBBLICHE = {"/login", "/health"}
+# /disiscrizione: link nelle email ai clienti, protetto dal token firmato
+ROUTE_PUBBLICHE = {"/login", "/health", "/disiscrizione/{token}"}
 
 
 def _tutte_le_route(routes) -> list[APIRoute]:

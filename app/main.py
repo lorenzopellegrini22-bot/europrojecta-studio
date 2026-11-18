@@ -18,6 +18,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app import NOME_APP
+from app.aggiornamenti.router import router as aggiornamenti_router
 from app.appalti.router import router as appalti_router
 from app.auth.account import router as account_router
 from app.auth.dipendenze import CsrfNonValido, NonAutenticato, Proibito, utente_corrente
@@ -110,6 +111,7 @@ app.include_router(account_router)
 app.include_router(integrazioni_router)
 app.include_router(bandi_router)
 app.include_router(crm_router)
+app.include_router(aggiornamenti_router)
 app.include_router(import_router)
 app.include_router(export_router)
 app.include_router(clienti_router)

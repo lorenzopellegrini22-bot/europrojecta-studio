@@ -133,10 +133,13 @@ def test_estrazione_completa(client, crea_utente, accedi, db, ai_pronta):
     accedi(utente)
     b = _bando_senza_date(db)
     assert "regime" in b.requisiti.da_verificare
+    # Il database dei test è condiviso: altri bandi aperti possono essere in coda
+    db.get(ImpostazioniAI, 1).estrazioni_per_notte = 2000
+    db.commit()
     finto = ClientFinto()
     esito = servizio.esegui(db, client=finto, oggi=date(2026, 11, 18))
     assert "bandi strutturati" in esito
-    chiamata = finto.chiamate[0]
+    chiamata = next(c for c in finto.chiamate if DESCRIZIONE in c["input"])
     assert chiamata["model"] == "modello-prova"
     assert chiamata["text"]["format"]["strict"] is True
     assert DESCRIZIONE in chiamata["input"]
@@ -154,7 +157,7 @@ def test_estrazione_completa(client, crea_utente, accedi, db, ai_pronta):
     assert b.stato == "in_arrivo"
     assert "date" not in (req.da_verificare or [])
     # costo: 2000 × 2 €/M + 500 × 8 €/M = 0,008 €
-    uso = db.scalar(select(UsoLLM).where(UsoLLM.operazione == "estrazione"))
+    uso = db.scalar(select(UsoLLM).where(UsoLLM.operazione == "estrazione").limit(1))
     assert uso.costo_stimato == Decimal("0.0080")
     # una seconda esecuzione non rifà lo stesso bando (input invariato)
     finto2 = ClientFinto()

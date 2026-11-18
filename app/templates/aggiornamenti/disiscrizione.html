@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block titolo %}Aggiornamenti · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<article class="pagina-stretta">
+  {% if not valido %}
+  <h1>Link non valido</h1>
+  <p>Il link non è valido o è incompleto. Per non ricevere più aggiornamenti puoi rispondere all'ultima email del tuo consulente.</p>
+  {% elif fatto %}
+  <h1>Fatto</h1>
+  <p>Non riceverai più aggiornamenti periodici. Se cambi idea, chiedi al tuo consulente.</p>
+  {% else %}
+  <h1>Non ricevere più gli aggiornamenti</h1>
+  <p>Confermi di non voler più ricevere gli aggiornamenti periodici del tuo consulente su bandi e pratiche?</p>
+  <form method="post" action="/disiscrizione/{{ token }}">
+    <button type="submit">Sì, non inviarmeli più</button>
+  </form>
+  {% endif %}
+</article>
+{% endblock %}

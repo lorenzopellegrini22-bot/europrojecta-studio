@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block titolo %}Aggiornamenti ai clienti · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<div class="intestazione">
+  <hgroup>
+    <h1>Aggiornamenti ai clienti</h1>
+    <p>Messaggi periodici ai tuoi clienti, per email o WhatsApp, con i bandi che hai scelto per loro e lo stato delle pratiche. Nessun messaggio parte senza la tua approvazione.</p>
+  </hgroup>
+  <form method="post" action="/aggiornamenti/genera">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label class="casella"><input type="checkbox" name="usa_ai" value="1"> Scrivi i testi con l'AI</label>
+    <button class="secondary outline piccolo">Prepara le bozze per tutti i clienti attivi</button>
+  </form>
+</div>
+{% if msg %}<div class="messaggio {{ 'ok' if esito == 'ok' else 'errore' }}" role="status">{{ msg }}</div>{% endif %}
+
+<details class="guida">
+  <summary><span class="icona-info" aria-hidden="true">i</span> Come funzionano</summary>
+  <ul>
+    <li>Le bozze si creano da sole per i clienti con aggiornamenti «ogni settimana» o «ogni mese» (scheda cliente → Modifica), oppure quando vuoi con il pulsante qui sopra.</li>
+    <li>Partono solo ai referenti che hanno dato il consenso per quel canale (scheda cliente → Referenti → Consensi). Chi si disiscrive dal link nell'email non riceve più nulla.</li>
+    <li>Con l'AI il testo viene riscritto in modo più naturale: all'AI arriva solo il testo con i segnaposto, mai i nomi del cliente o dei referenti.</li>
+  </ul>
+</details>
+
+<nav class="schede">
+  {% for k, e in etichette.items() %}<a href="/aggiornamenti?stato={{ k }}" {% if stato == k %}aria-current="page"{% endif %}>{{ e }}</a>{% endfor %}
+  <a href="/aggiornamenti?stato=tutti" {% if stato == "tutti" %}aria-current="page"{% endif %}>Tutti</a>
+</nav>
+
+{% if not elenco %}
+<article><p>Nessun aggiornamento {{ etichette.get(stato, "") | lower }}.</p></article>
+{% else %}
+<form method="post" action="/aggiornamenti-approva">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <div class="overflow-auto">
+  <table class="striped">
+    <thead><tr><th></th><th>Cliente</th><th>Destinatario</th><th>Canale</th><th>Stato</th><th>Creato il</th></tr></thead>
+    <tbody>
+    {% for ag in elenco %}
+    <tr>
+      <td>{% if ag.stato in ("bozza", "errore") %}<input type="checkbox" name="ids" value="{{ ag.id }}" aria-label="Seleziona">{% endif %}</td>
+      <td><a href="/aggiornamenti/{{ ag.id }}">{{ ag.azienda.ragione_sociale }}</a>{% if ag.generato_con_ai %} <small class="etichetta">AI</small>{% endif %}</td>
+      <td>{{ ag.referente.nome_completo if ag.referente else "—" }}</td>
+      <td>{{ "Email" if ag.canale == "email" else "WhatsApp" }}</td>
+      <td>{{ etichette[ag.stato] }}{% if ag.errore %}<br><small class="errore-campo">{{ ag.errore | truncate(80) }}</small>{% endif %}</td>
+      <td>{{ ag.creato_il | data_ora }}{% if ag.inviato_il %}<br><small>inviato {{ ag.inviato_il | data_ora }}</small>{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% if stato in ("bozza", "errore") %}<button type="submit">Approva e invia i selezionati</button> <small>Rileggi prima ogni bozza aprendola.</small>{% endif %}
+</form>
+{% endif %}
+{% endblock %}

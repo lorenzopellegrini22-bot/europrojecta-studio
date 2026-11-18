@@ -187,12 +187,37 @@ WHATSAPP = TipoIntegrazione(
             aiuto="Token permanente di un utente di sistema.",
             variabile_ambiente="WHATSAPP_ACCESS_TOKEN",
         ),
+        Campo(
+            "nome_modello",
+            "Nome del modello di messaggio approvato",
+            aiuto=(
+                "Il modello (template) creato e approvato in WhatsApp Manager per gli "
+                "aggiornamenti, con due variabili nel testo: {{1}} = nome del referente, "
+                "{{2}} = testo dell'aggiornamento."
+            ),
+            variabile_ambiente="WHATSAPP_NOME_MODELLO",
+        ),
+        Campo(
+            "lingua_modello",
+            "Lingua del modello",
+            obbligatorio=False,
+            predefinito="it",
+            aiuto="Codice della lingua con cui il modello è stato approvato (es. it).",
+        ),
+        Campo(
+            "versione_api",
+            "Versione della Graph API",
+            obbligatorio=False,
+            predefinito="v27.0",
+            aiuto="Quella indicata negli esempi della documentazione Meta (es. v27.0).",
+        ),
     ),
     verificabile=False,
     note=(
         "I messaggi avviati dall'azienda richiedono template approvati da Meta e hanno un costo "
         "per messaggio, addebitato all'account del consulente.",
-        "La verifica della connessione arriverà con il canale WhatsApp (fase 5).",
+        "Ogni invio va approvato nella pagina Aggiornamenti ai clienti; parte solo ai referenti "
+        "con il consenso WhatsApp registrato.",
     ),
     guida=(
         "Serve un account Meta Business verificato e un'app di tipo «Business» su Meta for "
@@ -202,7 +227,10 @@ WHATSAPP = TipoIntegrazione(
         "Per il token crea un utente di sistema in Business Manager (Impostazioni → Utenti di "
         "sistema), assegnagli l'app e genera un token permanente con i permessi "
         "whatsapp_business_messaging e whatsapp_business_management.",
-        "Copia i tre valori qui e salva. L'invio dei messaggi arriverà con il canale WhatsApp.",
+        "In WhatsApp Manager crea un modello di categoria «Utilità» o «Marketing» in italiano, "
+        "con testo simile a: «Buongiorno {{1}}, ecco gli aggiornamenti dal suo consulente: "
+        "{{2}}». Quando Meta lo approva, scrivi qui il suo nome.",
+        "Copia i valori qui e salva.",
     ),
     link_guida=(
         (

@@ -19,6 +19,7 @@ from app.models.crm_esteso import (
     REGOLAMENTI_DE_MINIMIS,
     STATI_PROGETTO,
     TIPI_ATTIVITA,
+    AggiornamentoCliente,
     AiutoDeMinimis,
     Attivita,
     Progetto,
@@ -339,6 +340,14 @@ def dati_scheda(db: Session, a: Azienda) -> dict[str, Any]:
             )
         ),
         "aiuti": aiuti,
+        "aggiornamenti": list(
+            db.scalars(
+                select(AggiornamentoCliente)
+                .where(AggiornamentoCliente.azienda_id == a.id)
+                .order_by(AggiornamentoCliente.creato_il.desc())
+                .limit(20)
+            )
+        ),
         "plafond": plafond_residuo(aiuti, "generale", a.plafond_de_minimis_manuale),
         "dimensione": dimensione,
         "dimensione_provenienza": provenienza,

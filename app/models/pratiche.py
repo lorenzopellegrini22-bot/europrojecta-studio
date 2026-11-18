@@ -278,7 +278,15 @@ class PraticaEvento(Base):
 # --- Allegati, prefattibilità, email inviate ----------------------------------------------
 
 ESITI_PREFATTIBILITA = ("da_valutare", "fattibile", "fattibile_con_riserva", "non_fattibile")
-TIPI_NOTIFICA = ("comunicazione_pratica", "promemoria", "prova", "opportunita")
+TIPI_NOTIFICA = (
+    "comunicazione_pratica",
+    "promemoria",
+    "prova",
+    "opportunita",
+    "aggiornamento_cliente",
+    "riepilogo_mattutino",
+    "avviso",
+)
 
 
 class Allegato(ConTimestamp, Base):

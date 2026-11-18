@@ -87,6 +87,18 @@
 {% if messaggio_crm %}<div class="messaggio errore" role="alert">{{ messaggio_crm }}</div>{% endif %}
 {% include "clienti/_crm.html" %}
 
+<section id="aggiornamenti">
+  <h2>Aggiornamenti al cliente</h2>
+  <form method="post" action="/clienti/{{ azienda.id }}/aggiornamenti" class="in-linea">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="secondary outline piccolo">Prepara un aggiornamento</button>
+    <label class="casella"><input type="checkbox" name="usa_ai" value="1"> con l'AI</label>
+  </form>
+  {% if aggiornamenti %}
+  <ul>{% for ag in aggiornamenti %}<li><a href="/aggiornamenti/{{ ag.id }}">{{ ag.creato_il | data_ora }}</a> · {{ "email" if ag.canale == "email" else "WhatsApp" }} · {{ {"bozza": "bozza", "approvato": "approvato", "inviato": "inviato il " ~ (ag.inviato_il | data_ora), "errore": "non inviato", "scartato": "scartato"}[ag.stato] }}</li>{% endfor %}</ul>
+  {% else %}<p><small>Nessun aggiornamento inviato.</small></p>{% endif %}
+</section>
+
 <section id="opportunita">
   <h2>Opportunità</h2>
   {% if not azienda.avvisi_attivi %}
