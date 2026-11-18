@@ -48,6 +48,23 @@ def raccolta_bandi(forza: bool = False, solo: str | None = None) -> str:
     return riepilogo
 
 
+def riferimenti_istat() -> str:
+    """Ogni mese: ricarica comuni e raccordo ATECO dai file ufficiali ISTAT, poi riconosce
+    il comune delle sedi che non hanno ancora il codice ISTAT."""
+    from app.models import Sede
+    from app.riferimenti import istat, territorio
+
+    with get_sessionmaker()() as db:
+        esito = istat.aggiorna(db)
+        t = territorio.in_memoria(db)
+        riconosciute = sum(
+            territorio.completa_sede(t, s)
+            for s in db.scalars(select(Sede).where(Sede.comune_testo.is_not(None)))
+        )
+        db.commit()
+    return f"{esito} Sedi con comune riconosciuto: {riconosciute}."
+
+
 def avviso_fonti() -> int:
     """Email ai titolari quando una fonte arriva a N fallimenti consecutivi (brief: default 2).
     Parte una volta sola, quando il contatore raggiunge la soglia."""

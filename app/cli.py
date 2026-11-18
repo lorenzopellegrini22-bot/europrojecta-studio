@@ -101,6 +101,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("collega-doppioni", help="collega i bandi doppi tra fonte nazionale e regionali")
 
     sub.add_parser("ruota-chiavi", help="ricifra i segreti con la SECRET_KEY attuale")
+    sub.add_parser("carica-istat", help="scarica e carica comuni e raccordo ATECO (ISTAT)")
     p = sub.add_parser(
         "collaudo-prepara", help="prepara il file del collaudo (20 bandi, 10 aziende)"
     )
@@ -131,6 +132,11 @@ def main(argv: list[str] | None = None) -> int:
         esito = "SUPERATO" if risultato.superato else "NON SUPERATO"
         print(f"Report scritto in {args.report}: {esito}")
         return 0 if risultato.superato else 1
+    if args.comando == "carica-istat":
+        from app.jobs import attivita as job
+
+        print(job.riferimenti_istat())
+        return 0
     if args.comando == "ruota-chiavi":
         from app.db import get_sessionmaker
         from app.sicurezza.rotazione import ruota

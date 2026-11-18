@@ -40,6 +40,16 @@ def battito() -> None:
     log.info("battito: database raggiungibile")
 
 
+def istat_mancante() -> bool:
+    from sqlalchemy import select
+
+    from app.db import get_sessionmaker
+    from app.models import Comune
+
+    with get_sessionmaker()() as db:
+        return db.scalar(select(Comune.codice_istat).limit(1)) is None
+
+
 def job_raccolta() -> None:
     esegui_job("raccolta_bandi", attivita.raccolta_bandi)
 
@@ -62,6 +72,10 @@ def job_opportunita() -> None:
 
 def job_appalti() -> None:
     esegui_job("raccolta_appalti", attivita.raccolta_appalti)
+
+
+def job_istat() -> None:
+    esegui_job("riferimenti_istat", attivita.riferimenti_istat)
 
 
 def job_promemoria() -> None:
@@ -122,6 +136,13 @@ def crea_scheduler() -> BlockingScheduler:
     scheduler.add_job(
         job_promemoria, _cron(settings.promemoria_orario, fuso), id="promemoria", **notturno
     )
+    # Tabelle ISTAT (comuni, raccordo ATECO): il primo giorno del mese
+    scheduler.add_job(
+        job_istat,
+        CronTrigger(day=1, hour=3, minute=40, timezone=fuso),
+        id="riferimenti_istat",
+        **notturno,
+    )
     scheduler.add_job(battito, "interval", minutes=15, id="battito")
     return scheduler
 
@@ -133,6 +154,9 @@ def main() -> None:
     if raccolta_mai_riuscita():
         log.info("Prima raccolta mai eseguita: la avvio subito")
         scheduler.add_job(job_raccolta, "date", run_date=datetime.now(), id="raccolta_iniziale")
+    if istat_mancante():
+        log.info("Tabelle ISTAT vuote: le carico subito")
+        scheduler.add_job(job_istat, "date", run_date=datetime.now(), id="istat_iniziale")
     for job in scheduler.get_jobs():
         log.info("Job pianificato: %s (%s)", job.id, job.trigger)
     battito()

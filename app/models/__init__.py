@@ -34,8 +34,11 @@ from app.models.pratiche import (
     PraticaOperazione,
     Prefattibilita,
 )
+from app.models.riferimenti import AtecoRaccordo, Comune
 
 __all__ = [
+    "AtecoRaccordo",
+    "Comune",
     "AggiornamentoCliente",
     "AiutoDeMinimis",
     "Attivita",

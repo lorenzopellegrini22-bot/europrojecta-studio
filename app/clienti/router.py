@@ -215,6 +215,14 @@ def _valori_da_azienda(a: Azienda) -> dict[str, Any]:
     return v
 
 
+def _riconosci_comune(db: Session, azienda: Azienda) -> None:
+    """Codice ISTAT del comune della sede (e provincia/regione se mancano)."""
+    from app.riferimenti.territorio import completa_sede, in_memoria
+
+    if azienda.sede_legale is not None:
+        completa_sede(in_memoria(db), azienda.sede_legale)
+
+
 def _applica_tag(db: Session, azienda: Azienda, testo_tag: str) -> None:
     """Tag separati da virgola; quelli nuovi si creano."""
     nomi = []
@@ -438,6 +446,7 @@ def crea(request: Request, db: Db, utente: Autenticato, form: Form) -> Response:
         return _form(request, db, None, v, errori)
     azienda = Azienda(ragione_sociale=v["ragione_sociale"])
     _applica(azienda, v)
+    _riconosci_comune(db, azienda)
     db.add(azienda)
     _applica_tag(db, azienda, v["tag_testo"])
     db.flush()
@@ -514,6 +523,7 @@ def salva(request: Request, azienda_id: int, db: Db, utente: Autenticato, form: 
     if errori:
         return _form(request, db, a, v, errori)
     differenze = _applica(a, v)
+    _riconosci_comune(db, a)
     prima = [t.nome for t in a.tag]
     _applica_tag(db, a, v["tag_testo"])
     if [t.nome for t in a.tag] != prima:

@@ -334,6 +334,9 @@ def _applica(db: Session, a: Azienda, v: dict[str, Any]) -> None:
         ):
             if campo in v:
                 setattr(sede, attr, v[campo])
+        from app.riferimenti.territorio import completa_sede, in_memoria
+
+        completa_sede(in_memoria(db), sede)
     if v.get("ateco"):
         codice = v["ateco"]
         for x in a.ateco:

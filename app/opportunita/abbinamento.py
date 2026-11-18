@@ -102,6 +102,8 @@ class Contesto:
     aiuti: list[Any] = field(default_factory=list)
     progetti: list[Any] = field(default_factory=list)
     oggi: date | None = None
+    territorio: Any = None  # app.riferimenti.territorio.Territorio (tabella ISTAT), se caricata
+    raccordo: Any = None  # app.riferimenti.ateco.Raccordo (ATECO 2007/2025), se caricato
 
 
 class Escluso(Exception):
@@ -184,13 +186,22 @@ def _valuta(a: Azienda, b: Bando, ctx: Contesto) -> Esito:
     sede = a.sede_legale.regione if a.sede_legale else None
     comune = a.sede_legale.comune_testo if a.sede_legale else None
     if req.territorio == "comunale" and req.comuni and comune:
-        from app.utils.ricerca import normalizza
-
-        if normalizza(comune) not in {normalizza(c) for c in req.comuni}:
+        if not _comune_ammesso(a.sede_legale, req.comuni, ctx):
             raise Escluso(f"Bando per altri comuni ({', '.join(req.comuni[:3])})")
         e.soddisfatti.append(f"Bando per il comune della sede ({comune})")
         e.punteggio += 20
         return _altri_filtri(a, req, b, e, ctx)
+    # Bando provinciale: con la tabella ISTAT le province si confrontano per sigla
+    province = getattr(req, "province", None)
+    sigla_sede = getattr(a.sede_legale, "provincia", None) if a.sede_legale else None
+    if req.territorio == "provinciale" and province and sigla_sede and ctx.territorio:
+        sigle = {ctx.territorio.sigla(p) for p in province}
+        if None not in sigle:
+            if sigla_sede.upper() not in sigle:
+                raise Escluso(f"Bando per altre province ({', '.join(province[:3])})")
+            e.soddisfatti.append(f"Bando per la provincia della sede ({sigla_sede.upper()})")
+            e.punteggio += 15
+            return _altri_filtri(a, req, b, e, ctx)
     if req.territorio == "nazionale":
         e.soddisfatti.append("Bando nazionale")
         e.punteggio += 5
@@ -235,6 +246,28 @@ def ente_locale(b: Bando) -> str | None:
     return None
 
 
+def _comune_ammesso(sede: Any, comuni: list[str], ctx: Contesto) -> bool:
+    """Il comune della sede è tra quelli del bando? Con la tabella ISTAT si confrontano i
+    codici (nomi scritti in modi diversi, omonimi in province diverse); i nomi del bando non
+    riconosciuti si confrontano per nome, come prima."""
+    from app.riferimenti.istat import norm_nome
+
+    t = ctx.territorio
+    codice = getattr(sede, "codice_istat", None)
+    if t is not None and not codice:
+        voce = t.comune(sede.comune_testo, getattr(sede, "provincia", None))
+        codice = voce.codice if voce else None
+    nome_sede = norm_nome(sede.comune_testo)
+    for nome in comuni:
+        codici = t.codici(nome) if t is not None else None
+        if codici and codice:
+            if codice in codici:
+                return True
+        elif norm_nome(nome) == nome_sede:
+            return True
+    return False
+
+
 def _altri_filtri(a: Azienda, req: Any, b: Bando, e: Esito, ctx: Contesto) -> Esito:
     from app.utils.impresa import anzianita_mesi, dimensione_calcolata, plafond_residuo
 
@@ -259,20 +292,37 @@ def _altri_filtri(a: Azienda, req: Any, b: Bando, e: Esito, ctx: Contesto) -> Es
         else:
             nota = f" (stimata: {stimata})" if stimata else ""
             e.da_verificare.append(f"Dimensioni ammesse: {', '.join(req.dimensioni)}{nota}")
+    from app.riferimenti.ateco import confronta
+
+    primario = a.ateco_primario
+    versione_az = getattr(primario, "versione", None) if primario is not None else None
+    versione_bando = getattr(req, "ateco_versione", None)
     if req.ateco_ammessi:
-        primario = a.ateco_primario
         if primario is None:
             e.da_verificare.append("Il bando ammette solo alcuni ATECO: manca quello del cliente")
             e.punteggio -= 5
-        elif _ateco_ok(primario.codice, req.ateco_ammessi):
-            e.soddisfatti.append(f"ATECO {primario.codice} tra gli ammessi")
-            e.punteggio += 20
         else:
-            raise Escluso(f"ATECO {primario.codice} non tra gli ammessi")
-    primario = a.ateco_primario
+            esito = confronta(
+                primario.codice, versione_az, req.ateco_ammessi, versione_bando, ctx.raccordo
+            )
+            if esito == "si":
+                e.soddisfatti.append(f"ATECO {primario.codice} tra gli ammessi")
+                e.punteggio += 20
+            elif esito == "forse":
+                e.da_verificare.append(
+                    f"ATECO {primario.codice}: verificare con il raccordo ATECO 2007/2025"
+                )
+            else:
+                raise Escluso(f"ATECO {primario.codice} non tra gli ammessi")
     esclusi = getattr(req, "ateco_esclusi", None)
-    if esclusi and primario is not None and _ateco_ok(primario.codice, esclusi):
-        raise Escluso(f"ATECO {primario.codice} escluso dal bando")
+    if esclusi and primario is not None:
+        esito = confronta(primario.codice, versione_az, esclusi, versione_bando, ctx.raccordo)
+        if esito == "si":
+            raise Escluso(f"ATECO {primario.codice} escluso dal bando")
+        if esito == "forse":
+            e.da_verificare.append(
+                f"ATECO {primario.codice} forse tra gli esclusi (raccordo ATECO 2007/2025)"
+            )
     # Forma giuridica: solo quando il bando è esplicito e le forme sono riconosciute
     forme = getattr(req, "forme_giuridiche", None)
     if forme:
@@ -481,6 +531,11 @@ def abbina(db: Session, oggi: date | None = None) -> str:
             )
         )
     )
+    from app.riferimenti import ateco as rif_ateco
+    from app.riferimenti import territorio as rif_territorio
+
+    territorio = rif_territorio.in_memoria(db)
+    raccordo = rif_ateco.in_memoria(db)
     totale_nuove = 0
     for a in clienti:
         esistenti = {
@@ -491,6 +546,8 @@ def abbina(db: Session, oggi: date | None = None) -> str:
             aiuti=list(db.scalars(select(AiutoDeMinimis).where(AiutoDeMinimis.azienda_id == a.id))),
             progetti=list(db.scalars(select(Progetto).where(Progetto.azienda_id == a.id))),
             oggi=oggi,
+            territorio=territorio,
+            raccordo=raccordo,
         )
         trovate_b = [
             ("bando", b.id, es) for b in bandi if (es := valuta_bando(a, b, ctx)) is not None
