@@ -114,3 +114,60 @@ def test_appalti():
     # profilo vuoto: nessun appalto
     vuoto = _cliente(soa_possedute=None, cpv_interesse=None)
     assert valuta_appalto(vuoto, _appalto(), regioni_cliente(vuoto)) is None
+
+
+def test_nuovi_filtri_con_motivo_di_esclusione():
+    from app.opportunita.abbinamento import Contesto, famiglia_forma, valuta_bando_con_motivo
+
+    oggi = date(2026, 11, 18)
+    c = _cliente(
+        dimensione_manuale=None,
+        dipendenti=8,
+        fatturato=Decimal("900000"),
+        totale_attivo=None,
+        forma_giuridica="S.r.l.",
+        data_costituzione=date(2025, 6, 1),
+        plafond_de_minimis_manuale=None,
+    )
+    # dimensione stimata: non esclude mai, al massimo «da verificare»
+    es, motivo = valuta_bando_con_motivo(c, _bando(dimensioni=["media"]), Contesto(oggi=oggi))
+    assert es is not None and motivo is None
+    assert any("stimata: micro" in m for m in es.da_verificare)
+    # anzianità: costituita da 17 mesi
+    _, motivo = valuta_bando_con_motivo(c, _bando(anzianita_max_mesi=12), Contesto(oggi=oggi))
+    assert motivo and "al massimo 12" in motivo
+    es, _ = valuta_bando_con_motivo(c, _bando(anzianita_max_mesi=36), Contesto(oggi=oggi))
+    assert any("Anzianità compatibile" in m for m in es.soddisfatti)
+    senza_data = _cliente(data_costituzione=None)
+    es, _ = valuta_bando_con_motivo(senza_data, _bando(anzianita_max_mesi=12), Contesto(oggi=oggi))
+    assert any("manca la data" in m for m in es.da_verificare)
+    # forma giuridica: esclude solo se entrambe riconosciute
+    assert famiglia_forma("Società a responsabilità limitata") == "società di capitali"
+    _, motivo = valuta_bando_con_motivo(
+        c, _bando(forme_giuridiche=["Società cooperative"]), Contesto(oggi=oggi)
+    )
+    assert motivo and "Forma giuridica" in motivo
+    es, _ = valuta_bando_con_motivo(
+        c, _bando(forme_giuridiche=["Soggetti iscritti all'albo X"]), Contesto(oggi=oggi)
+    )
+    assert es is not None
+    # de minimis: plafond noto e insufficiente → escluso; non noto → da verificare
+    aiuti = [
+        N(data_concessione=date(2025, 1, 1), importo=Decimal("295000"), regolamento="generale")
+    ]
+    _, motivo = valuta_bando_con_motivo(
+        c, _bando(regime="de_minimis", importo_min=Decimal("10000")), Contesto(aiuti, oggi=oggi)
+    )
+    assert motivo and "Plafond" in motivo
+    es, _ = valuta_bando_con_motivo(
+        c, _bando(regime="de_minimis", importo_min=Decimal("10000")), Contesto(oggi=oggi)
+    )
+    assert any("plafond del cliente non noto" in m for m in es.da_verificare)
+    # progetti: spese in comune → progetto più adatto
+    progetto = N(id=7, titolo="Linea", attivo=True, categorie=["digitale e software"])
+    es, _ = valuta_bando_con_motivo(
+        c,
+        _bando(categorie_spesa=["digitale e software", "formazione"]),
+        Contesto(progetti=[progetto], oggi=oggi),
+    )
+    assert es.progetto_id == 7 and any("Linea" in m for m in es.soddisfatti)

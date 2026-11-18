@@ -56,13 +56,22 @@ def _sha(testo: str) -> str:
 # --- Testi -------------------------------------------------------------------------------
 
 
-def profilo_anonimo(a: Azienda) -> str:
-    """Solo dati non identificativi (docs/dati-in-uscita.md)."""
+def profilo_anonimo(a: Azienda, progetti: list[Any] | None = None) -> str:
+    """Solo dati non identificativi (docs/dati-in-uscita.md). Dei progetti d'investimento
+    si mandano solo descrizione, categorie di spesa e importo (mai il titolo, che potrebbe
+    contenere nomi)."""
+    from app.utils.impresa import anzianita_mesi, dimensione_effettiva
+
     righe = ["Impresa cliente (dati anonimi):"]
     if a.forma_giuridica:
         righe.append(f"- forma giuridica: {a.forma_giuridica}")
-    if a.dimensione_manuale:
-        righe.append(f"- dimensione: {a.dimensione_manuale}")
+    dimensione, provenienza = dimensione_effettiva(a)
+    if dimensione:
+        stima = " (stima)" if provenienza == "calcolata" else ""
+        righe.append(f"- dimensione: {dimensione}{stima}")
+    mesi = anzianita_mesi(getattr(a, "data_costituzione", None))
+    if mesi is not None:
+        righe.append(f"- costituita da {mesi // 12} anni e {mesi % 12} mesi")
     sede = a.sede_legale
     if sede and (sede.regione or sede.provincia):
         righe.append(
@@ -92,6 +101,16 @@ def profilo_anonimo(a: Azienda) -> str:
             "- servizi e forniture di interesse: "
             + ", ".join(DIVISIONI_CPV.get(c, c) for c in a.cpv_interesse)
         )
+    for i, pr in enumerate([p for p in progetti or [] if p.attivo][:3], start=1):
+        parti = []
+        if pr.descrizione:
+            parti.append(pr.descrizione[:600])
+        if pr.categorie:
+            parti.append("spese: " + ", ".join(pr.categorie))
+        if pr.importo_stimato:
+            parti.append(f"importo circa {int(pr.importo_stimato):,} euro".replace(",", "."))
+        if parti:
+            righe.append(f"- progetto d'investimento {i}: " + "; ".join(parti))
     return "\n".join(righe)
 
 
@@ -312,7 +331,11 @@ def esegui(db: Session, client: Any = None, oggi: date | None = None) -> str:
         )
         if not opportunita:
             continue
-        profilo = profilo_anonimo(a)
+        from app.models import Progetto
+
+        profilo = profilo_anonimo(
+            a, list(db.scalars(select(Progetto).where(Progetto.azienda_id == a.id)))
+        )
         testi = {o.id: testo_opportunita(o) for o in opportunita}
         # Similarità (se c'è il modello di embeddings), altrimenti ordine per regole
         if imp.modello_embeddings:

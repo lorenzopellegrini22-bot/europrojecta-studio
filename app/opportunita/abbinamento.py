@@ -24,7 +24,7 @@ from typing import Any
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models import Azienda, Bando
+from app.models import AiutoDeMinimis, Azienda, Bando, Progetto
 from app.models.appalti import Appalto
 from app.models.opportunita import Opportunita
 
@@ -75,6 +75,7 @@ class Esito:
     punteggio: int
     soddisfatti: list[str] = field(default_factory=list)
     da_verificare: list[str] = field(default_factory=list)
+    progetto_id: int | None = None
 
     def motivi(self) -> dict[str, list[str]]:
         return {"soddisfatti": self.soddisfatti, "da_verificare": self.da_verificare}
@@ -92,7 +93,69 @@ def _ateco_ok(codice: str, ammessi: list[str]) -> bool:
     return any(c.startswith(x.replace(".", "")) for x in ammessi)
 
 
-def valuta_bando(a: Azienda, b: Bando) -> Esito | None:
+@dataclass
+class Contesto:
+    """Dati del cliente che servono ai filtri, caricati una volta per cliente."""
+
+    aiuti: list[Any] = field(default_factory=list)
+    progetti: list[Any] = field(default_factory=list)
+    oggi: date | None = None
+
+
+class Escluso(Exception):
+    """Il bando è incompatibile: il motivo serve al collaudo (nessuna esclusione sbagliata)."""
+
+
+# Forme giuridiche: parole chiave → famiglia. Si esclude solo se entrambe le parti sono
+# riconosciute e nessuna forma del bando è della famiglia dell'azienda.
+FAMIGLIE_FORMA = (
+    (("srl", "s.r.l", "responsabilita limitata"), "società di capitali"),
+    (("spa", "s.p.a", "per azioni", "sapa", "s.a.p.a"), "società di capitali"),
+    (("societa di capitali",), "società di capitali"),
+    (("snc", "s.n.c", "nome collettivo", "sas", "s.a.s", "accomandita semplice"),
+     "società di persone"),
+    (("societa di persone", "societa semplice", "s.s."), "società di persone"),
+    (("ditta individuale", "impresa individuale", "imprenditore individuale"),
+     "impresa individuale"),
+    (("cooperativ", "soc. coop", "scarl", "s.c.a.r.l"), "cooperativa"),
+    (("consorzi",), "consorzio"),
+    (("associazion", "fondazion", "ente del terzo settore", " ets ", "onlus"), "non profit"),
+    (("libero professionista", "liberi professionisti", "professionist", "lavoratore autonomo"),
+     "professionista"),
+)  # fmt: skip
+
+
+def famiglia_forma(testo: str | None) -> str | None:
+    if not testo:
+        return None
+    from app.utils.ricerca import normalizza
+
+    t = f" {normalizza(testo)} "
+    for parole, famiglia in FAMIGLIE_FORMA:
+        if any(p in t for p in parole):
+            return famiglia
+    return None
+
+
+def valuta_bando(a: Azienda, b: Bando, contesto: Contesto | None = None) -> Esito | None:
+    """Esito dell'abbinamento, o None se il bando è incompatibile."""
+    esito, _ = valuta_bando_con_motivo(a, b, contesto)
+    return esito
+
+
+def valuta_bando_con_motivo(
+    a: Azienda, b: Bando, contesto: Contesto | None = None
+) -> tuple[Esito | None, str | None]:
+    """(esito, None) se il bando passa i filtri, (None, motivo) se viene escluso.
+    Principio: si esclude solo quando il requisito del bando è certo e il dato del cliente
+    è noto; in tutti gli altri casi il requisito è «da verificare»."""
+    try:
+        return _valuta(a, b, contesto or Contesto()), None
+    except Escluso as e:
+        return None, str(e)
+
+
+def _valuta(a: Azienda, b: Bando, ctx: Contesto) -> Esito:
     req = b.requisiti
     e = Esito(punteggio=50)
     if req is None:
@@ -102,7 +165,7 @@ def valuta_bando(a: Azienda, b: Bando) -> Esito | None:
     if req.tipologie_soggetto and not any(
         any(s in t.lower() for s in SOGGETTI_IMPRESA) for t in req.tipologie_soggetto
     ):
-        return None
+        raise Escluso("Bando non rivolto alle imprese: " + ", ".join(req.tipologie_soggetto[:3]))
     # Bandi di settore (cultura, agricoltura, turismo…): solo per chi è di quel settore
     settore = _sezione_settore(b.titolo)
     if settore:
@@ -110,7 +173,7 @@ def valuta_bando(a: Azienda, b: Bando) -> Esito | None:
         primario = a.ateco_primario
         if primario is not None:
             if primario.codice.replace(".", "")[:2] not in divisioni:
-                return None
+                raise Escluso(f"Bando per il settore {nome}, ATECO {primario.codice} diverso")
             e.soddisfatti.append(f"Bando per il settore {nome}, coerente con l'ATECO")
             e.punteggio += 10
         else:
@@ -122,10 +185,10 @@ def valuta_bando(a: Azienda, b: Bando) -> Esito | None:
         from app.utils.ricerca import normalizza
 
         if normalizza(comune) not in {normalizza(c) for c in req.comuni}:
-            return None
+            raise Escluso(f"Bando per altri comuni ({', '.join(req.comuni[:3])})")
         e.soddisfatti.append(f"Bando per il comune della sede ({comune})")
         e.punteggio += 20
-        return _dimensione_ateco(a, req, b, e)
+        return _altri_filtri(a, req, b, e, ctx)
     if req.territorio == "nazionale":
         e.soddisfatti.append("Bando nazionale")
         e.punteggio += 5
@@ -141,22 +204,37 @@ def valuta_bando(a: Azienda, b: Bando) -> Esito | None:
                 e.da_verificare.append(f"Solo alcuni comuni o province della regione {sede}")
                 e.punteggio -= 10
         else:
-            return None
+            raise Escluso(f"Bando per altre regioni ({', '.join(req.regioni[:3])})")
     else:
         e.da_verificare.append("Territorio del bando non indicato")
         e.punteggio -= 5
-    return _dimensione_ateco(a, req, b, e)
+    return _altri_filtri(a, req, b, e, ctx)
 
 
-def _dimensione_ateco(a: Azienda, req: Any, b: Bando, e: Esito) -> Esito | None:
+def _altri_filtri(a: Azienda, req: Any, b: Bando, e: Esito, ctx: Contesto) -> Esito:
+    from app.utils.impresa import anzianita_mesi, dimensione_calcolata, plafond_residuo
+
+    # Dimensione: quella manuale esclude; quella stimata (senza ULA) solo «da verificare»
     if req.dimensioni:
-        if a.dimensione_manuale:
-            if a.dimensione_manuale not in req.dimensioni:
-                return None
-            e.soddisfatti.append(f"Dimensione ammessa ({a.dimensione_manuale})")
+        manuale = a.dimensione_manuale
+        stimata = None
+        if not manuale:
+            stimata = dimensione_calcolata(
+                getattr(a, "dipendenti", None),
+                getattr(a, "fatturato", None),
+                getattr(a, "totale_attivo", None),
+            )
+        if manuale:
+            if manuale not in req.dimensioni:
+                raise Escluso(f"Dimensione {manuale} non ammessa ({', '.join(req.dimensioni)})")
+            e.soddisfatti.append(f"Dimensione ammessa ({manuale})")
             e.punteggio += 10
+        elif stimata in req.dimensioni:
+            e.soddisfatti.append(f"Dimensione stimata ammessa ({stimata})")
+            e.punteggio += 5
         else:
-            e.da_verificare.append(f"Dimensioni ammesse: {', '.join(req.dimensioni)}")
+            nota = f" (stimata: {stimata})" if stimata else ""
+            e.da_verificare.append(f"Dimensioni ammesse: {', '.join(req.dimensioni)}{nota}")
     if req.ateco_ammessi:
         primario = a.ateco_primario
         if primario is None:
@@ -166,18 +244,66 @@ def _dimensione_ateco(a: Azienda, req: Any, b: Bando, e: Esito) -> Esito | None:
             e.soddisfatti.append(f"ATECO {primario.codice} tra gli ammessi")
             e.punteggio += 20
         else:
-            return None
+            raise Escluso(f"ATECO {primario.codice} non tra gli ammessi")
     primario = a.ateco_primario
     esclusi = getattr(req, "ateco_esclusi", None)
     if esclusi and primario is not None and _ateco_ok(primario.codice, esclusi):
-        return None
-    if getattr(req, "anzianita_max_mesi", None):
-        e.da_verificare.append(f"Solo imprese costituite da meno di {req.anzianita_max_mesi} mesi")
-        e.punteggio -= 5
+        raise Escluso(f"ATECO {primario.codice} escluso dal bando")
+    # Forma giuridica: solo quando il bando è esplicito e le forme sono riconosciute
+    forme = getattr(req, "forme_giuridiche", None)
+    if forme:
+        mia = famiglia_forma(getattr(a, "forma_giuridica", None))
+        ammesse = {famiglia_forma(f) for f in forme}
+        if mia is None or None in ammesse:
+            e.da_verificare.append(f"Forme giuridiche ammesse: {', '.join(forme[:4])}")
+        elif mia in ammesse:
+            e.soddisfatti.append(f"Forma giuridica ammessa ({a.forma_giuridica})")
+        else:
+            raise Escluso(f"Forma giuridica {a.forma_giuridica} non ammessa")
+    # Anzianità dalla data di costituzione
+    mesi = anzianita_mesi(getattr(a, "data_costituzione", None), ctx.oggi)
+    massimo = getattr(req, "anzianita_max_mesi", None)
+    minimo = getattr(req, "anzianita_min_mesi", None)
+    if massimo or minimo:
+        if mesi is None:
+            limite = f"da meno di {massimo} mesi" if massimo else f"da almeno {minimo} mesi"
+            e.da_verificare.append(f"Solo imprese costituite {limite}: manca la data")
+            e.punteggio -= 5
+        elif massimo and mesi > massimo:
+            raise Escluso(f"Costituita da {mesi} mesi, il bando ne ammette al massimo {massimo}")
+        elif minimo and mesi < minimo:
+            raise Escluso(f"Costituita da {mesi} mesi, il bando ne chiede almeno {minimo}")
+        else:
+            e.soddisfatti.append(f"Anzianità compatibile ({mesi} mesi)")
+    # De minimis: plafond noto (indicato a mano o con aiuti registrati) contro l'aiuto minimo
     if getattr(req, "regime", None) == "de_minimis":
-        e.da_verificare.append("Aiuto in de minimis: verificare il plafond del cliente")
-    if getattr(req, "categorie_spesa", None):
-        e.soddisfatti.append("Spese ammissibili: " + ", ".join(req.categorie_spesa[:4]))
+        manuale = getattr(a, "plafond_de_minimis_manuale", None)
+        if manuale is None and not ctx.aiuti:
+            e.da_verificare.append("Aiuto in de minimis: plafond del cliente non noto")
+        else:
+            p = plafond_residuo(ctx.aiuti, "generale", manuale, ctx.oggi)
+            minimo_aiuto = getattr(req, "importo_min", None)
+            if minimo_aiuto is not None and p.residuo < minimo_aiuto:
+                raise Escluso(
+                    f"Plafond de minimis residuo {p.residuo:.0f} € inferiore all'aiuto minimo "
+                    f"{minimo_aiuto:.0f} €"
+                )
+            e.soddisfatti.append(f"De minimis: plafond residuo stimato {p.residuo:.0f} €")
+    # Spese ammissibili contro i progetti del cliente
+    categorie = getattr(req, "categorie_spesa", None)
+    if categorie:
+        attivi = [p for p in ctx.progetti if p.attivo and p.categorie]
+        migliore = max(attivi, key=lambda p: len(set(p.categorie) & set(categorie)), default=None)
+        if migliore is not None and set(migliore.categorie) & set(categorie):
+            comuni = sorted(set(migliore.categorie) & set(categorie))
+            e.soddisfatti.append(f"Progetto «{migliore.titolo}»: spese {', '.join(comuni)}")
+            e.punteggio += 10
+            e.progetto_id = migliore.id
+        else:
+            e.soddisfatti.append("Spese ammissibili: " + ", ".join(categorie[:4]))
+            if attivi:
+                e.da_verificare.append("Le spese del bando non coincidono con i progetti")
+                e.punteggio -= 5
     if b.stato == "in_arrivo":
         e.soddisfatti.append("In arrivo: c'è tempo per preparare la domanda")
     return e
@@ -288,6 +414,7 @@ def _salva(
                 punteggio=punteggio,
                 punteggio_regole=punteggio,
                 motivi=esito.motivi(),
+                progetto_id=esito.progetto_id,
                 stato="nuova",
                 trovata_il=ora,
             )
@@ -298,6 +425,7 @@ def _salva(
             # Il punteggio finale è quello dell'AI se c'è, altrimenti quello delle regole
             o.punteggio = o.punteggio_ai if o.punteggio_ai is not None else punteggio
             o.motivi = esito.motivi()
+            o.progetto_id = esito.progetto_id
     return nuove, tenute
 
 
@@ -335,7 +463,14 @@ def abbina(db: Session, oggi: date | None = None) -> str:
             ("bando" if o.bando_id else "appalto", o.bando_id or o.appalto_id): o
             for o in db.scalars(select(Opportunita).where(Opportunita.azienda_id == a.id))
         }
-        trovate_b = [("bando", b.id, es) for b in bandi if (es := valuta_bando(a, b)) is not None]
+        ctx = Contesto(
+            aiuti=list(db.scalars(select(AiutoDeMinimis).where(AiutoDeMinimis.azienda_id == a.id))),
+            progetti=list(db.scalars(select(Progetto).where(Progetto.azienda_id == a.id))),
+            oggi=oggi,
+        )
+        trovate_b = [
+            ("bando", b.id, es) for b in bandi if (es := valuta_bando(a, b, ctx)) is not None
+        ]
         regioni = regioni_cliente(a)
         trovate_a = [
             ("appalto", ap.id, es)
