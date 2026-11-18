@@ -315,7 +315,7 @@ def abbina(db: Session, oggi: date | None = None) -> str:
     bandi = list(
         db.scalars(
             select(Bando)
-            .where(Bando.stato.in_(("aperto", "in_arrivo")))
+            .where(Bando.stato.in_(("aperto", "in_arrivo")), Bando.bando_canonico_id.is_(None))
             .options(selectinload(Bando.requisiti))
         )
     )

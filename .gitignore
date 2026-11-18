@@ -10,3 +10,6 @@ htmlcov/
 /allegati/
 *.log
 /dati/
+
+# Backup locali del server (cifrati, ma comunque fuori dal repository)
+/backup/

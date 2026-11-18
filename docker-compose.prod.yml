@@ -1,0 +1,78 @@
+# Produzione: da usare INSIEME a docker-compose.yml
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Aggiunge: Caddy (https automatico), antivirus ClamAV, backup notturni cifrati.
+# Guida passo passo: docs/messa-in-produzione.md
+services:
+  db:
+    restart: unless-stopped
+    # In produzione il database non si espone nemmeno su localhost
+    ports: !reset []
+
+  app:
+    restart: unless-stopped
+    ports: !reset []
+    environment:
+      AMBIENTE: produzione
+      COOKIE_SECURE: "true"
+      CLAMAV_HOST: clamav
+    depends_on:
+      db:
+        condition: service_healthy
+      clamav:
+        condition: service_started
+
+  worker:
+    restart: unless-stopped
+    environment:
+      AMBIENTE: produzione
+      CLAMAV_HOST: clamav
+
+  caddy:
+    image: caddy:2.10
+    restart: unless-stopped
+    environment:
+      DOMINIO: ${DOMINIO:?imposta DOMINIO nel file .env (es. studio.europrojecta.it)}
+      EMAIL_CERTIFICATI: ${EMAIL_CERTIFICATI:-}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_dati:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+  clamav:
+    image: clamav/clamav:1.4
+    restart: unless-stopped
+    # Le firme dei virus si aggiornano da sole (freshclam) e restano nel volume
+    volumes:
+      - clamav_firme:/var/lib/clamav
+
+  backup:
+    build:
+      context: .
+      dockerfile: docker/backup.Dockerfile
+    restart: unless-stopped
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER:-europrojecta}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB:-europrojecta}
+      BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE:?imposta BACKUP_PASSPHRASE nel file .env}
+      BACKUP_ORARIO: ${BACKUP_ORARIO:-01:30}
+      BACKUP_GIORNI: ${BACKUP_GIORNI:-14}
+      TZ: Europe/Rome
+    volumes:
+      - allegati:/dati/allegati:ro
+      - ./backup:/backup
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  caddy_dati:
+  caddy_config:
+  clamav_firme:

@@ -60,6 +60,7 @@
       {% for k, e in fonti.items() %}<option value="{{ k }}" {% if filtri.fonte == k %}selected{% endif %}>{{ e.split(" –")[0] }}</option>{% endfor %}
     </select>
     <select name="ordine" aria-label="Ordina">
+      {% if filtri.q %}<option value="pertinenza" {% if filtri.ordine == "pertinenza" %}selected{% endif %}>Prima i più pertinenti</option>{% endif %}
       <option value="scadenza" {% if filtri.ordine == "scadenza" %}selected{% endif %}>Prima le scadenze vicine</option>
       <option value="recenti" {% if filtri.ordine == "recenti" %}selected{% endif %}>Prima i più recenti</option>
       <option value="importo" {% if filtri.ordine == "importo" %}selected{% endif %}>Prima gli importi più alti</option>

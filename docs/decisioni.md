@@ -167,7 +167,7 @@ Per provare l'app sul PC di sviluppo si usa `pgserver` (PostgreSQL 16.2 + pgvect
   - il consulente scarica ogni mese dal browser i file «CIG» e «categorie-opera» e li carica nell'app (Appalti → Importa da ANAC);
   - le colonne si riconoscono dall'intestazione; le categorie si collegano per CIG anche alle gare TED.
 - **MIT:** il catalogo era fuori servizio. Con il d.lgs. 36/2023 la pubblicazione dei bandi passa dalla Banca dati di ANAC, quindi il MIT non è più la fonte principale.
-- **InfoAppalti:** servizio privato in abbonamento. Copiarne i contenuti violerebbe le condizioni d'uso. L'unica strada è un'esportazione o un'API concessa da InfoAppalti con contratto: da chiedere a loro.
+- **InfoAppalti:** tolto su richiesta del committente (18/11/2026): servizio privato in abbonamento, non integrato e non più indicato nell'app.
 **Riassunto AI:**
 - su richiesta, con il modello scelto dal consulente nelle impostazioni di OpenAI (nessun nome di modello nel codice);
 - solo dati pubblici della gara; risultato salvato.

@@ -98,7 +98,30 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("estrai-bandi", help="struttura subito i requisiti dei bandi con l'AI")
     sub.add_parser("documenti-bandi", help="scarica subito i PDF dei bandi attivi")
 
+    sub.add_parser("collega-doppioni", help="collega i bandi doppi tra fonte nazionale e regionali")
+
+    sub.add_parser("ruota-chiavi", help="ricifra i segreti con la SECRET_KEY attuale")
+
     args = parser.parse_args(argv)
+    if args.comando == "ruota-chiavi":
+        from app.db import get_sessionmaker
+        from app.sicurezza.rotazione import ruota
+
+        with get_sessionmaker()() as db:
+            esito = ruota(db)
+        for chiave, valore in esito.items():
+            print(f"{chiave}: {valore}")
+        if esito["non_decifrabili"]:
+            print("ATTENZIONE: alcuni segreti non si decifrano con nessuna chiave: reinseriscili.")
+        print("Ora togli SECRET_KEY_PRECEDENTI, riavvia, e rigenera i codici di recupero.")
+        return 1 if esito["non_decifrabili"] else 0
+    if args.comando == "collega-doppioni":
+        from app.bandi.doppioni import collega
+        from app.db import get_sessionmaker
+
+        with get_sessionmaker()() as db:
+            print(collega(db))
+        return 0
     if args.comando == "crea-utente":
         return crea_utente(args.email, args.nome, args.ruolo)
     if args.comando == "reimposta-2fa":

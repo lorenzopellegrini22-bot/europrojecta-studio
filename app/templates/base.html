@@ -8,9 +8,14 @@
   <link rel="stylesheet" href="{{ url_for('static', path='vendor/pico.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
   <script src="{{ url_for('static', path='vendor/htmx.min.js') }}" defer></script>
+  <script src="{{ url_for('static', path='js/app.js') }}" defer></script>
 </head>
-<body hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'>
+<body hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'{% if utente %} data-inattivita="{{ inattivita_minuti }}"{% endif %}>
   {% if utente %}
+  <div id="avviso-sessione" class="messaggio attenzione avviso-sessione" role="alert" hidden>
+    <span id="avviso-sessione-testo">La sessione sta per scadere per inattività.</span>
+    <button type="button" id="resta-collegato" class="piccolo">Resta collegato</button>
+  </div>
   <header class="container">
     <nav>
       <ul>

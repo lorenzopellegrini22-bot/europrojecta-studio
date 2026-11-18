@@ -10,6 +10,7 @@ from app.auth import servizio, totp
 from app.auth.dipendenze import (
     sessione_opzionale,
     sessione_parziale,
+    utente_corrente,
     verifica_csrf,
 )
 from app.auth.sessioni import (
@@ -35,6 +36,13 @@ def _client(request: Request) -> tuple[str | None, str | None]:
 
 def _vai(url: str) -> RedirectResponse:
     return RedirectResponse(url, status_code=303)
+
+
+@router.get("/sessione/rinnova", dependencies=[Depends(utente_corrente)])
+def rinnova_sessione() -> Response:
+    """Chiamata dal pulsante «Resta collegato»: basta essere autenticati per aggiornare
+    l'ultimo uso della sessione (vedi app/auth/sessioni.py)."""
+    return Response(status_code=204, headers={"Cache-Control": "no-store"})
 
 
 @router.get("/login")

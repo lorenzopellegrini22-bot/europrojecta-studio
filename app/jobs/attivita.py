@@ -29,6 +29,13 @@ def raccolta_bandi(forza: bool = False, solo: str | None = None) -> str:
             if run.esito in ("errore", "fermato_sanita"):
                 fallite.append(codice)
     riepilogo = "\n".join(righe) or "Nessuna fonte attiva."
+    try:
+        from app.bandi.doppioni import collega
+
+        with get_sessionmaker()() as db:
+            riepilogo += "\n" + collega(db)
+    except Exception:  # i doppioni non devono far fallire la raccolta
+        log.exception("Collegamento dei bandi doppi non riuscito")
     if fallite:
         # Il job risulta in errore (e lo vede l'email del mattino), ma le altre fonti sono
         # state comunque elaborate.

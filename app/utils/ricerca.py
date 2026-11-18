@@ -15,7 +15,7 @@ import re
 import unicodedata
 from typing import Any
 
-from sqlalchemy import and_, func, literal, or_
+from sqlalchemy import and_, case, func, literal, or_
 
 CON_ACCENTI = "àáâäãèéêëìíîïòóôöõùúûüçñ"
 SENZA_ACCENTI = "aaaaaeeeeiiiiooooouuuucn"
@@ -109,3 +109,20 @@ def separa_regione(q: str) -> tuple[str | None, str]:
         if m:
             return r, (testo[: m.start()] + " " + testo[m.end() :]).strip()
     return None, testo
+
+
+def pertinenza(q: str, titolo: Any) -> Any:
+    """Punteggio SQL per ordinare i risultati: 2 punti per ogni gruppo di termini trovato
+    nel titolo, più 3 se il titolo contiene la frase intera. Senza ricerca: None."""
+    gruppi = termini(q)
+    if not gruppi:
+        return None
+    col = _colonna(titolo)
+    punti: Any = literal(0)
+    for forme in gruppi:
+        trovato = or_(*(col.like(literal(f"%{_escape(f)}%"), escape="\\") for f in forme))
+        punti = punti + case((trovato, 2), else_=0)
+    frase = " ".join(normalizza(q).split())
+    if len(gruppi) > 1 and frase:
+        punti = punti + case((col.like(literal(f"%{_escape(frase)}%"), escape="\\"), 3), else_=0)
+    return punti

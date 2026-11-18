@@ -124,12 +124,24 @@ def home(
     utente: Annotated[Utente, Depends(utente_corrente)],
 ) -> Response:
     oggi = date.today()
-    aperti = db.scalar(select(func.count()).select_from(Bando).where(Bando.stato == "aperto"))
-    in_arrivo = db.scalar(select(func.count()).select_from(Bando).where(Bando.stato == "in_arrivo"))
+    aperti = db.scalar(
+        select(func.count())
+        .select_from(Bando)
+        .where(Bando.stato == "aperto", Bando.bando_canonico_id.is_(None))
+    )
+    in_arrivo = db.scalar(
+        select(func.count())
+        .select_from(Bando)
+        .where(Bando.stato == "in_arrivo", Bando.bando_canonico_id.is_(None))
+    )
     in_scadenza = db.scalar(
         select(func.count())
         .select_from(Bando)
-        .where(Bando.stato == "aperto", Bando.data_chiusura.between(oggi, oggi + timedelta(7)))
+        .where(
+            Bando.stato == "aperto",
+            Bando.bando_canonico_id.is_(None),
+            Bando.data_chiusura.between(oggi, oggi + timedelta(7)),
+        )
     )
     # "Nuovi" = comparsi dopo la prima raccolta riuscita (la prima importa tutto lo storico)
     prima_raccolta = db.scalar(select(func.min(FonteRun.fine)).where(FonteRun.esito == "ok"))
@@ -140,6 +152,7 @@ def home(
             .select_from(Bando)
             .where(
                 Bando.stato.in_(("aperto", "in_arrivo")),
+                Bando.bando_canonico_id.is_(None),
                 Bando.visto_la_prima_volta > prima_raccolta,
                 Bando.visto_la_prima_volta >= datetime.now(UTC) - timedelta(days=7),
             )

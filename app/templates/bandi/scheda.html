@@ -24,6 +24,12 @@
   <h1>{{ bando.titolo }}</h1>
   <p>{{ bando.ente or "Ente non indicato" }} · {{ badge_stato(bando.stato) }}</p>
 </hgroup>
+{% if principale %}
+<div class="messaggio attenzione">Questo bando è lo stesso pubblicato dalla fonte regionale: per le opportunità, i PDF e l'AI si usa <a href="/bandi/{{ principale.id }}">la scheda principale</a>.</div>
+{% endif %}
+{% if copie %}
+<p><small>Lo stesso bando compare anche in: {% for c in copie %}<a href="/bandi/{{ c.id }}">{{ c.fonte.nome }}</a>{% if not loop.last %}, {% endif %}{% endfor %} (collegato in automatico, mostrato una volta sola).</small></p>
+{% endif %}
 <div class="gruppo-pulsanti">
   <a href="/prefattibilita/nuova?bando_id={{ bando.id }}" role="button" class="secondary outline piccolo">Verifica per un cliente</a>
   <a href="/revisione/{{ bando.id }}" role="button" class="secondary outline piccolo">Rivedi i requisiti</a>

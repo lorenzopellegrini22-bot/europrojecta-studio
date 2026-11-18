@@ -32,6 +32,7 @@ from app.config import get_settings
 from app.models import Bando
 from app.models.documenti import DocumentoBando
 from app.sources import http
+from app.utils import antivirus
 
 log = logging.getLogger(__name__)
 # pypdf segnala nei log ogni font non standard: rumore, non errori
@@ -259,7 +260,13 @@ def _scarica_e_leggi(
 
 def esegui(db: Session, client: httpx.Client | None = None, limite: int = PER_NOTTE) -> str:
     """Il job notturno: registra i PDF dei bandi attivi e ne scarica al massimo `limite`."""
-    bandi = list(db.scalars(select(Bando).where(Bando.stato.in_(("aperto", "in_arrivo")))))
+    bandi = list(
+        db.scalars(
+            select(Bando).where(
+                Bando.stato.in_(("aperto", "in_arrivo")), Bando.bando_canonico_id.is_(None)
+            )
+        )
+    )
     esistenti = {(d.bando_id, d.url): d for d in db.scalars(select(DocumentoBando))}
     for b in bandi:
         for c in candidati(b):
@@ -390,6 +397,10 @@ def carica_a_mano(
         raise ErroreDocumento(f"PDF troppo grande (oltre {MAX_MB} MB).")
     if not dati[:1024].lstrip().startswith(b"%PDF"):
         raise ErroreDocumento("Il file non è un PDF.")
+    try:
+        antivirus.controlla_bytes(dati)
+    except (antivirus.FileInfetto, antivirus.AntivirusNonDisponibile) as e:
+        raise ErroreDocumento(str(e)) from e
     testo, pagine = testo_pdf(dati)
     if documento is None:
         documento = DocumentoBando(
@@ -420,6 +431,7 @@ def da_caricare(db: Session) -> list[tuple[Bando, DocumentoBando]]:
             .join(DocumentoBando, DocumentoBando.bando_id == Bando.id)
             .where(
                 Bando.stato.in_(("aperto", "in_arrivo")),
+                Bando.bando_canonico_id.is_(None),
                 DocumentoBando.sha256.is_(None),
                 DocumentoBando.errore.is_not(None),
             )

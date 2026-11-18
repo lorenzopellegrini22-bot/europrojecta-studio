@@ -336,3 +336,7 @@ form.feedback { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap
 .testo-bando { position: sticky; top: 1rem; max-height: 90vh; overflow-y: auto; }
 .testo-bando mark { background: #fff1a8; }
 .campo-revisione.da-verificare-box { border-left: 4px solid var(--ep-attenzione); }
+
+/* Avviso di scadenza della sessione: in basso, sopra il contenuto */
+.avviso-sessione { position: fixed; left: 1rem; right: 1rem; bottom: 1rem; z-index: 10; display: flex; gap: 1rem; align-items: center; justify-content: space-between; background: var(--pico-background-color); box-shadow: 0 2px 10px rgba(0,0,0,.2); }
+.avviso-sessione[hidden] { display: none; }

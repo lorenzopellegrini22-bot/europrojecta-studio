@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import BinaryIO
 
 from app.config import get_settings
+from app.utils import antivirus
 
 TIPI_AMMESSI = {
     ".pdf": "application/pdf",
@@ -80,6 +81,11 @@ def salva(sorgente: BinaryIO, nome_originale: str) -> tuple[str, str, int, str]:
     if dimensione == 0:
         destinazione.unlink(missing_ok=True)
         raise ErroreAllegato("Il file è vuoto.")
+    try:
+        antivirus.controlla_file(destinazione)
+    except (antivirus.FileInfetto, antivirus.AntivirusNonDisponibile) as e:
+        destinazione.unlink(missing_ok=True)
+        raise ErroreAllegato(str(e)) from e
     return relativo.as_posix(), TIPI_AMMESSI[ext], dimensione, impronta.hexdigest()
 
 

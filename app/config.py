@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     # Chiave da cui si derivano le chiavi di cifratura (API key OpenAI, segreti TOTP).
     # Almeno 32 caratteri casuali: python -c "import secrets; print(secrets.token_urlsafe(48))"
     secret_key: SecretStr = Field(min_length=32)
+    # Rotazione: le chiavi vecchie, separate da virgola. Servono solo a leggere i segreti
+    # cifrati prima del cambio, finché non si lancia `python -m app.cli ruota-chiavi`.
+    secret_key_precedenti: SecretStr | None = None
 
     log_level: str = "INFO"
 
@@ -38,6 +41,9 @@ class Settings(BaseSettings):
     # Allegati delle pratiche: cartella sul server (volume Docker in produzione) e limite
     cartella_allegati: str = "dati/allegati"
     allegato_max_mb: int = 20
+    # Antivirus ClamAV per i file caricati (vuoto = nessun controllo, solo in sviluppo)
+    clamav_host: str | None = None
+    clamav_porta: int = 3310
 
     # Sessioni e login
     cookie_secure: bool = True

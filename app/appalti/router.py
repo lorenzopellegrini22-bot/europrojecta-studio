@@ -25,7 +25,7 @@ from app.models.appalti import Appalto
 from app.utils.cpv import DIVISIONI_CPV
 from app.utils.numeri import importo_italiano
 from app.utils.nuts_italia import NUTS3_PROVINCIA
-from app.utils.ricerca import condizione, separa_regione
+from app.utils.ricerca import condizione, pertinenza, separa_regione
 from app.utils.territorio import REGIONI
 from app.web import render
 
@@ -54,11 +54,6 @@ FONTI_ESTERNE = (
         "https://www.serviziocontrattipubblici.it/",
         "Bandi ed esiti pubblicati dalle stazioni appaltanti.",
     ),
-    (
-        "InfoAppalti",
-        "https://www.infoappalti.it",
-        "Servizio privato di segnalazione gare, in abbonamento.",
-    ),
 )
 PROVINCE = sorted({nome for nome, _ in NUTS3_PROVINCIA.values()})
 
@@ -84,7 +79,7 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
         "soa": (p.get("soa") or "").upper(),
         "fonte": p.get("fonte") or "",
         "nazionali": p.get("nazionali") or ("1" if "regione" not in p else ""),
-        "ordine": p.get("ordine") or "scadenza",
+        "ordine": p.get("ordine") or ("pertinenza" if (p.get("q") or "").strip() else "scadenza"),
     }
     try:
         pagina = max(int(p.get("pagina") or 1), 1)
@@ -138,7 +133,10 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
     if filtri["scadenza"].isdigit():
         query = query.where(Appalto.scadenza <= oggi + timedelta(days=int(filtri["scadenza"])))
     totale = db.scalar(select(func.count()).select_from(query.subquery())) or 0
-    if filtri["ordine"] == "recenti":
+    punti = pertinenza(q_testo, Appalto.titolo)
+    if filtri["ordine"] == "pertinenza" and punti is not None:
+        query = query.order_by(punti.desc(), Appalto.scadenza, Appalto.id)
+    elif filtri["ordine"] == "recenti":
         query = query.order_by(Appalto.pubblicazione.desc().nulls_last(), Appalto.id.desc())
     elif filtri["ordine"] == "importo":
         query = query.order_by(Appalto.importo_stimato.desc().nulls_last(), Appalto.id)

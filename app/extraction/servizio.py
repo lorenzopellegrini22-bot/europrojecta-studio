@@ -268,7 +268,7 @@ def da_estrarre(db: Session, modello: str, limite: int) -> list[Bando]:
     }
     candidati = db.scalars(
         select(Bando)
-        .where(Bando.stato.in_(("aperto", "in_arrivo")))
+        .where(Bando.stato.in_(("aperto", "in_arrivo")), Bando.bando_canonico_id.is_(None))
         .options(selectinload(Bando.requisiti))
         .order_by(Bando.data_chiusura.asc().nulls_last(), Bando.id)
     )

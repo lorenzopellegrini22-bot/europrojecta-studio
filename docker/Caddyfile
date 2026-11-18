@@ -1,0 +1,20 @@
+# Caddy: certificato https automatico (Let's Encrypt) per il dominio in DOMINIO.
+{
+	email {$EMAIL_CERTIFICATI}
+}
+
+{$DOMINIO} {
+	encode zstd gzip
+
+	# Allegati e PDF fino a 25 MB (il limite vero lo applica l'app)
+	request_body {
+		max_size 25MB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	reverse_proxy app:8000
+}

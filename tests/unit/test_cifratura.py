@@ -28,3 +28,25 @@ def test_impronta_deterministica_e_legata_allo_scopo():
 def test_anteprima_mostra_solo_ultime_quattro():
     assert anteprima("sk-proj-abcdefgh1234") == "…1234"
     assert anteprima("corta") == "…"
+
+
+def test_rotazione_della_chiave(monkeypatch):
+    from app.config import get_settings
+    from app.sicurezza.cifratura import ricifra
+
+    vecchia = get_settings().secret_key.get_secret_value()
+    token = cifra("sk-segreto", "prova")
+    try:
+        monkeypatch.setenv("SECRET_KEY", "n" * 40)
+        monkeypatch.setenv("SECRET_KEY_PRECEDENTI", vecchia)
+        get_settings.cache_clear()
+        assert decifra(token, "prova") == "sk-segreto"  # la vecchia chiave legge ancora
+        nuovo = ricifra(token, "prova")
+        monkeypatch.delenv("SECRET_KEY_PRECEDENTI")
+        get_settings.cache_clear()
+        assert decifra(nuovo, "prova") == "sk-segreto"  # ricifrato con la nuova
+        with pytest.raises(ErroreCifratura):
+            decifra(token, "prova")  # senza la vecchia il token vecchio non si legge
+    finally:
+        monkeypatch.undo()
+        get_settings.cache_clear()

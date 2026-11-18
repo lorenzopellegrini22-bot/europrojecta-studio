@@ -59,7 +59,6 @@ Aggiornato il 18/11/2026, dopo una nuova verifica su dati reali:
    - VPS con Caddy;
    - backup cifrati di database e volume `allegati`;
    - antivirus sugli allegati (es. ClamAV).
-8. **InfoAppalti:** se il consulente ha un abbonamento, chiedere a InfoAppalti un'esportazione o un'API contrattuale. Con quella si integra; senza, no.
 9. **Codici ISTAT dei comuni**, per il matching per sede e per i luoghi degli appalti ANAC.
 10. **Permessi dei collaboratori** da confermare con il committente. Oggi possono tutto tranne modificare i modelli, le impostazioni ed eliminare dati.
 11. Minori:

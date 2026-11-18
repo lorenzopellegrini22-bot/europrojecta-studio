@@ -47,6 +47,7 @@ def render(
     ctx: dict[str, Any] = {
         "utente": sessione.utente if sessione and sessione.mfa_verificata else None,
         "csrf_token": sessione.csrf_token if sessione else "",
+        "inattivita_minuti": get_settings().sessione_inattivita_minuti,
     }
     ctx.update(contesto or {})
     return templates.TemplateResponse(request, nome, ctx, status_code=status_code)

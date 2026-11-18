@@ -41,3 +41,40 @@ jobs:
         run: uv run pytest
       - name: Build immagine Docker
         run: docker build -f docker/Dockerfile -t europrojecta-studio:ci .
+
+  produzione:
+    # Controlla i file della messa in produzione: compose, Caddy e un backup vero
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compose di produzione valido
+        run: |
+          touch .env
+          POSTGRES_PASSWORD=x DOMINIO=studio.esempio.test BACKUP_PASSPHRASE=y \
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml config -q
+      - name: Caddyfile valido
+        run: |
+          docker run --rm -e DOMINIO=studio.esempio.test -e EMAIL_CERTIFICATI=ci@esempio.test \
+            -v "$PWD/docker/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2.10 \
+            caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+      - name: Backup cifrato e ripristino
+        run: |
+          docker build -f docker/backup.Dockerfile -t europrojecta-backup:ci .
+          docker network create ci
+          docker run -d --name db --network ci -e POSTGRES_PASSWORD=ci pgvector/pgvector:pg16
+          for i in $(seq 30); do docker exec db pg_isready -U postgres && break; sleep 2; done
+          docker exec db psql -U postgres -c "create table prova (x text); insert into prova values ('ciao');"
+          mkdir -p backup allegati && echo "allegato di prova" > allegati/a.txt
+          docker run --rm --network ci -e PGHOST=db -e PGUSER=postgres -e PGPASSWORD=ci \
+            -e PGDATABASE=postgres -e BACKUP_PASSPHRASE=segreta \
+            -v "$PWD/allegati:/dati/allegati:ro" -v "$PWD/backup:/backup" \
+            europrojecta-backup:ci /usr/local/bin/backup.sh ora
+          ls -l backup
+          docker run --rm -v "$PWD/backup:/backup" europrojecta-backup:ci sh -c '
+            set -e
+            f=$(ls /backup/*.db.gpg)
+            gpg --batch --quiet --pinentry-mode loopback --passphrase segreta --decrypt "$f" > /tmp/db.dump
+            pg_restore --list /tmp/db.dump | grep -q "TABLE public prova"
+            a=$(ls /backup/*.allegati.gpg)
+            gpg --batch --quiet --pinentry-mode loopback --passphrase segreta --decrypt "$a" | tar -tf - | grep -q "allegati/a.txt"
+            echo ripristino-ok'

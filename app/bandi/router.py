@@ -24,7 +24,7 @@ from app.models import (
     Utente,
 )
 from app.sources.incentivi_italia import ATTRIBUZIONE
-from app.utils.ricerca import condizione, separa_regione
+from app.utils.ricerca import condizione, pertinenza, separa_regione
 from app.utils.territorio import REGIONI
 from app.web import render
 
@@ -68,7 +68,7 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
     scadenza = _intero(p.get("scadenza"))
     pagina = max(_intero(p.get("pagina"), 1) or 1, 1)
 
-    query = select(Bando).outerjoin(BandoRequisiti)
+    query = select(Bando).outerjoin(BandoRequisiti).where(Bando.bando_canonico_id.is_(None))
     stati = STATI_FILTRO.get(stato, STATI_FILTRO["attivi"])
     if stati:
         query = query.where(Bando.stato.in_(stati))
@@ -95,9 +95,14 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
         query = query.where(Bando.data_chiusura.between(oggi, oggi + timedelta(days=scadenza)))
 
     totale = db.scalar(select(func.count()).select_from(query.subquery())) or 0
+    # Con una ricerca prima i bandi che hanno le parole nel titolo, poi per scadenza
+    punti = pertinenza(q_testo, Bando.titolo)
+    ordine = [Bando.data_chiusura.asc().nulls_last(), Bando.titolo]
+    if punti is not None:
+        ordine.insert(0, punti.desc())
     bandi = db.scalars(
         query.options(selectinload(Bando.requisiti))
-        .order_by(Bando.data_chiusura.asc().nulls_last(), Bando.titolo)
+        .order_by(*ordine)
         .limit(PER_PAGINA)
         .offset((pagina - 1) * PER_PAGINA)
     ).all()
@@ -143,6 +148,16 @@ def scheda(request: Request, db: Db, _: Autenticato, bando_id: int) -> Response:
             ),
             "req": bando.requisiti,
             "versioni": versioni,
+            "principale": db.get(Bando, bando.bando_canonico_id)
+            if bando.bando_canonico_id
+            else None,
+            "copie": list(
+                db.scalars(
+                    select(Bando)
+                    .where(Bando.bando_canonico_id == bando.id)
+                    .options(selectinload(Bando.fonte))
+                )
+            ),
             "attribuzione": ATTRIBUZIONE,
             "oggi": date.today(),
         },
