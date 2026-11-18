@@ -24,6 +24,7 @@ dependencies = [
     "pypdf>=5",
     "pgvector>=0.3",
     "numpy>=2",
+    "weasyprint>=70.0",
 ]
 
 [dependency-groups]

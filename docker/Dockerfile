@@ -11,6 +11,9 @@ ENV UV_COMPILE_BYTECODE=1 \
 
 WORKDIR /srv
 
+# Librerie per i PDF con WeasyPrint (documentazione ufficiale, Debian >= 11) e un font
+RUN apt-get update     && apt-get install -y --no-install-recommends         libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core     && rm -rf /var/lib/apt/lists/*
+
 # Prima le dipendenze (strato in cache), poi il codice.
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project

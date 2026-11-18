@@ -74,6 +74,7 @@
       </div>
       <div class="gruppo-pulsanti">
         <form method="post" action="/opportunita/{{ o.id }}/pratica"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="piccolo">Apri pratica</button></form>
+        {% if o.bando_id %}<form method="post" action="/clienti/{{ o.azienda_id }}/report/{{ o.bando_id }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Report PDF</button></form>{% endif %}
         {% if email_disponibile %}
         <form method="post" action="/opportunita/{{ o.id }}/segnala"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Segnala al cliente</button></form>
         {% endif %}

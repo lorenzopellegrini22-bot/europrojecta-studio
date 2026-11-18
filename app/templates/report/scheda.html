@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titolo %}Report per {{ r.azienda.ragione_sociale }} · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<nav aria-label="breadcrumb"><ul><li><a href="/clienti/{{ r.azienda_id }}">{{ r.azienda.ragione_sociale }}</a></li><li><a href="/bandi/{{ b.id }}">Bando</a></li><li>Report</li></ul></nav>
+<hgroup>
+  <h1>Report PDF per {{ r.azienda.ragione_sociale }}</h1>
+  <p>{{ b.titolo }} · stato: <strong>{{ {"bozza": "bozza", "approvato": "approvato", "inviato": "inviato al cliente"}[r.stato] }}</strong></p>
+</hgroup>
+{% if msg %}<div class="messaggio {{ 'ok' if esito == 'ok' else 'errore' }}" role="status">{{ msg }}</div>{% endif %}
+
+<form method="post" action="/report/{{ r.id }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% for chiave, titolo in sezioni %}
+  <label>{{ titolo }}
+    <textarea name="{{ chiave }}" rows="{{ 3 if chiave in ('note', 'scadenze') else 6 }}" {% if r.stato != "bozza" %}readonly{% endif %}>{{ r.contenuto.get(chiave) or "" }}</textarea>
+  </label>
+  {% endfor %}
+  <small>Il testo è precompilato dai dati del bando e dall'abbinamento: rileggilo e correggilo. La citazione della fonte con la licenza viene aggiunta in fondo al PDF.</small>
+  <div class="gruppo-pulsanti">
+    {% if r.stato == "bozza" %}
+    <button name="azione" value="salva" class="secondary">Salva la bozza</button>
+    <button name="azione" value="approva">Approva</button>
+    {% else %}
+    <a href="/report/{{ r.id }}/pdf" role="button">Scarica il PDF</a>
+    {% if r.stato == "approvato" %}<button name="azione" value="inviato" class="secondary">Segna come inviato al cliente</button>{% endif %}
+    <button name="azione" value="riapri" class="secondary outline">Riapri per modificare</button>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}
