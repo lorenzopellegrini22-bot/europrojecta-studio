@@ -387,14 +387,32 @@ def testo_per_ai(db: Session, bando_id: int, budget: int) -> str:
             .order_by(DocumentoBando.id)
         )
     )
+    non_letti = list(
+        db.scalars(
+            select(DocumentoBando).where(
+                DocumentoBando.bando_id == bando_id,
+                DocumentoBando.testo_estratto.is_(None),
+                DocumentoBando.errore.is_not(None),
+            )
+        )
+    )
+    avviso = ""
+    if non_letti:
+        # Il link resta: l'AI sa che il bando ha documenti non letti e non li dà per assenti
+        elenco = "\n".join(f"- {d.titolo or 'PDF'}: {d.url}" for d in non_letti[:5])
+        avviso = (
+            "\n\nDOCUMENTI DEL BANDO NON LETTI (il sito non ne consente lo scarico "
+            f"automatico):\n{elenco}\nI requisiti che potrebbero essere in questi documenti "
+            "vanno segnati da_verificare."
+        )
     if not docs or budget <= 0:
-        return ""
+        return avviso[: max(budget, 0)]
     parte = budget // len(docs)
     pezzi = []
     for d in docs:
         brani = brani_utili(d.testo_estratto or "", parte)
         pezzi.append(f"\n\nDOCUMENTO PDF: {d.titolo or d.url}\n{brani}")
-    return "".join(pezzi)[:budget]
+    return ("".join(pezzi) + avviso)[:budget]
 
 
 # --- Caricamento manuale -----------------------------------------------------------------
@@ -458,3 +476,25 @@ def da_caricare(db: Session) -> list[tuple[Bando, DocumentoBando]]:
             .order_by(Bando.data_chiusura.asc().nulls_last(), Bando.id)
         ).all()
     )
+
+
+def nome_dal_link(url: str) -> str:
+    """Nome del file nel link («…/PNGSLdocumento73863.pdf» → «pngsldocumento73863.pdf»)."""
+    from urllib.parse import unquote, urlsplit
+
+    return unquote(urlsplit(url).path.rsplit("/", 1)[-1]).strip().lower()
+
+
+def nome_scaricato(nome: str) -> str:
+    """Nome del file come lo salva il browser, ripulito: «documento (1).pdf» → «documento.pdf»."""
+    nome = nome.replace("\\", "/").rsplit("/", 1)[-1].strip().lower()
+    return re.sub(r"\s*\(\d+\)(?=\.pdf$)", "", nome)
+
+
+def documenti_per_nome(db: Session) -> dict[str, list[DocumentoBando]]:
+    """Documenti da caricare raggruppati per nome del file nel link (lo stesso PDF può
+    servire a più bandi: si carica su tutti)."""
+    per_nome: dict[str, list[DocumentoBando]] = {}
+    for _b, d in da_caricare(db):
+        per_nome.setdefault(nome_dal_link(d.url), []).append(d)
+    return per_nome

@@ -14,6 +14,21 @@
   <p>Altri PDF non si scaricano per un errore del sito (pagina non trovata, sito irraggiungibile): l'app riprova da sola dopo 7 giorni, ma puoi caricarli subito.</p>
 </details>
 
+{% if righe %}
+<article class="carica-insieme">
+  <header><strong>Il modo più veloce: caricali tutti insieme</strong></header>
+  <ol>
+    <li>Apri i link della tabella qui sotto: il browser scarica i PDF nella cartella Download.</li>
+    <li>Seleziona tutti i PDF scaricati (anche trascinandoli qui) e premi «Carica tutti».</li>
+  </ol>
+  <p><small>Ogni file va da solo al bando giusto, riconosciuto dal nome del file nel link (es. «PNGSLdocumento73863.pdf»). L'AI li legge nella prossima analisi notturna.</small></p>
+  <form method="post" action="/documenti/da-caricare" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="file" name="file" accept="application/pdf,.pdf" multiple required aria-label="PDF scaricati">
+    <button type="submit">Carica tutti</button>
+  </form>
+</article>
+{% endif %}
 {% if not righe %}
 <article><p>Nessun PDF da caricare: tutti i documenti dei bandi aperti sono stati letti.</p></article>
 {% else %}

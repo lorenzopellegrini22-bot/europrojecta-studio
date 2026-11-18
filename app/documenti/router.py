@@ -66,3 +66,44 @@ def carica(
         else f"PDF «{nome}» caricato, ma senza testo leggibile (scansione)."
     )
     return RedirectResponse(f"{torna}?esito=ok&msg={quote(messaggio)}#documenti", 303)
+
+
+@router.post("/documenti/da-caricare", dependencies=[Depends(verifica_csrf)])
+def carica_insieme(
+    db: Db,
+    utente: Autenticato,
+    file: Annotated[list[UploadFile], File()],
+) -> Response:
+    """Più PDF insieme (es. tutti quelli scaricati dal browser): ognuno va al bando il cui
+    link ha lo stesso nome di file."""
+    per_nome = s.documenti_per_nome(db)
+    caricati, non_abbinati, errori = 0, [], []
+    for f in file[:50]:
+        nome = (f.filename or "").replace("\\", "/").rsplit("/", 1)[-1]
+        documenti = per_nome.get(s.nome_scaricato(nome), [])
+        if not documenti:
+            non_abbinati.append(nome)
+            continue
+        dati = f.file.read(s.MAX_MB * 1024 * 1024 + 1)
+        for d in documenti:
+            try:
+                s.carica_a_mano(db, d.bando_id, dati, nome, d)
+                audit.registra(db, utente, "bando", d.bando_id, "modifica", {"pdf_caricato": nome})
+                db.commit()
+                caricati += 1
+            except s.ErroreDocumento as e:
+                db.rollback()
+                errori.append(f"{nome}: {e}")
+    parti = [f"PDF caricati: {caricati}."]
+    if non_abbinati:
+        parti.append(
+            "Non abbinati (il nome non corrisponde a nessun link): "
+            + ", ".join(non_abbinati[:10])
+            + ". Caricali dalla riga del bando."
+        )
+    if errori:
+        parti.append("Errori: " + "; ".join(errori[:5]))
+    esito = "ok" if caricati and not errori else "errore"
+    return RedirectResponse(
+        f"/documenti/da-caricare?esito={esito}&msg={quote(' '.join(parti))}", status_code=303
+    )
