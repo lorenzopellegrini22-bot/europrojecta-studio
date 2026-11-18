@@ -6,26 +6,33 @@
     <h1>Appalti pubblici</h1>
     <p>{{ totale }} bandi di gara aperti trovati.
       {% if ultima %}Aggiornati il {{ ultima.fine | data_ora }}.{% else %}La raccolta non è ancora stata eseguita.{% endif %}
-      Ogni notte dalla piattaforma europea TED.</p>
+      Ogni notte da TED (UE) e Consip; gli appalti sotto soglia si importano da ANAC.</p>
   </hgroup>
   {% if utente.is_titolare %}
+  <div class="gruppo-pulsanti">
+  <a href="/appalti/importa" role="button" class="secondary outline piccolo">Importa da ANAC</a>
   <form method="post" action="/appalti/aggiorna">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <button type="submit" class="secondary outline piccolo" {% if in_corso %}disabled{% endif %}>{{ "Aggiornamento in corso…" if in_corso else "Aggiorna adesso" }}</button>
   </form>
+  </div>
   {% endif %}
 </div>
 {% if request.query_params.get("aggiornamento") %}<div class="messaggio ok" role="status">Aggiornamento avviato: ricarica la pagina tra un minuto.</div>{% endif %}
 
 <form method="get" action="/appalti" class="filtri">
-  <input type="search" name="q" value="{{ filtri.q }}" placeholder="Cerca nell'oggetto, nella stazione appaltante o nel numero" aria-label="Cerca">
+  <input type="search" name="q" value="{{ filtri.q }}" placeholder="Parole nell'oggetto o nella descrizione, ente, CIG (es. depuratore Lanciano)" aria-label="Cerca">
   <div class="grid">
     <select name="natura" aria-label="Tipo di appalto">
       <option value="">Lavori, servizi e forniture</option>
       {% for k, e in nature.items() %}<option value="{{ k }}" {% if filtri.natura == k %}selected{% endif %}>{{ e }}</option>{% endfor %}
     </select>
+    <select name="soa" aria-label="Categoria SOA">
+      <option value="">Tutte le categorie SOA</option>
+      {% for k, e in categorie_soa.items() %}<option value="{{ k }}" {% if filtri.soa == k %}selected{% endif %}>{{ k }} · {{ e | truncate(60) }}</option>{% endfor %}
+    </select>
     <select name="cpv" aria-label="Categoria">
-      <option value="">Tutte le categorie</option>
+      <option value="">Tutte le categorie CPV</option>
       {% for k, e in divisioni.items() %}<option value="{{ k }}" {% if filtri.cpv == k %}selected{% endif %}>{{ k }} · {{ e }}</option>{% endfor %}
     </select>
   </div>
@@ -38,14 +45,19 @@
       <option value="">Tutte le province</option>
       {% for pr in province %}<option value="{{ pr }}" {% if filtri.provincia == pr %}selected{% endif %}>{{ pr }}</option>{% endfor %}
     </select>
-    <input name="comune" value="{{ filtri.comune }}" placeholder="Comune della stazione appaltante" aria-label="Comune">
+    <input name="comune" value="{{ filtri.comune }}" placeholder="Comune (ente o luogo dei lavori)" aria-label="Comune">
   </div>
+  <label class="casella"><input type="checkbox" name="nazionali" value="1" {% if filtri.nazionali %}checked{% endif %}> Con regione o provincia, includi anche le gare valide in tutta Italia</label>
   <div class="grid">
     <input name="importo_min" value="{{ filtri.importo_min }}" placeholder="Importo da (€)" inputmode="numeric" aria-label="Importo minimo">
     <input name="importo_max" value="{{ filtri.importo_max }}" placeholder="Importo fino a (€)" inputmode="numeric" aria-label="Importo massimo">
     <select name="scadenza" aria-label="Scadenza">
       <option value="">Qualsiasi scadenza</option>
       {% for g in (7, 15, 30, 60) %}<option value="{{ g }}" {% if filtri.scadenza == g | string %}selected{% endif %}>Scade entro {{ g }} giorni</option>{% endfor %}
+    </select>
+    <select name="fonte" aria-label="Fonte">
+      <option value="">Tutte le fonti</option>
+      {% for k, e in fonti.items() %}<option value="{{ k }}" {% if filtri.fonte == k %}selected{% endif %}>{{ e.split(" –")[0] }}</option>{% endfor %}
     </select>
     <select name="ordine" aria-label="Ordina">
       <option value="scadenza" {% if filtri.ordine == "scadenza" %}selected{% endif %}>Prima le scadenze vicine</option>
@@ -64,19 +76,21 @@
 {% else %}
 <div class="overflow-auto">
 <table class="striped">
-  <thead><tr><th>Oggetto</th><th>Stazione appaltante</th><th>Luogo</th><th>Importo stimato</th><th>Scadenza offerte</th></tr></thead>
+  <thead><tr><th>Oggetto</th><th>Categoria</th><th>Stazione appaltante</th><th>Luogo</th><th>Importo</th><th>Scadenza</th></tr></thead>
   <tbody>
   {% for a in appalti %}
-    {% set giorni = (a.scadenza - oggi).days %}
+    {% set giorni = (a.scadenza - oggi).days if a.scadenza else none %}
+    {% set prev = prevalente(a.categorie_soa) %}
     <tr>
       <td>
-        {% if a.link %}<a href="{{ a.link }}" target="_blank" rel="noopener noreferrer">{{ a.titolo | truncate(140) }}</a>{% else %}{{ a.titolo | truncate(140) }}{% endif %}
-        <br><small>{{ (a.natura or []) | map("capitalize") | join(", ") }}{% if a.cpv %} · CPV {{ a.cpv[:2] | join(", ") }}{% endif %} · n. {{ a.id_esterno }}</small>
+        <a href="/appalti/{{ a.id }}">{{ a.titolo | truncate(140) }}</a>
+        <br><small>{{ (a.natura or []) | map("capitalize") | join(", ") }}{% if a.cig %} · CIG {{ a.cig }}{% endif %} · {{ fonti.get(a.fonte, a.fonte).split(" –")[0] }}</small>
       </td>
+      <td>{% if prev %}<strong>{{ prev.codice }}</strong>{% endif %}{% for c in (a.categorie_soa or []) if not prev or c.codice != prev.codice %} {{ c.codice }}{% endfor %}{% if not a.categorie_soa %}—{% endif %}</td>
       <td>{{ a.stazione_appaltante or "—" }}{% if a.citta %}<br><small>{{ a.citta }}</small>{% endif %}</td>
       <td>{% if a.province %}{{ a.province[:2] | join(", ") }}{% if a.province | length > 2 %} e altre{% endif %}{% elif a.regioni %}{{ a.regioni[:2] | join(", ") }}{% else %}Italia{% endif %}</td>
       <td>{{ a.importo_stimato | euro }}</td>
-      <td class="{% if giorni <= 7 %}scaduta{% endif %}">{{ a.scadenza | data }}<br><small>{% if giorni == 0 %}oggi{% else %}tra {{ giorni }} giorni{% endif %}</small></td>
+      <td class="{% if giorni is not none and giorni <= 7 %}scaduta{% endif %}">{% if a.scadenza %}{{ a.scadenza | data }}<br><small>{% if giorni == 0 %}oggi{% else %}tra {{ giorni }} giorni{% endif %}</small>{% else %}<small>Sempre aperta</small>{% endif %}</td>
     </tr>
   {% endfor %}
   </tbody>
@@ -91,7 +105,7 @@
 {% endif %}
 {% endif %}
 
-<p><small>{{ attribuzione }} TED contiene gli appalti sopra le soglie europee; per quelli sotto soglia usa le fonti qui sotto.</small></p>
+<p><small>{{ attribuzione }} Dati Consip: licenza CC BY 4.0. TED contiene gli appalti sopra le soglie europee; quelli sotto soglia arrivano dai file ANAC importati.</small></p>
 
 <details>
   <summary>Altre fonti di appalti pubblici</summary>

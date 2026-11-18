@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titolo %}Importa appalti ANAC · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<nav aria-label="breadcrumb"><ul><li><a href="/appalti">Appalti</a></li><li>Importa da ANAC</li></ul></nav>
+<hgroup>
+  <h1>Importa gli appalti da ANAC</h1>
+  <p>Per avere anche gli appalti sotto soglia, con le categorie SOA (prevalente e scorporabili).</p>
+</hgroup>
+
+{% for e in esiti %}<div class="messaggio ok" role="status">{{ e }}</div>{% endfor %}
+{% if errore %}<div class="messaggio errore" role="alert">{{ errore }}</div>{% endif %}
+
+<details class="guida" open>
+  <summary><span class="icona-info" aria-hidden="true">i</span> Come scaricare i file da ANAC</summary>
+  <p>Il portale ANAC non permette lo scarico automatico dal server, ma i dati sono aperti: bastano due download dal browser, una volta al mese (ANAC aggiorna i file all'inizio di ogni mese).</p>
+  <ol>
+    <li>Apri il <a href="https://dati.anticorruzione.it/opendata/dataset?q=cig" target="_blank" rel="noopener noreferrer">catalogo open data di ANAC</a> e scegli il dataset dei CIG dell'anno in corso, oppure «CIG aggiornamenti delta» per le sole novità del mese.</li>
+    <li>Scarica la risorsa in formato <strong>CSV</strong> (arriva come file ZIP: non serve aprirlo).</li>
+    <li>Per le categorie SOA apri il dataset <a href="https://dati.anticorruzione.it/opendata/dataset?q=categorie" target="_blank" rel="noopener noreferrer">«categorie-opera»</a> e scarica anche quello in CSV.</li>
+    <li>Carica qui sotto i file, anche tutti insieme. Dei CIG vengono tenute solo le gare con scadenza delle offerte non ancora passata; le categorie si collegano alle gare già presenti, comprese quelle di TED con lo stesso CIG.</li>
+  </ol>
+  <p><small>Licenza dei dati ANAC: Creative Commons BY-SA 4.0. I file grandi (centinaia di MB) richiedono qualche minuto.</small></p>
+</details>
+
+<form method="post" action="/appalti/importa" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <input type="file" name="file" multiple required accept=".csv,.zip" aria-label="File ANAC">
+  <button type="submit">Importa</button>
+</form>
+{% endblock %}

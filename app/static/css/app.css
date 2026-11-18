@@ -300,3 +300,7 @@ table.barre progress { margin: 0; }
 tr.voce-ko td:first-child { color: var(--ep-errore); }
 tr.voce-ok td:first-child { color: var(--ep-ok); }
 .carica-file { margin-top: 0.5rem; }
+
+/* Scheda appalto */
+table.scheda-gara th { width: 13rem; vertical-align: top; font-weight: 600; }
+table.scheda-gara td { vertical-align: top; }

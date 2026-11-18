@@ -11,7 +11,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse, Response
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app import audit
@@ -41,6 +41,7 @@ from app.models.pratiche import (
 from app.pratiche import allegati as archivio
 from app.pratiche import servizio as s
 from app.utils.numeri import importo_italiano
+from app.utils.ricerca import condizione
 from app.web import leggi_form, render, testo
 
 router = APIRouter()
@@ -147,17 +148,16 @@ def _query_elenco(request: Request) -> tuple[Any, dict[str, Any]]:
         )
         .order_by(Pratica.creato_il.desc())
     )
-    if filtri["q"]:
-        m = f"%{filtri['q']}%"
-        query = query.where(
-            or_(
-                Pratica.codice.ilike(m),
-                Azienda.ragione_sociale.ilike(m),
-                Bando.titolo.ilike(m),
-                Pratica.bando_testo.ilike(m),
-                Pratica.protocollo.ilike(m),
-            )
-        )
+    testo = condizione(
+        filtri["q"],
+        Pratica.codice,
+        Azienda.ragione_sociale,
+        Bando.titolo,
+        Pratica.bando_testo,
+        Pratica.protocollo,
+    )
+    if testo is not None:
+        query = query.where(testo)
     if filtri["stato"] == "attive":
         query = query.where(Pratica.stato.not_in(STATI_PRATICA_CONCLUSI))
     elif filtri["stato"] in STATI_PRATICA:
@@ -264,7 +264,7 @@ def cerca_bandi(request: Request, db: Db, _: Autenticato) -> Response:
         bandi = list(
             db.scalars(
                 select(Bando)
-                .where(or_(Bando.titolo.ilike(f"%{q}%"), Bando.ente.ilike(f"%{q}%")))
+                .where(condizione(q, Bando.titolo, Bando.ente))
                 .order_by(Bando.stato.in_(("aperto", "in_arrivo")).desc(), Bando.titolo)
                 .limit(20)
             )
@@ -308,6 +308,8 @@ def nuova(request: Request, db: Db, utente: Autenticato) -> Response:
             "azienda_id": _intero(p.get("azienda_id")),
             "bando_id": _intero(p.get("bando_id")),
             "prefattibilita_id": _intero(p.get("prefattibilita_id")),
+            "bando_testo": (p.get("bando_testo") or "").strip()[:500] or None,
+            "scadenza_presentazione": p.get("scadenza") or None,
             "responsabile_id": utente.id,
         },
         {},

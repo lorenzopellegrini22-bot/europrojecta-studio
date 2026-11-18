@@ -123,8 +123,19 @@ def promemoria_scadenze(oggi=None) -> str:  # type: ignore[no-untyped-def]
 
 
 def raccolta_appalti() -> str:
-    """Bandi di gara italiani aperti da TED (vedi app/appalti/ted.py)."""
-    from app.appalti.ted import raccogli
+    """Bandi di gara aperti da TED e iniziative aperte Consip (MEPA, SDAPA, convenzioni).
+    Una fonte che fallisce non ferma l'altra; il job risulta in errore se ne fallisce una."""
+    from app.appalti import consip, ted
 
+    righe, errori = [], []
     with get_sessionmaker()() as db:
-        return raccogli(db)
+        for nome, funzione in (("TED", ted.raccogli), ("Consip", consip.raccogli)):
+            try:
+                esito = funzione(db)
+                righe.append(esito[0] if isinstance(esito, tuple) else esito)
+            except Exception as e:  # noqa: BLE001 — si registra e si prosegue
+                db.rollback()
+                errori.append(f"{nome}: {type(e).__name__}: {e}")
+    if errori:
+        raise RuntimeError(" | ".join(righe + errori))
+    return " | ".join(righe)

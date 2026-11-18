@@ -61,6 +61,14 @@ OPENAI = TipoIntegrazione(
             aiuto="Si crea nella dashboard di OpenAI, sezione API keys. Inizia con «sk-».",
             variabile_ambiente="OPENAI_API_KEY",
         ),
+        Campo(
+            "modello",
+            "Modello per i riassunti",
+            obbligatorio=False,
+            aiuto="Il nome del modello OpenAI da usare (lo trovi nella documentazione di "
+            "OpenAI, pagina Models). Serve per i riassunti degli appalti.",
+            variabile_ambiente="OPENAI_MODELLO",
+        ),
     ),
     verificabile=True,
     note=(
@@ -78,8 +86,13 @@ OPENAI = TipoIntegrazione(
         "per esempio «Europrojecta Studio».",
         "Copia la chiave (inizia con «sk-»): OpenAI la mostra una sola volta.",
         "Incollala qui nel campo «API key», premi Salva e poi «Verifica connessione».",
+        "Nel campo «Modello per i riassunti» scrivi il nome del modello scelto, come indicato "
+        "nella pagina Models della documentazione di OpenAI.",
     ),
-    link_guida=(("Pagina delle API key di OpenAI", "https://platform.openai.com/api-keys"),),
+    link_guida=(
+        ("Pagina delle API key di OpenAI", "https://platform.openai.com/api-keys"),
+        ("Elenco dei modelli OpenAI", "https://platform.openai.com/docs/models"),
+    ),
 )
 
 SMTP = TipoIntegrazione(

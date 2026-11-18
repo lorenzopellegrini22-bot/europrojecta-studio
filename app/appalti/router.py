@@ -5,12 +5,16 @@ scadenza."""
 from datetime import date, timedelta
 from decimal import Decimal
 from typing import Annotated
+from urllib.parse import quote, urlencode
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse, Response
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 
+from app.appalti import anac
+from app.appalti.riassunto import ErroreRiassunto, disponibile, genera
+from app.appalti.scheda import CATEGORIE_SOA, FONTI, prevalente, righe_scheda, testo_scheda
 from app.appalti.ted import ATTRIBUZIONE
 from app.auth.dipendenze import richiede_titolare, utente_corrente, verifica_csrf
 from app.db import get_db
@@ -21,6 +25,7 @@ from app.models.appalti import Appalto
 from app.utils.cpv import DIVISIONI_CPV
 from app.utils.numeri import importo_italiano
 from app.utils.nuts_italia import NUTS3_PROVINCIA
+from app.utils.ricerca import condizione, separa_regione
 from app.utils.territorio import REGIONI
 from app.web import render
 
@@ -76,32 +81,55 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
         "importo_min": p.get("importo_min") or "",
         "importo_max": p.get("importo_max") or "",
         "scadenza": p.get("scadenza") or "",
+        "soa": (p.get("soa") or "").upper(),
+        "fonte": p.get("fonte") or "",
+        "nazionali": p.get("nazionali") or ("1" if "regione" not in p else ""),
         "ordine": p.get("ordine") or "scadenza",
     }
     try:
         pagina = max(int(p.get("pagina") or 1), 1)
     except ValueError:
         pagina = 1
-    query = select(Appalto).where(Appalto.scadenza >= oggi)
-    if filtri["q"]:
-        m = f"%{filtri['q']}%"
-        query = query.where(
-            or_(
-                Appalto.titolo.ilike(m),
-                Appalto.stazione_appaltante.ilike(m),
-                Appalto.id_esterno.ilike(m),
-            )
+    # Aperti: scadenza futura; le abilitazioni Consip senza termine sono sempre aperte
+    query = select(Appalto).where(
+        or_(
+            Appalto.scadenza >= oggi,
+            and_(Appalto.scadenza.is_(None), Appalto.fonte == "consip"),
         )
+    )
+    # Ogni parola in almeno un campo, accenti e plurali ignorati (app/utils/ricerca.py)
+    regione_nel_testo, q_testo = separa_regione(filtri["q"])
+    if regione_nel_testo and not filtri["regione"]:
+        filtri["regione"] = regione_nel_testo
+    testo = condizione(
+        q_testo,
+        Appalto.titolo,
+        Appalto.descrizione,
+        Appalto.stazione_appaltante,
+        Appalto.cig,
+        Appalto.id_esterno,
+    )
+    if testo is not None:
+        query = query.where(testo)
+    if filtri["soa"] in CATEGORIE_SOA:
+        query = query.where(Appalto.codici_soa.any(filtri["soa"]))
+    if filtri["fonte"] in FONTI:
+        query = query.where(Appalto.fonte == filtri["fonte"])
     if filtri["natura"] in NATURE:
         query = query.where(Appalto.natura.any(filtri["natura"]))
     if filtri["cpv"] in DIVISIONI_CPV:
         query = query.where(Appalto.divisioni_cpv.any(filtri["cpv"]))
+    # Con "anche nazionali" un filtro territoriale include le gare valide in tutta Italia
+    nazionali = Appalto.regioni.is_(None) if filtri["nazionali"] else None
     if filtri["regione"] in REGIONI:
-        query = query.where(Appalto.regioni.any(filtri["regione"]))
+        cond = Appalto.regioni.any(filtri["regione"])
+        query = query.where(or_(cond, nazionali) if nazionali is not None else cond)
     if filtri["provincia"] in PROVINCE:
-        query = query.where(Appalto.province.any(filtri["provincia"]))
+        cond = Appalto.province.any(filtri["provincia"])
+        query = query.where(or_(cond, nazionali) if nazionali is not None else cond)
     if filtri["comune"]:
-        query = query.where(Appalto.citta.ilike(f"%{filtri['comune']}%"))
+        m = f"%{filtri['comune']}%"
+        query = query.where(or_(Appalto.citta.ilike(m), Appalto.luogo_esecuzione.ilike(m)))
     minimo, massimo = _importo(filtri["importo_min"]), _importo(filtri["importo_max"])
     if minimo is not None:
         query = query.where(Appalto.importo_stimato >= minimo)
@@ -126,7 +154,7 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
     in_corso = db.scalar(
         select(JobRun).where(JobRun.job == "raccolta_appalti", JobRun.esito == "in_corso").limit(1)
     )
-    filtri_url = "&".join(f"{k}={v}" for k, v in filtri.items() if v)
+    filtri_url = urlencode({k: v for k, v in filtri.items() if v})
     return render(
         request,
         "appalti/lista.html",
@@ -146,6 +174,9 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
             "fonti_esterne": FONTI_ESTERNE,
             "attribuzione": ATTRIBUZIONE,
             "oggi": oggi,
+            "categorie_soa": CATEGORIE_SOA,
+            "fonti": FONTI,
+            "prevalente": prevalente,
         },
     )
 
@@ -154,3 +185,88 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
 def aggiorna(background: BackgroundTasks, _: Titolare) -> Response:
     background.add_task(esegui_job, "raccolta_appalti", attivita.raccolta_appalti)
     return RedirectResponse("/appalti?aggiornamento=1", status_code=303)
+
+
+# --- Import dei file ANAC ----------------------------------------------------------------
+
+
+@router.get("/appalti/importa")
+def pagina_importa(request: Request, _: Titolare) -> Response:
+    return render(
+        request,
+        "appalti/importa.html",
+        {
+            "esiti": request.query_params.getlist("esito"),
+            "errore": request.query_params.get("errore"),
+        },
+    )
+
+
+@router.post("/appalti/importa", dependencies=[Depends(verifica_csrf)])
+def importa(
+    db: Db,
+    utente: Titolare,
+    file: Annotated[list[UploadFile], File()],
+) -> Response:
+    """Uno o più file ANAC (CSV o ZIP). Prima i CIG, poi le categorie: l'ordine dei file
+    caricati insieme si sistema da solo (le categorie si agganciano ai CIG già presenti)."""
+    from app import audit
+
+    ordinati = sorted(file, key=lambda f: "categor" in (f.filename or "").lower())
+    esiti = []
+    for f in ordinati:
+        nome = (f.filename or "file").rsplit("/", 1)[-1]
+        try:
+            esito = anac.importa(db, f.file, nome)
+        except anac.ErroreImport as e:
+            db.rollback()
+            return RedirectResponse(
+                f"/appalti/importa?errore={quote(f'{nome}: {e}')}", status_code=303
+            )
+        esiti.append(f"{nome} – {esito.riepilogo()}")
+        audit.registra(db, utente, "appalto", None, "crea", {"import_anac": nome})
+        db.commit()
+    return RedirectResponse(
+        "/appalti/importa?" + urlencode([("esito", e) for e in esiti]), status_code=303
+    )
+
+
+# --- Scheda e riassunto ------------------------------------------------------------------
+
+
+def _appalto(db: Session, appalto_id: int) -> Appalto:
+    a = db.get(Appalto, appalto_id)
+    if a is None:
+        raise HTTPException(404)
+    return a
+
+
+@router.get("/appalti/{appalto_id}")
+def scheda(request: Request, appalto_id: int, db: Db, _: Autenticato) -> Response:
+    a = _appalto(db, appalto_id)
+    ai_ok, ai_motivo = disponibile(db)
+    return render(
+        request,
+        "appalti/scheda.html",
+        {
+            "a": a,
+            "righe": righe_scheda(a),
+            "testo": testo_scheda(a),
+            "ai_ok": ai_ok,
+            "ai_motivo": ai_motivo,
+            "errore": request.query_params.get("errore"),
+            "oggi": date.today(),
+        },
+    )
+
+
+@router.post("/appalti/{appalto_id}/riassunto", dependencies=[Depends(verifica_csrf)])
+def riassumi(appalto_id: int, db: Db, _: Autenticato) -> Response:
+    a = _appalto(db, appalto_id)
+    try:
+        genera(db, a)
+    except ErroreRiassunto as e:
+        return RedirectResponse(
+            f"/appalti/{a.id}?errore={quote(str(e))}#riassunto", status_code=303
+        )
+    return RedirectResponse(f"/appalti/{a.id}#riassunto", status_code=303)

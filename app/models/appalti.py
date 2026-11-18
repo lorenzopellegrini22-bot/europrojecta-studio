@@ -14,7 +14,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base, ConTimestamp
 
-LISTE_APPALTO = ("nuts", "regioni", "province", "cpv", "divisioni_cpv", "natura")
+LISTE_APPALTO = ("nuts", "regioni", "province", "cpv", "divisioni_cpv", "natura", "codici_soa")
 
 
 class Appalto(ConTimestamp, Base):
@@ -39,5 +39,27 @@ class Appalto(ConTimestamp, Base):
     pubblicazione: Mapped[date | None] = mapped_column(Date, index=True)
     importo_stimato: Mapped[Decimal | None] = mapped_column(Numeric(16, 2))
     link: Mapped[str | None] = mapped_column(Text)
+    # Scheda completa (TED: campi strutturati; ANAC: file CIG e categorie-opera)
+    cig: Mapped[str | None] = mapped_column(String(20), index=True)
+    tipo_procedura: Mapped[str | None] = mapped_column(Text)
+    criterio_aggiudicazione: Mapped[str | None] = mapped_column(Text)
+    descrizione: Mapped[str | None] = mapped_column(Text)
+    riferimenti_legge: Mapped[str | None] = mapped_column(Text)
+    luogo_esecuzione: Mapped[str | None] = mapped_column(Text)
+    ente_indirizzo: Mapped[str | None] = mapped_column(Text)
+    ente_email: Mapped[str | None] = mapped_column(Text)
+    ente_telefono: Mapped[str | None] = mapped_column(Text)
+    ente_sito: Mapped[str | None] = mapped_column(Text)
+    link_partecipazione: Mapped[str | None] = mapped_column(Text)
+    # [{"titolo", "url"}]
+    documenti: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB)
+    # [{"codice": "OG6", "descrizione", "tipo": "prevalente"|"scorporabile"|None,
+    #   "importo", "provenienza": "anac"|"testo"}]
+    categorie_soa: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB)
+    codici_soa: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
+    # Riassunto scritto dall'AI (solo dati pubblici dell'appalto)
+    riassunto: Mapped[str | None] = mapped_column(Text)
+    riassunto_il: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    riassunto_modello: Mapped[str | None] = mapped_column(String(100))
     raw: Mapped[dict[str, Any]] = mapped_column(JSONB)
     visto_il: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

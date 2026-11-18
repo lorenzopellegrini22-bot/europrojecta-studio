@@ -1,42 +1,64 @@
 # Cose da migliorare
 
-Aggiornato il 18/11/2026, dopo la prova completa su dati reali:
-- raccolta reale da Incentivi Italia: 6.095 bandi, di cui 749 aperti e 12 in arrivo;
-- verifica nel browser di dashboard, bandi, scheda bando, fonti, account e impostazioni;
-- 90 test automatici verdi.
+Aggiornato il 18/11/2026, dopo una nuova verifica su dati reali:
+- **Bandi:** 6.095 da Incentivi Italia, più 45 attivi dalle fonti regionali di Toscana e Lazio.
+- **Appalti:** 1.618 gare aperte da TED e 501 iniziative aperte Consip.
+- **Test:** 150 automatici, tutti verdi.
 
 ## Fatto
-- Pagina **Il mio account**: cambio password (disconnette gli altri dispositivi), nuovi codici di recupero confermati con il codice dell'app, dispositivi collegati, ultimi accessi.
-- **Pulizia notturna** (04:00): sessioni scadute e log di accesso più vecchi di un anno.
-- **Limite per indirizzo IP** sul login: 20 tentativi falliti in 15 minuti, su qualsiasi account. Dietro Caddy si legge l'IP reale (`--proxy-headers`).
-- **Stato delle integrazioni e delle fonti in home**: avvisi se OpenAI o SMTP non sono collegati, o se una fonte fallisce da 2 raccolte.
-- Raccolta dei bandi **pianificata ogni notte** nel worker, con un test che lo verifica.
-
-- **Fonti regionali** Toscana (Sviluppo Toscana) e Lazio (Lazio Innova + Lazio Europa): 45 bandi attivi in più, molti assenti dal dataset nazionale. Umbria e Marche per ora solo dal dataset nazionale (vedi `docs/fonti/regioni.md`).
-
+- Pagina **Il mio account**:
+  - cambio password, che disconnette gli altri dispositivi;
+  - nuovi codici di recupero, confermati con il codice dell'app;
+  - dispositivi collegati e ultimi accessi.
+- **Pulizia notturna** (04:00) di sessioni scadute e log di accesso; **limite per IP** sul login.
+- **Raccolta dei bandi ogni notte**: dataset nazionale più fonti regionali di Toscana e Lazio.
 - **Pratiche a fasi**:
-  - modelli con fasi e operazioni (checklist, dati, email con segnaposto);
-  - scadenzario;
-  - clienti con referenti;
-  - export CSV;
-  - riepilogo stampabile.
+  - modelli, checklist con allegati, email con segnaposto e invio dal server;
+  - scadenzario e promemoria;
+  - export CSV e riepilogo stampabile.
+- **Clienti:**
+  - referenti, ATECO, dati dimensionali, segnalatori;
+  - compilazione dal Registro Imprese (Openapi).
+- **Prefattibilità** con voci automatiche; **statistiche** dello studio.
+- **Integrazioni:** interruttore attiva/disattiva e guida "i" per ognuna.
+- **Appalti:**
+  - fonti: TED e Consip ogni notte, import dei file ANAC (anche sotto soglia, con categorie SOA);
+  - scheda gara completa e riassunto AI;
+  - filtri per SOA, CPV, territorio, importo, scadenza e fonte.
+- **Ricerca testuale** comune a tutte le pagine (vedi `docs/decisioni.md`):
+  - parole in qualsiasi ordine, accenti e plurali ignorati, sinonimi;
+  - una regione scritta nella ricerca diventa il filtro territoriale.
 
 ## Problemi trovati provando con i dati reali (già corretti)
-- Importi assurdi nella fonte (oltre mille miliardi) mandavano in errore il salvataggio: ora vengono scartati e segnalati come "da verificare".
-- Il job risultava "ok" anche se una fonte era in errore: ora risulta "errore".
-- 6 bandi di enti locali (Comuni, Regioni) dichiarano "tutte le regioni": non vengono più trattati come nazionali, il territorio è "da verificare".
-- In alcuni record più comuni sono in un'unica voce separata da ";": ora vengono separati.
-- La dashboard contava come "nuovi" tutti i bandi della prima importazione: ora conta solo quelli comparsi dopo.
+- **Importi assurdi nella fonte** (oltre mille miliardi) bloccavano il salvataggio: ora vengono scartati e segnati "da verificare".
+- **Job "ok" con una fonte in errore**: ora risulta "errore".
+- **Enti locali trattati come nazionali**: 6 bandi di Comuni o Regioni che dichiarano "tutte le regioni" ora hanno il territorio "da verificare".
+- **Importi "900.000"** letti come 900 euro.
+- **Promemoria** che potevano partire due volte nello stesso giorno.
+- **CIG ripetuti** nel file Consip.
+- **Categorie SOA scritte senza trattino** ("OS18B").
+- **Ricerca** con più parole, accenti o plurali (vedi sopra).
 
 ## Da fare, in ordine di priorità
-1. **Doppioni tra fonte nazionale e regionale**: lo stesso bando può comparire due volte (es. un bando toscano sia in Incentivi Italia sia in Sviluppo Toscana). Il collegamento arriva con la fase 3.
-2. **Codici ISTAT dei comuni**: oggi i comuni dei bandi sono nomi testuali. Servono la tabella ISTAT e la normalizzazione per il matching per sede.
-3. **Avvisi email sulle fonti** dopo 2 fallimenti consecutivi: il dato è già contato, l'invio arriva con l'SMTP (fase 5).
-4. **Avviso alla scadenza della sessione**: se la sessione scade mentre si compila un form, i dati inseriti si perdono.
-5. **Verifica WhatsApp**: con il canale WhatsApp (fase 5), dopo aver verificato la documentazione Meta.
-6. **Rotazione della SECRET_KEY** con MultiFernet.
-7. **Ricerca testuale migliore** (accenti, più parole): con `unaccent` e un indice trigram quando i dati crescono.
-8. **Appalti sotto soglia**: importazione manuale del dataset ANAC scaricato dal browser (il portale non consente lo scarico automatico).
-9. **Antivirus sugli allegati** (es. ClamAV nel container) prima della messa in produzione.
-10. **Backup del volume `allegati`** insieme al database (fase 7).
-
+1. **Avvisi automatici per cliente (matching, fase 4).** Ogni mattina, i bandi e gli appalti nuovi adatti a ciascun cliente: regione, dimensione, ATECO, categorie SOA, CPV. È la funzione con più valore che manca. Oggi c'è solo la prefattibilità, fatta a mano per un bando alla volta.
+2. **Estrazione AI dei requisiti dei bandi (fase 3).** Molti campi sono ancora "da verificare" (regime, spese ammissibili, importi). Per il Lazio le date stanno solo nel testo.
+3. **Doppioni tra fonte nazionale e regionale.** Lo stesso bando può comparire due volte; il collegamento arriva con la fase 3.
+4. **Ordinamento per pertinenza** nella ricerca dei bandi. Oggi l'ordine è per scadenza; servirebbe prima il titolo che contiene le parole cercate.
+5. **Categorie SOA per le gare TED.** Arrivano solo dal file ANAC importato (collegato per CIG) o dal riassunto AI. Si potrebbe leggere anche il disciplinare in PDF.
+6. **Prove con gli account veri del consulente:**
+   - token Openapi in sandbox, poi in produzione;
+   - casella SMTP con email di prova;
+   - chiave OpenAI con un riassunto;
+   - giro completo nel browser con login e 2FA.
+7. **Messa in produzione (fase 7):**
+   - VPS con Caddy;
+   - backup cifrati di database e volume `allegati`;
+   - antivirus sugli allegati (es. ClamAV).
+8. **InfoAppalti:** se il consulente ha un abbonamento, chiedere a InfoAppalti un'esportazione o un'API contrattuale. Con quella si integra; senza, no.
+9. **Codici ISTAT dei comuni**, per il matching per sede e per i luoghi degli appalti ANAC.
+10. **Permessi dei collaboratori** da confermare con il committente. Oggi possono tutto tranne modificare i modelli, le impostazioni ed eliminare dati.
+11. Minori:
+    - avviso prima della scadenza della sessione;
+    - verifica WhatsApp;
+    - rotazione della SECRET_KEY con MultiFernet;
+    - catalogo MIT da ricontrollare quando torna online.

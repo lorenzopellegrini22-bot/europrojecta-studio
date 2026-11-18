@@ -154,6 +154,34 @@ Per provare l'app sul PC di sviluppo si usa `pgserver` (PostgreSQL 16.2 + pgvect
 - Le altre fonti sono nella pagina come link, con una spiegazione dei loro limiti.
 - Per gli appalti sotto soglia si potrà importare a mano il dataset ANAC scaricato dal browser (da valutare).
 
+## 2026-11-18 — Appalti: scheda completa, categorie SOA, Consip e import ANAC
+**Richiesta del committente:** per ogni appalto le informazioni di una scheda gara professionale (categorie SOA prevalente e scorporabili, ente con contatti, CIG, date, procedura, criterio, importo, descrizione, riferimenti di legge, documenti) e un riassunto. Inoltre i dati di ANAC, MIT, MEPA e InfoAppalti.
+**Come si ottengono i dati, in modo lecito:**
+- **TED:** più campi richiesti all'API (nomi verificati sulla specifica `api-v3.yaml`): contatti dell'ente, tipo di procedura, criterio di aggiudicazione, descrizione, base giuridica, link ai documenti e alla piattaforma di gara. CIG e categorie SOA si leggono dal testo quando ci sono; TED non li ha come campi.
+- **Consip (MEPA, SDAPA, convenzioni, accordi quadro):**
+  - open data ufficiali `dati.consip.it`, licenza CC BY 4.0, letti seguendo il tracciato record ufficiale;
+  - il robots.txt vieta /api/ e chiede 10 secondi tra le richieste: si scarica solo il file annuale da /download/, una volta a notte;
+  - le singole RdO del MEPA non sono pubbliche (procedure a invito): Consip pubblica solo dati aggregati.
+- **ANAC:**
+  - il portale rifiuta le richieste automatiche, ma i dati sono aperti (CC BY-SA 4.0);
+  - il consulente scarica ogni mese dal browser i file «CIG» e «categorie-opera» e li carica nell'app (Appalti → Importa da ANAC);
+  - le colonne si riconoscono dall'intestazione; le categorie si collegano per CIG anche alle gare TED.
+- **MIT:** il catalogo era fuori servizio. Con il d.lgs. 36/2023 la pubblicazione dei bandi passa dalla Banca dati di ANAC, quindi il MIT non è più la fonte principale.
+- **InfoAppalti:** servizio privato in abbonamento. Copiarne i contenuti violerebbe le condizioni d'uso. L'unica strada è un'esportazione o un'API concessa da InfoAppalti con contratto: da chiedere a loro.
+**Riassunto AI:**
+- su richiesta, con il modello scelto dal consulente nelle impostazioni di OpenAI (nessun nome di modello nel codice);
+- solo dati pubblici della gara; risultato salvato.
+
+## 2026-11-18 — Ricerca testuale comune (bandi, appalti, clienti, pratiche)
+Misurata sui dati reali:
+- ogni parola si cerca in qualsiasi ordine: «transizione ecologica imprese» da 0 a 18 bandi;
+- accenti ignorati con `translate()`: «attivita» da 3 a 411;
+- singolare e plurale: «fotovoltaico» da 1 a 7;
+- sinonimi del settore (startup, PMI);
+- parole generiche (bando, avviso) ignorate;
+- una regione scritta nella ricerca diventa il filtro territoriale.
+Codice in `app/utils/ricerca.py`.
+
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.
 - Jinja2 + HTMX + Pico.css salvati nel repository, nessuna risorsa da CDN.

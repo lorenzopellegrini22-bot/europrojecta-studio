@@ -396,3 +396,79 @@ def test_promemoria_scadenze(client, crea_utente, accedi, db, monkeypatch):
     inviate.clear()
     attivita.promemoria_scadenze(date.today() + timedelta(days=2))
     assert not [a for a, _ in inviate if a == utente.email]
+
+
+def test_import_anac_scheda_e_filtro_soa(client, crea_utente, accedi, db):
+    import io
+    import zipfile
+
+    from tests.unit.test_appalti_fonti import INTESTAZIONE_CIG
+
+    accedi(crea_utente())
+    cig = f"Z{uuid.uuid4().hex[:9].upper()}"
+    cig_ted = f"Y{uuid.uuid4().hex[:9].upper()}"
+    scadenza = (date.today() + timedelta(days=14)).isoformat()
+    righe_cig = "\n".join(
+        [
+            INTESTAZIONE_CIG,
+            f"{cig};1;Razionalizzazione del sistema depurativo;2882628.25;1;;2882628.25;LAVORI;"
+            f"ATTIVO;ORDINARIO;069046;Chieti;2026-11-04;{scadenza};1;PROCEDURA APERTA;"
+            "SASI SPA;SEZIONE REGIONALE ABRUZZO;45252100;Impianti di depurazione",
+            f"{cig_ted};1;Gara già su TED;100;1;;100;LAVORI;ATTIVO;ORDINARIO;;;"
+            f"2026-11-04;{scadenza};1;PROCEDURA APERTA;ENTE;;;",
+            "X000000001;1;Gara scaduta;1;1;;1;LAVORI;;;;;2025-01-01;2025-02-01;1;;ENTE;;;",
+        ]
+    )
+    pacchetto = io.BytesIO()
+    with zipfile.ZipFile(pacchetto, "w") as z:
+        z.writestr("cig_csv.csv", righe_cig)
+    categorie = (
+        "cig;id_categoria;descrizione;cod_tipo_categoria;descrizione_tipo_categoria\n"
+        f"{cig};OG6;ACQUEDOTTI;P;PREVALENTE\n{cig};OS22;POTABILIZZAZIONE;S;SCORPORABILE\n"
+        f"{cig_ted};OG1;EDIFICI;P;PREVALENTE\n"
+    )
+    # una gara TED con lo stesso CIG riceve le categorie senza essere duplicata
+    db.add(
+        Appalto(
+            fonte="ted",
+            id_esterno=f"prova-{uuid.uuid4().hex[:8]}",
+            titolo="Gara TED con CIG",
+            cig=cig_ted,
+            scadenza=date.today() + timedelta(days=14),
+            raw={},
+        )
+    )
+    db.commit()
+    token = csrf(client, "/appalti/importa")
+    assert "Come scaricare i file da ANAC" in client.get("/appalti/importa").text
+    r = client.post(
+        "/appalti/importa",
+        data={"csrf_token": token},
+        files=[
+            ("file", ("categorie-opera.csv", categorie.encode(), "text/csv")),
+            ("file", ("cig_2026.zip", pacchetto.getvalue(), "application/zip")),
+        ],
+    )
+    assert r.status_code == 303 and "errore" not in r.headers["location"], r.headers["location"]
+    pagina = client.get(r.headers["location"]).text
+    assert "1 gare aperte importate" in pagina and "1 aggiornate" in pagina
+    db.expire_all()
+    a = db.scalar(select(Appalto).where(Appalto.cig == cig))
+    assert a.fonte == "anac" and a.regioni == ["Abruzzo"] and a.province == ["Chieti"]
+    assert a.importo_stimato == Decimal("2882628.25") and a.natura == ["lavori"]
+    assert [(c["codice"], c["tipo"]) for c in a.categorie_soa] == [
+        ("OG6", "prevalente"),
+        ("OS22", "scorporabile"),
+    ]
+    ted_a = db.scalar(select(Appalto).where(Appalto.cig == cig_ted))
+    assert ted_a.fonte == "ted" and ted_a.codici_soa == ["OG1"]
+    assert db.scalar(select(Appalto).where(Appalto.cig == "X000000001")) is None
+
+    scheda = client.get(f"/appalti/{a.id}").text
+    assert "OG6 - Acquedotti" in scheda and "OS22 - Impianti di potabilizzazione" in scheda
+    assert "Copia la scheda" in scheda and "Collega OpenAI" in scheda
+    lista = client.get("/appalti?soa=OG6&regione=Abruzzo").text
+    assert "Razionalizzazione del sistema depurativo" in lista
+    assert "Razionalizzazione" not in client.get("/appalti?soa=OG1").text
+    assert "Razionalizzazione" in client.get("/appalti?q=depurativo+SASI").text
+    assert "Razionalizzazione" not in client.get("/appalti?q=depurativo+Milano").text

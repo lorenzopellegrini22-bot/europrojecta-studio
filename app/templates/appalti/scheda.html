@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block titolo %}{{ a.titolo | truncate(60) }} · Appalti · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<nav aria-label="breadcrumb"><ul><li><a href="/appalti">Appalti</a></li><li>{{ a.cig and ("CIG " ~ a.cig) or a.id_esterno }}</li></ul></nav>
+<div class="intestazione">
+  <hgroup>
+    <h1>{{ a.titolo | truncate(160) }}</h1>
+    <p>{{ a.stazione_appaltante or "" }}
+      {% if a.scadenza %}· <span class="{% if (a.scadenza - oggi).days <= 7 %}scaduta{% endif %}">scade il {{ a.scadenza | data }} ({% if a.scadenza == oggi %}oggi{% else %}tra {{ (a.scadenza - oggi).days }} giorni{% endif %})</span>{% endif %}</p>
+  </hgroup>
+  <div class="gruppo-pulsanti">
+    <a href="/pratiche/nuova?bando_testo={{ (((("CIG " ~ a.cig ~ " – ") if a.cig else "") ~ a.titolo) | truncate(300)) | urlencode }}{% if a.scadenza %}&scadenza={{ a.scadenza.isoformat() }}{% endif %}" role="button" class="piccolo">Apri una pratica</a>
+    <button type="button" class="secondary outline piccolo" data-copia="testo-scheda">Copia la scheda</button>
+    {% if a.link %}<a href="{{ a.link }}" target="_blank" rel="noopener noreferrer" role="button" class="secondary outline piccolo">Avviso ufficiale</a>{% endif %}
+  </div>
+</div>
+
+<article id="riassunto">
+  <header><strong>Riassunto</strong>{% if a.riassunto_il %} <small>(scritto dall'AI il {{ a.riassunto_il | data_ora }} — verificare sempre sul bando)</small>{% endif %}</header>
+  {% if errore %}<div class="messaggio errore" role="alert">{{ errore }}</div>{% endif %}
+  {% if a.riassunto %}<div class="testo-email">{{ a.riassunto }}</div>{% endif %}
+  {% if ai_ok %}
+  <form method="post" action="/appalti/{{ a.id }}/riassunto">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="piccolo">{{ "Rifai il riassunto" if a.riassunto else "Riassumi con l'AI" }}</button>
+    <small>Ad OpenAI arrivano solo i dati pubblici di questa gara.</small>
+  </form>
+  {% else %}
+  <p><small>{{ ai_motivo }}{% if utente.is_titolare %} <a href="/impostazioni/integrazioni/openai">Apri le impostazioni</a>.{% endif %}</small></p>
+  {% endif %}
+</article>
+
+<article>
+  <header><strong>Scheda della gara</strong></header>
+  <table class="scheda-gara">
+    <tbody>
+    {% for etichetta, valore in righe %}
+      <tr>
+        <th scope="row">{{ etichetta }}</th>
+        <td>
+          {% if etichetta == "Documentazione" and valore != "—" %}
+            {% for riga in valore.split("\n") %}{% set parti = riga.split(": ", 1) %}<a href="{{ parti[1] }}" target="_blank" rel="noopener noreferrer">{{ parti[0] }}</a><br>{% endfor %}
+          {% else %}
+            <span class="note-testo">{{ valore }}</span>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if a.categorie_soa and a.categorie_soa | selectattr("provenienza", "equalto", "testo") | list %}
+  <p><small>Le categorie SOA marcate come lette dal testo sono estratte automaticamente dall'avviso: verificale sul disciplinare.</small></p>
+  {% endif %}
+</article>
+
+<pre id="testo-scheda" hidden>{{ testo }}</pre>
+<script src="{{ url_for('static', path='js/app.js') }}" defer></script>
+{% endblock %}

@@ -10,7 +10,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app import audit
@@ -23,6 +23,7 @@ from app.models.crm import DIMENSIONI, STATI_CLIENTE
 from app.pratiche.servizio import ETICHETTE_STATO_PRATICA, partita_iva_valida
 from app.sicurezza.cifratura import ErroreCifratura
 from app.utils.numeri import importo_italiano
+from app.utils.ricerca import condizione
 from app.utils.territorio import REGIONI
 from app.web import leggi_form, render, testo
 
@@ -222,16 +223,11 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
     q = (request.query_params.get("q") or "").strip()
     stato = request.query_params.get("stato") or ""
     query = select(Azienda).options(selectinload(Azienda.sedi)).order_by(Azienda.ragione_sociale)
-    if q:
-        m = f"%{q}%"
-        query = query.where(
-            or_(
-                Azienda.ragione_sociale.ilike(m),
-                Azienda.partita_iva.ilike(m),
-                Azienda.codice_fiscale.ilike(m),
-                Azienda.email.ilike(m),
-            )
-        )
+    testo = condizione(
+        q, Azienda.ragione_sociale, Azienda.partita_iva, Azienda.codice_fiscale, Azienda.email
+    )
+    if testo is not None:
+        query = query.where(testo)
     if stato in STATI_CLIENTE:
         query = query.where(Azienda.stato_cliente == stato)
     aziende = list(db.scalars(query))

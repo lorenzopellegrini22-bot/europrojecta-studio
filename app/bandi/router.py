@@ -15,6 +15,7 @@ from app.jobs import attivita
 from app.jobs.esecuzione import esegui_job
 from app.models import Bando, BandoRequisiti, BandoVersione, Fonte, FonteRun, JobRun, Utente
 from app.sources.incentivi_italia import ATTRIBUZIONE
+from app.utils.ricerca import condizione, separa_regione
 from app.utils.territorio import REGIONI
 from app.web import render
 
@@ -62,15 +63,12 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
     stati = STATI_FILTRO.get(stato, STATI_FILTRO["attivi"])
     if stati:
         query = query.where(Bando.stato.in_(stati))
-    if q:
-        modello = f"%{q}%"
-        query = query.where(
-            or_(
-                Bando.titolo.ilike(modello),
-                Bando.ente.ilike(modello),
-                Bando.descrizione.ilike(modello),
-            )
-        )
+    regione_nel_testo, q_testo = separa_regione(q)
+    if regione_nel_testo and not regione:
+        regione = regione_nel_testo
+    testo = condizione(q_testo, Bando.titolo, Bando.ente, Bando.descrizione)
+    if testo is not None:
+        query = query.where(testo)
     if regione == "nazionali":
         query = query.where(BandoRequisiti.territorio == "nazionale")
     elif regione in REGIONI:
