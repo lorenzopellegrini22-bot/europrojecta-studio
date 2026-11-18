@@ -48,6 +48,8 @@ class Settings(BaseSettings):
     # Antivirus ClamAV per i file caricati (vuoto = nessun controllo, solo in sviluppo)
     clamav_host: str | None = None
     clamav_porta: int = 3310
+    # Job notturni via HTTP (Vercel Cron, app/jobs/cron.py): vuoto = rotte /cron spente
+    cron_secret: SecretStr | None = None
     # Avviso email quando una fonte dei bandi fallisce N raccolte di seguito
     avviso_fonte_dopo: int = Field(default=2, ge=1)
 

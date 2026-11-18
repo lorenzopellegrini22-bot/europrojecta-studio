@@ -12,7 +12,14 @@ pytestmark = pytest.mark.integration
 
 # /disiscrizione: link nelle email ai clienti, protetto dal token firmato
 # /primo-accesso: solo con PRIMO_ACCESSO=true e nessun utente (test più sotto)
-ROUTE_PUBBLICHE = {"/login", "/health", "/disiscrizione/{token}", "/primo-accesso"}
+# /cron/{nome}: solo con CRON_SECRET e l'intestazione Authorization giusta (test_cron.py)
+ROUTE_PUBBLICHE = {
+    "/login",
+    "/health",
+    "/disiscrizione/{token}",
+    "/primo-accesso",
+    "/cron/{nome}",
+}
 
 
 def _tutte_le_route(routes) -> list[APIRoute]:

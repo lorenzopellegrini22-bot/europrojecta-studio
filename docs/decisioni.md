@@ -355,7 +355,8 @@ I file non si scaricano sul server: si leggono solo le pagine, i documenti li ap
 
 ## 2026-11-18 — Pubblicazione su Vercel (installazione NuvioLab)
 L'istanza NuvioLab gira su Vercel (`europrojecta-studio.vercel.app`, funzioni a Francoforte) con database Neon in UE, per scelta del titolare. `.vercelignore` esclude segreti e dati locali; Vercel installa le dipendenze da `uv.lock`.
-**Limiti noti su Vercel:** il worker non gira (niente raccolta notturna né email del mattino automatiche), i PDF dei report non si generano (WeasyPrint senza librerie di sistema), gli allegati finiscono in `/tmp` e si perdono, niente ClamAV né backup restic. La guida `docs/messa-in-produzione.md` (VPS + Docker Compose) resta il modo completo.
+**Job notturni:** il worker non gira; al suo posto Vercel Cron chiama `/cron/<job>` (`app/jobs/cron.py`, protetto da `CRON_SECRET`) agli orari di `vercel.json`, in UTC e distanziati di un'ora perché sul piano Hobby l'orario è preciso solo all'ora. Ogni job ha al massimo 300 secondi (limite del piano Hobby): la raccolta dei bandi ne ha richiesti 68, quella degli appalti 232.
+**Limiti noti su Vercel:** i PDF dei report non si generano (WeasyPrint senza librerie di sistema), gli allegati finiscono in `/tmp` e si perdono, niente ClamAV né backup restic. La guida `docs/messa-in-produzione.md` (VPS + Docker Compose) resta il modo completo.
 Le migrazioni girano da sole a ogni pubblicazione (`buildCommand` in `vercel.json`, con `DATABASE_URL_UNPOOLED` di Neon): le credenziali del database restano su Vercel. Il primo titolare si crea dal browser con la pagina `/primo-accesso` (`PRIMO_ACCESSO=true`), che sparisce appena esiste un utente.
 
 ## 2026-11-18 — Verifica in due passaggi disattivabile

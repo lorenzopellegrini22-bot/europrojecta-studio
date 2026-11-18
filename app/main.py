@@ -43,6 +43,7 @@ from app.extraction.servizio import stato_budget
 from app.importer.router import router as import_router
 from app.integrazioni import servizio as servizio_integrazioni
 from app.integrazioni.router import router as integrazioni_router
+from app.jobs.cron import router as cron_router
 from app.models import AggiornamentoCliente, Bando, Fonte, FonteRun, Opportunita, Pratica, Utente
 from app.models.pratiche import STATI_PRATICA_CONCLUSI
 from app.opportunita.router import router as opportunita_router
@@ -123,6 +124,7 @@ def _csrf(request: Request, _: CsrfNonValido) -> Response:
 
 
 app.include_router(auth_router)
+app.include_router(cron_router)
 app.include_router(account_router)
 app.include_router(integrazioni_router)
 app.include_router(bandi_router)
