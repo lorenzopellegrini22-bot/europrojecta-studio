@@ -49,7 +49,7 @@
     {% if c.segreto and sc.provenienza == "app" %}
     <label>
       <input type="checkbox" name="rimuovi_{{ c.nome }}" value="1">
-      Rimuovi {{ c.etichetta | lower }} salvata
+      Rimuovi il valore salvato di «{{ c.etichetta }}»
     </label>
     {% endif %}
   {% endfor %}

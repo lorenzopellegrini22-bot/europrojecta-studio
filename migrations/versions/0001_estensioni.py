@@ -1,4 +1,4 @@
-"""Fase 0: estensioni PostgreSQL (pgvector per gli embeddings, unaccent per le ricerche).
+"""Fase 0: estensione pgvector per gli embeddings.
 
 Revision ID: 0001
 Revises:
@@ -17,9 +17,7 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     op.execute("CREATE EXTENSION IF NOT EXISTS vector")
-    op.execute("CREATE EXTENSION IF NOT EXISTS unaccent")
 
 
 def downgrade() -> None:
-    op.execute("DROP EXTENSION IF EXISTS unaccent")
     op.execute("DROP EXTENSION IF EXISTS vector")

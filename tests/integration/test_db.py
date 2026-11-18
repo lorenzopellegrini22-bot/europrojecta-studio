@@ -13,7 +13,7 @@ pytestmark = pytest.mark.integration
 def test_estensioni_installate(engine_test: Engine):
     with engine_test.connect() as conn:
         estensioni = set(conn.execute(text("SELECT extname FROM pg_extension")).scalars())
-        assert {"vector", "unaccent"} <= estensioni
+        assert "vector" in estensioni
         # pgvector funziona davvero: distanza coseno tra due vettori
         distanza = conn.execute(text("SELECT '[1,0]'::vector <=> '[0,1]'::vector")).scalar()
         assert distanza == pytest.approx(1.0)
