@@ -156,6 +156,8 @@ def test_riassunto_usa_modello_delle_impostazioni(monkeypatch):
 
     client = SimpleNamespace(responses=Risposte())
     monkeypatch.setattr(riassunto, "disponibile", lambda db: (True, ""))
+    monkeypatch.setattr(riassunto, "_modello", lambda db: "modello-scelto")
+    monkeypatch.setattr("app.extraction.servizio.registra_uso", lambda *a, **k: None)
     monkeypatch.setattr(
         riassunto.integrazioni,
         "leggi_valori",

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block titolo %}Revisione · {{ b.titolo | truncate(50) }} · {{ NOME_APP }}{% endblock %}
+{% macro mostra(v) -%}
+  {%- if v is none or v == [] -%}<em>—</em>
+  {%- elif v is string or v is number -%}{{ v }}
+  {%- elif v is iterable and v is not mapping -%}{{ v | join(", ") }}
+  {%- else -%}{{ v }}{%- endif -%}
+{%- endmacro %}
+{% block contenuto %}
+<nav aria-label="breadcrumb"><ul><li><a href="/revisione">Revisione</a></li><li>{{ b.titolo | truncate(60) }}</li></ul></nav>
+<div class="intestazione">
+  <hgroup>
+    <h1>{{ b.titolo | truncate(140) }}</h1>
+    <p>{{ b.ente or "" }}{% if estrazione %} · estratto il {{ estrazione.creato_il | data_ora }} con {{ estrazione.modello }} (prompt {{ estrazione.versione_prompt }}){% endif %}</p>
+  </hgroup>
+  <a href="/bandi/{{ b.id }}" role="button" class="secondary outline piccolo">Scheda del bando</a>
+</div>
+
+{% if not estrazione %}<div class="messaggio attenzione">Questo bando non è ancora stato strutturato dall'AI: puoi comunque correggere i campi.</div>{% endif %}
+{% if b.requisiti and b.requisiti.sintesi %}<article><header><strong>Sintesi</strong></header><p class="note-testo">{{ b.requisiti.sintesi }}</p></article>{% endif %}
+{% if altri %}<div class="messaggio attenzione"><strong>Altri requisiti indicati dall'AI:</strong> {{ altri }}</div>{% endif %}
+
+<div class="revisione">
+  <section>
+    {% for r in campi %}
+    {% set c = r.campo %}
+    <article id="campo-{{ c.nome }}" class="campo-revisione {% if r.da_verificare %}da-verificare-box{% endif %}">
+      <header class="intestazione">
+        <div><strong>{{ c.descrizione }}</strong>
+          {% if r.provenienza %}<small class="etichetta">{{ {"fonte": "dalla fonte", "llm": "dall'AI", "manuale": "corretto a mano"}[r.provenienza] }}</small>{% endif %}
+          {% if r.da_verificare %}<span class="da-verificare">da verificare</span>{% endif %}
+        </div>
+      </header>
+      <p>Valore attuale: <strong>{{ mostra(r.attuale) }}</strong></p>
+      {% if r.ai %}
+      <p><small>AI: {{ mostra(r.ai.valore) }} · confidenza {{ r.ai.confidenza }}{% if r.ai.citazione %} · «{{ r.ai.citazione | truncate(220) }}»{% endif %}</small></p>
+      {% endif %}
+      <div class="gruppo-pulsanti">
+        <form method="post" action="/revisione/{{ b.id }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="campo" value="{{ c.nome }}"><input type="hidden" name="azione" value="conferma">
+          <button class="piccolo">Conferma</button>
+        </form>
+        {% if r.manuale %}
+        <form method="post" action="/revisione/{{ b.id }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="campo" value="{{ c.nome }}"><input type="hidden" name="azione" value="annulla">
+          <button class="secondary outline piccolo">Annulla la correzione</button>
+        </form>
+        {% endif %}
+      </div>
+      <details>
+        <summary>Correggi</summary>
+        <form method="post" action="/revisione/{{ b.id }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="campo" value="{{ c.nome }}"><input type="hidden" name="azione" value="correggi">
+          {% if c.tipo == "scelta" %}
+          <select name="valore" aria-label="Valore"><option value="">Non indicato</option>{% for o in c.valori %}<option value="{{ o }}" {% if r.attuale == o %}selected{% endif %}>{{ o }}</option>{% endfor %}</select>
+          {% elif c.tipo == "lista" %}
+          <textarea name="valore" rows="3" aria-label="Valori, uno per riga">{{ (r.attuale or []) | join("\n") }}</textarea>
+          {% if c.valori %}<small>Valori ammessi: {{ c.valori | join(", ") | truncate(300) }}</small>{% else %}<small>Un valore per riga.</small>{% endif %}
+          {% elif c.tipo == "data" %}
+          <input type="date" name="valore" value="{{ r.attuale.isoformat() if r.attuale else '' }}" aria-label="Data">
+          {% elif c.tipo == "testo" %}
+          <textarea name="valore" rows="4" aria-label="Testo">{{ r.attuale or "" }}</textarea>
+          {% else %}
+          <input name="valore" inputmode="decimal" value="{{ r.attuale if r.attuale is not none else '' }}" aria-label="Valore">
+          {% endif %}
+          <input name="nota" placeholder="Nota (facoltativa)" aria-label="Nota">
+          <button class="piccolo">Salva la correzione</button>
+        </form>
+      </details>
+    </article>
+    {% endfor %}
+  </section>
+  <aside class="testo-bando">
+    <article>
+      <header><strong>Testo del bando</strong> <small>(in giallo le citazioni usate dall'AI)</small></header>
+      <div>{{ testo }}</div>
+    </article>
+  </aside>
+</div>
+{% endblock %}

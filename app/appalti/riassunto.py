@@ -39,9 +39,25 @@ def disponibile(db: Session) -> tuple[bool, str]:
         return False, "Collega OpenAI in Impostazioni → Integrazioni per i riassunti."
     if not s.attiva:
         return False, "L'integrazione OpenAI è disattivata nelle impostazioni."
-    if not integrazioni.leggi_valori(db, "openai").get("modello"):
-        return False, "Scegli il modello da usare in Impostazioni → Integrazioni → OpenAI."
+    if not _modello(db):
+        return False, "Scegli il modello in Impostazioni → Intelligenza artificiale."
+    from app.extraction.servizio import stato_budget
+
+    b = stato_budget(db)
+    if b["superato"] or b["sospesa"]:
+        return False, "Budget AI del mese esaurito: i riassunti ripartono il mese prossimo."
     return True, ""
+
+
+def _modello(db: Session) -> str | None:
+    from app.extraction.servizio import impostazioni
+
+    imp = impostazioni(db)
+    return (
+        imp.modello_scoring
+        or imp.modello_estrazione
+        or integrazioni.leggi_valori(db, "openai").get("modello")
+    )
 
 
 def genera(db: Session, appalto: Appalto, client=None) -> str:  # type: ignore[no-untyped-def]
@@ -51,13 +67,12 @@ def genera(db: Session, appalto: Appalto, client=None) -> str:  # type: ignore[n
     valori = integrazioni.leggi_valori(db, "openai")
     import openai
 
+    modello = _modello(db) or valori.get("modello")
     client = client or openai.OpenAI(api_key=valori["api_key"], timeout=60.0, max_retries=1)
     oggi = datetime.now(UTC).date()
     testo = f"Data di oggi: {oggi:%d/%m/%Y}\n\n{testo_scheda(appalto)}"
     try:
-        risposta = client.responses.create(
-            model=valori["modello"], instructions=ISTRUZIONI, input=testo
-        )
+        risposta = client.responses.create(model=modello, instructions=ISTRUZIONI, input=testo)
     except openai.AuthenticationError as e:
         raise ErroreRiassunto("La chiave OpenAI non è valida.") from e
     except openai.RateLimitError as e:
@@ -66,11 +81,22 @@ def genera(db: Session, appalto: Appalto, client=None) -> str:  # type: ignore[n
         raise ErroreRiassunto("Il modello indicato nelle impostazioni non esiste.") from e
     except openai.APIError as e:
         raise ErroreRiassunto(f"OpenAI ha risposto con un errore: {e}") from e
+    from app.extraction.servizio import registra_uso
+
+    uso = getattr(risposta, "usage", None)
+    registra_uso(
+        db,
+        "riassunto",
+        modello,
+        int(getattr(uso, "input_tokens", 0) or 0),
+        int(getattr(uso, "output_tokens", 0) or 0),
+        "ok",
+    )
     riassunto = (getattr(risposta, "output_text", "") or "").strip()
     if not riassunto:
         raise ErroreRiassunto("OpenAI non ha restituito testo.")
     appalto.riassunto = riassunto
     appalto.riassunto_il = datetime.now(UTC)
-    appalto.riassunto_modello = valori["modello"][:100]
+    appalto.riassunto_modello = modello[:100]
     db.commit()
     return riassunto

@@ -6,6 +6,7 @@ Job:
 - pulizia: ogni notte all'ora PULIZIA_ORARIO (default 04:00);
 - promemoria: ogni mattina all'ora PROMEMORIA_ORARIO (default 07:30), email delle scadenze;
 - raccolta_appalti: ogni notte all'ora APPALTI_ORARIO (default 03:15), TED e Consip;
+- estrazione_bandi: ogni notte all'ora ESTRAZIONE_ORARIO (default 04:30), requisiti con l'AI;
 - opportunita: ogni mattina all'ora OPPORTUNITA_ORARIO (default 07:00), abbinamento clienti
   ↔ bandi/appalti ed email con le novità;
 - battito: ogni 15 minuti verifica il database (compare nei log).
@@ -44,6 +45,10 @@ def job_raccolta() -> None:
 
 def job_pulizia() -> None:
     esegui_job("pulizia", attivita.pulizia)
+
+
+def job_estrazione() -> None:
+    esegui_job("estrazione_bandi", attivita.estrazione_bandi)
 
 
 def job_opportunita() -> None:
@@ -90,6 +95,12 @@ def crea_scheduler() -> BlockingScheduler:
     scheduler.add_job(job_pulizia, _cron(settings.pulizia_orario, fuso), id="pulizia", **notturno)
     scheduler.add_job(
         job_appalti, _cron(settings.appalti_orario, fuso), id="raccolta_appalti", **notturno
+    )
+    scheduler.add_job(
+        job_estrazione,
+        _cron(settings.estrazione_orario, fuso),
+        id="estrazione_bandi",
+        **notturno,
     )
     scheduler.add_job(
         job_opportunita,

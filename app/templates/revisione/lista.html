@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block titolo %}Revisione dei bandi · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<hgroup>
+  <h1>Revisione dei bandi</h1>
+  <p>Bandi aperti o in arrivo strutturati dall'AI con campi ancora da verificare. Conferma o correggi: le correzioni prevalgono su fonte e AI e non vengono più toccate.</p>
+</hgroup>
+{% if not righe %}
+<article><p>Niente da rivedere. Le estrazioni avvengono ogni notte (Impostazioni → Intelligenza artificiale).</p></article>
+{% else %}
+<div class="overflow-auto">
+<table class="striped">
+  <thead><tr><th>Bando</th><th>Scadenza</th><th>Campi da verificare</th></tr></thead>
+  <tbody>
+  {% for b, dv in righe %}
+    <tr>
+      <td><a href="/revisione/{{ b.id }}">{{ b.titolo | truncate(110) }}</a><br><small>{{ b.ente or "" }}</small></td>
+      <td>{{ b.data_chiusura | data }}</td>
+      <td>{{ dv | length }} <small>({{ dv[:4] | join(", ") }}{% if dv | length > 4 %}…{% endif %})</small></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

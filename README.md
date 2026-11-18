@@ -12,6 +12,7 @@ Ha tre parti:
 > - accesso sicuro (password + 2FA) e pagina *Il mio account*;
 > - **Impostazioni → Integrazioni** (chiavi API cifrate);
 > - **raccolta dei bandi nazionali da Incentivi Italia, ogni notte**, con pagine Bandi e Fonti.
+> - **estrazione dei requisiti dei bandi con l'AI** (OpenAI del consulente): citazioni verificate, revisione con conferma o correzione, budget mensile;
 > - **opportunità per cliente**: ogni mattina bandi e appalti adatti a ogni cliente (territorio, dimensione, ATECO, SOA con classifica, CPV), con email delle novità;
 > - **appalti pubblici** italiani aperti da TED, ogni notte, con ricerca per categoria (CPV), tipo, regione, provincia, comune, importo e scadenza;
 > - **Registro Imprese (Openapi)** per compilare i clienti dalla partita IVA; integrazioni attivabili con guida al collegamento;

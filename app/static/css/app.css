@@ -327,3 +327,10 @@ table.scheda-gara td { vertical-align: top; }
   margin: 0.5rem 0;
 }
 .griglia-caselle label { margin: 0; font-size: 0.9rem; }
+
+/* Revisione dei requisiti estratti */
+.revisione { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; }
+@media (max-width: 1000px) { .revisione { grid-template-columns: 1fr; } }
+.testo-bando { position: sticky; top: 1rem; max-height: 90vh; overflow-y: auto; }
+.testo-bando mark { background: #fff1a8; }
+.campo-revisione.da-verificare-box { border-left: 4px solid var(--ep-attenzione); }

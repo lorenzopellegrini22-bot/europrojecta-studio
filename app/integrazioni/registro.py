@@ -81,7 +81,8 @@ OPENAI = TipoIntegrazione(
         "studio.",
         "In Billing aggiungi un metodo di pagamento e del credito: senza credito le chiamate "
         "falliscono con «quota insufficiente».",
-        "Imposta un limite mensile di spesa (Limits) per non avere sorprese.",
+        "Imposta un limite mensile di spesa (Project settings → Limits, con «Enforce a hard "
+        "limit» per fermare davvero le chiamate) per non avere sorprese.",
         "Apri la pagina API keys e premi «Create new secret key». Dagli un nome riconoscibile, "
         "per esempio «Europrojecta Studio».",
         "Copia la chiave (inizia con «sk-»): OpenAI la mostra una sola volta.",
@@ -92,6 +93,10 @@ OPENAI = TipoIntegrazione(
     link_guida=(
         ("Pagina delle API key di OpenAI", "https://platform.openai.com/api-keys"),
         ("Elenco dei modelli OpenAI", "https://platform.openai.com/docs/models"),
+        (
+            "Limiti di spesa (guida ufficiale)",
+            "https://developers.openai.com/api/docs/guides/spend-limits",
+        ),
     ),
 )
 

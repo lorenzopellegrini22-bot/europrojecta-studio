@@ -173,3 +173,11 @@ def opportunita() -> str:
             o.notificata_il = ora
         db.commit()
         return f"{esito} Email inviate: {inviate}."
+
+
+def estrazione_bandi() -> str:
+    """Ogni notte: l'AI struttura i requisiti dei bandi aperti o in arrivo nuovi o cambiati."""
+    from app.extraction.servizio import esegui
+
+    with get_sessionmaker()() as db:
+        return esegui(db)

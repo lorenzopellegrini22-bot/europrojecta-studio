@@ -26,7 +26,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.bandi.stato import calcola_stato
-from app.models import Bando, BandoRequisiti, BandoVersione, Fonte, FonteRun
+from app.models import Bando, BandoVersione, Fonte, FonteRun
 from app.sources import http
 from app.sources.base import Fonte as FonteImpl
 from app.sources.base import RecordBando, RequisitiFonte
@@ -74,22 +74,21 @@ def assicura_fonte(db: Session, impl: FonteImpl) -> Fonte:
     return fonte
 
 
+_AI: dict[int, dict] = {}  # type: ignore[type-arg]
+_MANUALI: dict[int, dict] = {}  # type: ignore[type-arg]
+
+
 def scrivi_requisiti(bando: Bando, rf: RequisitiFonte) -> None:
-    """Scrive i requisiti strutturati dalla fonte. In fase 3 la risoluzione completa
-    (correzione manuale > fonte > LLM) sostituirà questa scrittura diretta."""
-    req = bando.requisiti or BandoRequisiti()
-    provenienza: dict[str, str] = {}
-    for campo in CAMPI_REQUISITI_FONTE:
-        valore = getattr(rf, campo)
-        setattr(req, campo, valore)
-        if valore is not None and campo != "territorio":
-            provenienza[campo] = "fonte"
-    if rf.territorio != "sconosciuto":
-        provenienza["territorio"] = "fonte"
-    req.provenienza = provenienza
-    req.da_verificare = rf.da_verificare or None
-    req.risolto_il = _adesso()
-    bando.requisiti = req
+    """Salva i valori della fonte e risolve i requisiti con le estrazioni AI e le correzioni
+    manuali già presenti (correzione manuale > fonte > AI, vedi app/extraction/)."""
+    from app.extraction.applica import scrivi, valori_da_fonte
+
+    scrivi(
+        bando,
+        valori_da_fonte(rf),
+        _AI.get(bando.id) if bando.id else None,
+        _MANUALI.get(bando.id) if bando.id else None,
+    )
 
 
 def _applica_campi(bando: Bando, rec: RecordBando, h: str) -> None:
@@ -144,6 +143,13 @@ def applica_record(
             select(Bando).where(Bando.fonte_id == fonte.id).options(selectinload(Bando.requisiti))
         )
     }
+    from app.extraction.applica import carica_ai_e_manuali
+
+    ai, manuali = carica_ai_e_manuali(db)
+    _AI.clear()
+    _AI.update(ai)
+    _MANUALI.clear()
+    _MANUALI.update(manuali)
     conta_rna = Counter(b.id_rna for b in esistenti.values() if b.id_rna)
     per_rna = {b.id_rna: b for b in esistenti.values() if b.id_rna and conta_rna[b.id_rna] == 1}
     ids_nel_file = {r.id_esterno for r in records}

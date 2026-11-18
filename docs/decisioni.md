@@ -201,6 +201,33 @@ Codice in `app/utils/ricerca.py`.
 - Tabella `opportunita` invece di `match` dello schema: serve anche per gli appalti.
 - Provato sui dati reali con due clienti tipo (impresa edile del Lazio, software house di Firenze). Le prove hanno portato a togliere tre falsi positivi: bandi di un altro comune, bandi di settore, appalti con categoria solo secondaria.
 
+## 2026-11-18 — Fase 3: estrazione dei requisiti con l'AI
+Implementata secondo il brief (sezioni 8 e 10).
+- **Schema:**
+  - `app/extraction/schema.py`, versione 1;
+  - ogni campo è `{valore, confidenza, citazione, da_verificare}`, con vocabolari chiusi: categorie di spesa (12 valori del brief), forme di agevolazione, dimensioni, regime, modalità, regioni;
+  - output strutturato OpenAI (JSON Schema `strict`) con la Responses API, verificata sulla SDK installata.
+- **Prompt:** versionato in `app/extraction/prompts/estrazione_v1.md`. Al modello si indica la struttura tipica dei bandi (finalità, beneficiari, spese, agevolazione, procedura, termini). Il formato ufficiale del «bando tipo» del Codice degli incentivi resta da trovare e verificare: è in `da-migliorare.md`.
+- **Verifica:**
+  - la citazione deve comparire nel testo (confronto normalizzato), altrimenti la confidenza diventa «bassa» e il campo «da verificare»;
+  - i valori fuori vocabolario o di tipo sbagliato vengono scartati.
+- **Risoluzione** (`app/extraction/risoluzione.py`, funzione pura): correzione manuale > fonte > AI.
+  - Un dato della fonte che la fonte stessa segna incerto cede a un valore AI con confidenza alta o media.
+  - I valori della fonte si salvano in `bando_requisiti.valori_fonte`, così ogni nuova raccolta ricalcola i requisiti senza perdere AI e correzioni. Per i bandi importati prima si ricostruiscono dai campi con provenienza «fonte».
+  - Le **date** trovate dall'AI completano solo i bandi senza date (es. portali regionali); lo stato si ricalcola.
+- **Quando si estrae:** solo i bandi aperti o in arrivo il cui hash (testo + versione del prompt + versione dello schema + modello) è cambiato. Al massimo N per notte (impostabile), prima quelli che scadono prima.
+- **Costi:**
+  - ogni chiamata va in `uso_llm`, con il costo stimato dai prezzi inseriti dal consulente: nessun prezzo nel codice;
+  - con un budget impostato servono i prezzi del modello, altrimenti l'estrazione non parte;
+  - all'80% del budget un'email ai titolari, al 100% sospensione fino al primo giorno del mese successivo;
+  - con chiave non valida o credito esaurito il run si ferma e l'errore compare nella pagina.
+- **Revisione:**
+  - pagina con i bandi che hanno campi da verificare;
+  - per ogni campo: valore, confidenza e citazione, con il testo del bando a fianco e le citazioni evidenziate;
+  - «Conferma», «Correggi» e «Annulla» la correzione (`bando_override`).
+- **Modelli:** in Impostazioni → Intelligenza artificiale (estrazione, valutazione, embeddings), con il «Modello per i riassunti» dell'integrazione come riserva. Anche i riassunti degli appalti registrano i consumi e rispettano il budget.
+- **Non ancora fatti:** download e lettura dei PDF dei bandi, embeddings e punteggio AI delle opportunità (fase 4).
+
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.
 - Jinja2 + HTMX + Pico.css salvati nel repository, nessuna risorsa da CDN.

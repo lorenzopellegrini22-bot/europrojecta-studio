@@ -26,6 +26,7 @@ from app.bandi.router import router as bandi_router
 from app.clienti.router import router as clienti_router
 from app.clienti.segnalatori import router as segnalatori_router
 from app.db import get_db
+from app.extraction.router import router as estrazione_router
 from app.integrazioni import servizio as servizio_integrazioni
 from app.integrazioni.router import router as integrazioni_router
 from app.models import Bando, Fonte, FonteRun, Opportunita, Pratica, Utente
@@ -110,6 +111,7 @@ app.include_router(prefattibilita_router)
 app.include_router(statistiche_router)
 app.include_router(appalti_router)
 app.include_router(opportunita_router)
+app.include_router(estrazione_router)
 
 
 @app.get("/")

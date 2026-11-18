@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block titolo %}Intelligenza artificiale · Impostazioni · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<nav aria-label="breadcrumb"><ul><li><a href="/impostazioni/integrazioni">Impostazioni</a></li><li>Intelligenza artificiale</li></ul></nav>
+<hgroup>
+  <h1>Intelligenza artificiale</h1>
+  <p>Modelli, budget e prezzi per l'estrazione dei requisiti dei bandi e i riassunti. La chiave OpenAI si collega in <a href="/impostazioni/integrazioni/openai">Integrazioni → OpenAI</a>.</p>
+</hgroup>
+
+{% if salvato %}<div class="messaggio ok" role="status">Impostazioni salvate.</div>{% endif %}
+{% if messaggio %}<div class="messaggio ok" role="status">{{ messaggio }}</div>{% endif %}
+{% if not pronta %}<div class="messaggio attenzione">{{ motivo }}</div>{% endif %}
+{% if budget.sospesa %}<div class="messaggio errore">Estrazioni sospese fino al {{ imp.sospesa_fino_al | data }}: {{ imp.motivo_sospensione }}.</div>
+{% elif imp.motivo_sospensione %}<div class="messaggio errore">Ultimo errore: {{ imp.motivo_sospensione }}</div>{% endif %}
+
+<div class="grid">
+  <article><header>Spesa stimata del mese</header><p class="numero">{{ budget.spesa | euro }}</p>
+    <small>{% if budget.budget %}su {{ budget.budget | euro }} ({{ budget.percentuale }}%){% else %}nessun budget impostato{% endif %}</small>
+    {% if budget.budget %}<progress value="{{ budget.spesa }}" max="{{ budget.budget }}"></progress>{% endif %}
+  </article>
+  <article><header>Bandi da strutturare</header><p class="numero">{{ in_coda if in_coda is not none else "—" }}</p>
+    <small>Aperti o in arrivo, nuovi o cambiati. Ogni notte se ne fanno al massimo {{ imp.estrazioni_per_notte }}.</small>
+    {% if pronta %}
+    <form method="post" action="/impostazioni/ai/esegui"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Esegui adesso</button></form>
+    {% endif %}
+  </article>
+</div>
+
+{% if per_operazione %}
+<article>
+  <header><strong>Consumi del mese</strong></header>
+  <table><thead><tr><th>Operazione</th><th>Chiamate</th><th>Costo stimato</th></tr></thead>
+  <tbody>{% for op, n, c in per_operazione %}<tr><td>{{ op | capitalize }}</td><td>{{ n }}</td><td>{{ c | euro }}</td></tr>{% endfor %}</tbody></table>
+  <small>Stima calcolata con i prezzi inseriti qui sotto: la cifra esatta è nel tuo account OpenAI.</small>
+</article>
+{% endif %}
+
+<details class="guida">
+  <summary><span class="icona-info" aria-hidden="true">i</span> Come compilare questa pagina</summary>
+  <ol>
+    <li>Scegli i modelli nella pagina <a href="https://platform.openai.com/docs/models" target="_blank" rel="noopener noreferrer">Models</a> della documentazione OpenAI e scrivine il nome esatto. Per l'estrazione serve un modello che supporti gli «output strutturati».</li>
+    <li>Copia dalla pagina <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener noreferrer">Pricing</a> di OpenAI i prezzi per milione di token (ingresso e uscita) di ogni modello che usi. Servono per stimare la spesa e far rispettare il budget.</li>
+    <li>Imposta un budget mensile: all'80% arriva un'email, al 100% le estrazioni si fermano fino al mese successivo. La raccolta dei bandi e le opportunità continuano a funzionare.</li>
+    <li>Imposta anche un limite di spesa direttamente in OpenAI: Project settings → Limits (o i limiti dell'organizzazione), attivando «Enforce a hard limit» se vuoi che le chiamate si fermino davvero. Istruzioni ufficiali: <a href="https://developers.openai.com/api/docs/guides/spend-limits" target="_blank" rel="noopener noreferrer">Spend limits</a>.</li>
+  </ol>
+</details>
+
+<form method="post" action="/impostazioni/ai">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <article>
+    <header><strong>Modelli</strong></header>
+    <div class="grid">
+      <label>Estrazione dei bandi<input name="modello_estrazione" value="{{ imp.modello_estrazione or '' }}"></label>
+      <label>Valutazione delle opportunità <small>(prossima fase)</small><input name="modello_scoring" value="{{ imp.modello_scoring or '' }}"></label>
+      <label>Embeddings <small>(prossima fase)</small><input name="modello_embeddings" value="{{ imp.modello_embeddings or '' }}"></label>
+    </div>
+    <small>Se il modello di estrazione è vuoto si usa il «Modello per i riassunti» dell'integrazione OpenAI.</small>
+  </article>
+  <article>
+    <header><strong>Budget</strong></header>
+    <div class="grid">
+      <label>Budget mensile (€)<input name="budget_mensile_eur" inputmode="decimal" value="{{ imp.budget_mensile_eur if imp.budget_mensile_eur is not none else '' }}"></label>
+      <label>Bandi da strutturare per notte<input type="number" min="0" max="2000" name="estrazioni_per_notte" value="{{ imp.estrazioni_per_notte }}"></label>
+    </div>
+    {% if imp.sospesa_fino_al or imp.motivo_sospensione %}<label class="casella"><input type="checkbox" name="riattiva" value="1"> Riattiva subito le estrazioni (dopo aver sistemato il problema)</label>{% endif %}
+  </article>
+  <article>
+    <header><strong>Prezzi per milione di token (€)</strong></header>
+    {% set voci = (imp.prezzi or {}).items() | list %}
+    {% for i in range(6) %}
+    {% set v = voci[i] if i < voci | length else none %}
+    <div class="grid">
+      <input name="prezzo_modello_{{ i }}" placeholder="Nome del modello" value="{{ v[0] if v else '' }}" aria-label="Modello">
+      <input name="prezzo_ingresso_{{ i }}" placeholder="Ingresso €/M" inputmode="decimal" value="{{ v[1].ingresso if v else '' }}" aria-label="Prezzo ingresso">
+      <input name="prezzo_uscita_{{ i }}" placeholder="Uscita €/M" inputmode="decimal" value="{{ v[1].uscita if v else '' }}" aria-label="Prezzo uscita">
+    </div>
+    {% endfor %}
+  </article>
+  <button type="submit">Salva</button>
+</form>
+{% endblock %}

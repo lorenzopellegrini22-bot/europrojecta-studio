@@ -198,6 +198,9 @@ class BandoRequisiti(Base):
     regime: Mapped[str | None] = mapped_column(String(20))
     modalita: Mapped[str | None] = mapped_column(String(20))
     sintesi: Mapped[str | None] = mapped_column(Text)
+    # Valori strutturati dalla fonte (ultimo import): servono a ri-risolvere i requisiti
+    # quando arrivano estrazioni AI o correzioni manuali, senza riscaricare la fonte
+    valori_fonte: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     provenienza: Mapped[dict[str, str]] = mapped_column(JSONB, default=dict, server_default="{}")
     da_verificare: Mapped[list[str] | None] = _lista()
     risolto_il: Mapped[datetime] = mapped_column(

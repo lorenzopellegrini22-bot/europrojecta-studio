@@ -167,6 +167,17 @@ def _dimensione_ateco(a: Azienda, req: Any, b: Bando, e: Esito) -> Esito | None:
             e.punteggio += 20
         else:
             return None
+    primario = a.ateco_primario
+    esclusi = getattr(req, "ateco_esclusi", None)
+    if esclusi and primario is not None and _ateco_ok(primario.codice, esclusi):
+        return None
+    if getattr(req, "anzianita_max_mesi", None):
+        e.da_verificare.append(f"Solo imprese costituite da meno di {req.anzianita_max_mesi} mesi")
+        e.punteggio -= 5
+    if getattr(req, "regime", None) == "de_minimis":
+        e.da_verificare.append("Aiuto in de minimis: verificare il plafond del cliente")
+    if getattr(req, "categorie_spesa", None):
+        e.soddisfatti.append("Spese ammissibili: " + ", ".join(req.categorie_spesa[:4]))
     if b.stato == "in_arrivo":
         e.soddisfatti.append("In arrivo: c'è tempo per preparare la domanda")
     return e

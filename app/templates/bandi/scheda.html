@@ -10,7 +10,7 @@
       {% elif valore is string or valore is number %}{{ valore }}
       {% else %}{{ valore | join(", ") }}{% endif %}
       {% if req and campo in (req.da_verificare or []) %} <span class="da-verificare">da verificare</span>{% endif %}
-      {% if req and req.provenienza.get(chiave_prov) %}<small class="provenienza"> · {{ req.provenienza[chiave_prov] }}</small>{% endif %}
+      {% if req and req.provenienza.get(chiave_prov) %}<small class="provenienza"> · {{ {"fonte": "dalla fonte", "llm": "estratto dall'AI", "manuale": "corretto a mano"}.get(req.provenienza[chiave_prov], req.provenienza[chiave_prov]) }}</small>{% endif %}
     </td>
   </tr>
 {%- endmacro %}
@@ -19,10 +19,19 @@
   <ul><li><a href="/bandi">Bandi</a></li><li>Scheda</li></ul>
 </nav>
 
+<div class="intestazione">
 <hgroup>
   <h1>{{ bando.titolo }}</h1>
   <p>{{ bando.ente or "Ente non indicato" }} · {{ badge_stato(bando.stato) }}</p>
 </hgroup>
+<div class="gruppo-pulsanti">
+  <a href="/prefattibilita/nuova?bando_id={{ bando.id }}" role="button" class="secondary outline piccolo">Verifica per un cliente</a>
+  <a href="/revisione/{{ bando.id }}" role="button" class="secondary outline piccolo">Rivedi i requisiti</a>
+</div>
+</div>
+{% if req and req.sintesi %}
+<article><header><strong>In breve</strong>{% if req.provenienza.get("sintesi") == "llm" %} <small class="provenienza">(sintesi dell'AI: verifica sempre sul bando)</small>{% endif %}</header><p class="note-testo">{{ req.sintesi }}</p></article>
+{% endif %}
 
 <div class="grid">
   <article>
@@ -53,7 +62,11 @@
       <tr><th scope="row">Territorio</th><td>{{ territorio(req) }}{% if "territorio" in (req.da_verificare or []) %} <span class="da-verificare">da verificare</span>{% endif %}</td></tr>
       {{ riga("Zone speciali", "aree_speciali", req.aree_speciali) }}
       {{ riga("Dimensioni d'impresa", "dimensioni", req.dimensioni) }}
-      {{ riga("Codici ATECO" ~ (" (" ~ req.ateco_versione ~ ")" if req.ateco_versione else ""), "ateco", req.ateco_ammessi or "Tutti i settori ammissibili", "ateco_ammessi") }}
+      {{ riga("Codici ATECO" ~ (" (" ~ req.ateco_versione ~ ")" if req.ateco_versione else ""), "ateco_ammessi", req.ateco_ammessi or "Tutti i settori ammissibili") }}
+      {% if req.ateco_esclusi %}{{ riga("ATECO esclusi", "ateco_esclusi", req.ateco_esclusi) }}{% endif %}
+      {% if req.forme_giuridiche %}{{ riga("Forme giuridiche", "forme_giuridiche", req.forme_giuridiche) }}{% endif %}
+      {% if req.anzianita_min_mesi or req.anzianita_max_mesi %}{{ riga("Anzianità dell'impresa", "anzianita_max_mesi", ("da " ~ req.anzianita_min_mesi ~ " mesi " if req.anzianita_min_mesi else "") ~ ("fino a " ~ req.anzianita_max_mesi ~ " mesi" if req.anzianita_max_mesi else "")) }}{% endif %}
+      {{ riga("Intensità dell'aiuto", "percentuale", (req.percentuale | string ~ "%") if req.percentuale else none) }}
       {{ riga("Beneficiari", "tipologie_soggetto", req.tipologie_soggetto) }}
       {{ riga("Settori", "settori", req.settori) }}
       {{ riga("Forma di agevolazione", "forma_agevolazione", req.forma_agevolazione) }}
