@@ -1,0 +1,11 @@
+{# Pulsanti di feedback su un'opportunità «o» (pagina Opportunità, scheda cliente, scheda bando) #}
+{% if o.feedback %}<small class="etichetta">{{ {"utile": "utile", "non_pertinente": "non pertinente", "gia_noto": "già noto"}[o.feedback] }}</small>
+{% else %}
+<form method="post" action="/opportunita/{{ o.id }}/feedback" class="feedback">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <input type="hidden" name="torna" value="{{ request.url.path }}{% if request.url.query %}?{{ request.url.query }}{% endif %}">
+  <button name="feedback" value="utile" class="secondary outline piccolo">Utile</button>
+  <button name="feedback" value="non_pertinente" class="secondary outline piccolo">Non pertinente</button>
+  <button name="feedback" value="gia_noto" class="secondary outline piccolo">Già noto</button>
+</form>
+{% endif %}

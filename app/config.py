@@ -48,6 +48,8 @@ class Settings(BaseSettings):
     # Antivirus ClamAV per i file caricati (vuoto = nessun controllo, solo in sviluppo)
     clamav_host: str | None = None
     clamav_porta: int = 3310
+    # Avviso email quando una fonte dei bandi fallisce N raccolte di seguito
+    avviso_fonte_dopo: int = Field(default=2, ge=1)
 
     # Massimali de minimis in euro su 3 anni mobili (configurabili: le norme cambiano).
     # Generale: Reg. (UE) 2023/2831; SIEG: Reg. (UE) 2023/2832;

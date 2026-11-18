@@ -1,7 +1,7 @@
 """Bandi doppi, ordine per pertinenza, rinnovo della sessione, rotazione della chiave."""
 
 import uuid
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from sqlalchemy import select
@@ -121,3 +121,54 @@ def test_rotazione_della_chiave_su_database(client, crea_utente, accedi, db, mon
         get_settings.cache_clear()
         db.query(Integrazione).filter(Integrazione.codice == "openai").delete()
         db.commit()
+
+
+def test_avviso_fonti_e_filtri_bandi(client, crea_utente, accedi, db, monkeypatch):
+    from app.jobs import attivita
+    from app.models import BandoRequisiti, Opportunita
+    from tests.integration.test_funzioni_studio import _configura_smtp
+    from tests.integration.test_pratiche import _cliente
+
+    titolare = crea_utente()
+    accedi(titolare)
+    _configura_smtp(client)
+    inviate = []
+    monkeypatch.setattr(
+        "app.comunicazioni.invia",
+        lambda valori, a, oggetto, testo, rispondi_a=None: inviate.append((a, oggetto, testo)),
+    )
+    fonte = _fonte(db, f"fonte_rotta_{uuid.uuid4().hex[:6]}", "Fonte rotta")
+    fonte.fallimenti_consecutivi = 2
+    db.commit()
+    attivita.avviso_fonti()
+    mie = [x for x in inviate if x[0] == titolare.email]
+    assert mie and "Fonte rotta" in mie[0][2]
+    fonte.fallimenti_consecutivi = 3  # una volta sola, quando si raggiunge la soglia
+    db.commit()
+    inviate.clear()
+    attivita.avviso_fonti()
+    assert not [x for x in inviate if "Fonte rotta" in x[2]]
+
+    # Filtro «con campi da verificare» e clienti compatibili nella scheda del bando
+    f = _fonte(db, "prova_pertinenza", "Prova")
+    sigla = uuid.uuid4().hex[:6]
+    incerto = _nuovo(db, f, f"Bando incerto {sigla}")
+    certo = _nuovo(db, f, f"Bando certo {sigla}")
+    db.add(
+        BandoRequisiti(
+            bando_id=incerto.id, territorio="nazionale", provenienza={}, da_verificare=["regime"]
+        )
+    )
+    db.add(BandoRequisiti(bando_id=certo.id, territorio="nazionale", provenienza={}))
+    a = _cliente(client, db)
+    db.add(
+        Opportunita(
+            azienda_id=a.id, bando_id=certo.id, punteggio=77, motivi={}, stato="nuova",
+            trovata_il=datetime.now(UTC),
+        )
+    )  # fmt: skip
+    db.commit()
+    pagina = client.get(f"/bandi?q={sigla}&verifica=1").text
+    assert f"/bandi/{incerto.id}" in pagina and f"/bandi/{certo.id}" not in pagina
+    scheda = client.get(f"/bandi/{certo.id}").text
+    assert a.ragione_sociale in scheda and "Non pertinente" in scheda

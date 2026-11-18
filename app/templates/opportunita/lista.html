@@ -70,7 +70,6 @@
           </small>
         </details>
         {% endif %}
-        {% if o.feedback %}<small class="etichetta">Feedback: {{ {"utile": "utile", "non_pertinente": "non pertinente", "gia_noto": "già noto"}[o.feedback] }}</small>{% endif %}
       </div>
       <div class="gruppo-pulsanti">
         <form method="post" action="/opportunita/{{ o.id }}/pratica"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="piccolo">Apri pratica</button></form>
@@ -84,16 +83,7 @@
         {% if o.stato != "scartata" %}
         <form method="post" action="/opportunita/{{ o.id }}/stato"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="stato" value="scartata"><input type="hidden" name="torna" value="{{ request.url.path }}?{{ request.url.query }}"><button class="secondary outline piccolo">Scarta</button></form>
         {% endif %}
-        {% if not o.feedback %}
-        <form method="post" action="/opportunita/{{ o.id }}/feedback" class="feedback">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <input type="hidden" name="torna" value="{{ request.url.path }}?{{ request.url.query }}">
-          <small>Il punteggio è giusto?</small>
-          <button name="feedback" value="utile" class="secondary outline piccolo">Utile</button>
-          <button name="feedback" value="non_pertinente" class="secondary outline piccolo">Non pertinente</button>
-          <button name="feedback" value="gia_noto" class="secondary outline piccolo">Già noto</button>
-        </form>
-        {% endif %}
+        {% include "opportunita/_feedback.html" %}
       </div>
     </div>
   </div>

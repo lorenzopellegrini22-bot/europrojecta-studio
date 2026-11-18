@@ -23,6 +23,7 @@ from app.models import (
     JobRun,
     Utente,
 )
+from app.models.opportunita import Opportunita
 from app.sources.incentivi_italia import ATTRIBUZIONE
 from app.utils.ricerca import condizione, pertinenza, separa_regione
 from app.utils.territorio import REGIONI
@@ -90,6 +91,9 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
         )
     if forma:
         query = query.where(BandoRequisiti.forma_agevolazione.any(forma))
+    da_verificare = p.get("verifica") == "1"
+    if da_verificare:
+        query = query.where(func.cardinality(BandoRequisiti.da_verificare) > 0)
     if scadenza:
         oggi = date.today()
         query = query.where(Bando.data_chiusura.between(oggi, oggi + timedelta(days=scadenza)))
@@ -108,7 +112,14 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
     ).all()
     pagine = max((totale + PER_PAGINA - 1) // PER_PAGINA, 1)
 
-    filtri = {"q": q, "stato": stato, "regione": regione, "forma": forma, "scadenza": scadenza}
+    filtri = {
+        "q": q,
+        "stato": stato,
+        "regione": regione,
+        "forma": forma,
+        "scadenza": scadenza,
+        "verifica": da_verificare,
+    }
     return render(
         request,
         "bandi/lista.html",
@@ -148,6 +159,17 @@ def scheda(request: Request, db: Db, _: Autenticato, bando_id: int) -> Response:
             ),
             "req": bando.requisiti,
             "versioni": versioni,
+            "compatibili": list(
+                db.scalars(
+                    select(Opportunita)
+                    .where(
+                        Opportunita.bando_id == bando.id,
+                        Opportunita.stato.not_in(("scartata",)),
+                    )
+                    .options(selectinload(Opportunita.azienda))
+                    .order_by(Opportunita.punteggio.desc())
+                )
+            ),
             "principale": db.get(Bando, bando.bando_canonico_id)
             if bando.bando_canonico_id
             else None,

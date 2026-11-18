@@ -124,6 +124,22 @@
 </article>
 {% endif %}
 
+<article id="clienti-compatibili">
+  <header><strong>Clienti compatibili</strong></header>
+  {% if not compatibili %}<p><small>Nessun cliente compatibile tra quelli con la ricerca automatica attiva.</small></p>
+  {% else %}
+  <ul>
+    {% for o in compatibili %}
+    <li><span class="punteggio">{{ o.punteggio }}</span> <a href="/clienti/{{ o.azienda_id }}">{{ o.azienda.ragione_sociale }}</a>
+      {% if o.motivazione_ai %}<br><small>{{ o.motivazione_ai }}</small>{% endif %}
+      {% include "opportunita/_feedback.html" %}
+      <form method="post" action="/clienti/{{ o.azienda_id }}/report/{{ bando.id }}" class="in-linea"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Report PDF</button></form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</article>
+
 {% if bando.descrizione %}
 <article>
   <header><strong>Descrizione dalla fonte</strong></header>

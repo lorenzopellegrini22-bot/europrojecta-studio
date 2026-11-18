@@ -37,10 +37,51 @@ def raccolta_bandi(forza: bool = False, solo: str | None = None) -> str:
     except Exception:  # i doppioni non devono far fallire la raccolta
         log.exception("Collegamento dei bandi doppi non riuscito")
     if fallite:
+        try:
+            avviso_fonti()
+        except Exception:
+            log.exception("Avviso delle fonti non riuscito")
+    if fallite:
         # Il job risulta in errore (e lo vede l'email del mattino), ma le altre fonti sono
         # state comunque elaborate.
         raise ErroreRaccolta(riepilogo)
     return riepilogo
+
+
+def avviso_fonti() -> int:
+    """Email ai titolari quando una fonte arriva a N fallimenti consecutivi (brief: default 2).
+    Parte una volta sola, quando il contatore raggiunge la soglia."""
+    from app.comunicazioni import email_disponibile, invia_registrando
+    from app.config import get_settings
+    from app.models import Utente
+
+    soglia = get_settings().avviso_fonte_dopo
+    with get_sessionmaker()() as db:
+        fonti = list(db.scalars(select(Fonte).where(Fonte.fallimenti_consecutivi == soglia)))
+        if not fonti or not email_disponibile(db):
+            return 0
+        testo = "\n".join(
+            [
+                "Buongiorno,",
+                "",
+                f"queste fonti dei bandi non rispondono da {soglia} raccolte consecutive:",
+                *[f"• {f.nome} ({f.url})" for f in fonti],
+                "",
+                "I bandi già raccolti restano visibili. Dettagli nella pagina Fonti dei bandi.",
+            ]
+        )
+        inviate = 0
+        for u in db.scalars(select(Utente).where(Utente.attivo, Utente.ruolo == "titolare")):
+            ok, _ = invia_registrando(
+                db,
+                tipo="avviso",
+                destinatario=u.email,
+                oggetto=f"Attenzione: {len(fonti)} fonti dei bandi non rispondono",
+                testo=testo,
+                utente=u,
+            )
+            inviate += ok
+        return inviate
 
 
 class ErroreRaccolta(Exception):

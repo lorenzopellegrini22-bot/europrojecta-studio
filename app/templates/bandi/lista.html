@@ -35,6 +35,7 @@
       {% endfor %}
     </select>
   </div>
+  <label class="casella"><input type="checkbox" name="verifica" value="1" {% if filtri.verifica %}checked{% endif %}> Solo con campi da verificare</label>
   <div class="azioni-filtri">
     <button type="submit">Filtra</button>
     <a href="/bandi" class="secondary">Azzera filtri</a>

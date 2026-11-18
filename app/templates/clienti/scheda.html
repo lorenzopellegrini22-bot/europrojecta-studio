@@ -109,7 +109,8 @@
   <ul>
     {% for o in opportunita %}
     <li><span class="punteggio">{{ o.punteggio }}</span> <small class="etichetta">{{ "Bando" if o.bando_id else "Appalto" }}</small>
-      <a href="{{ '/bandi/%d' % o.bando_id if o.bando_id else '/appalti/%d' % o.appalto_id }}">{{ o.titolo | truncate(110) }}</a>{% if o.scadenza %} <small>· scade il {{ o.scadenza | data }}</small>{% endif %}</li>
+      <a href="{{ '/bandi/%d' % o.bando_id if o.bando_id else '/appalti/%d' % o.appalto_id }}">{{ o.titolo | truncate(110) }}</a>{% if o.scadenza %} <small>· scade il {{ o.scadenza | data }}</small>{% endif %}
+      {% include "opportunita/_feedback.html" %}</li>
     {% endfor %}
   </ul>
   <a href="/opportunita?cliente={{ azienda.id }}">Tutte le opportunità del cliente</a>
