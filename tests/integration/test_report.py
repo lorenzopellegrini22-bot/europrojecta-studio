@@ -41,7 +41,7 @@ def test_report_bozza_approvazione_pdf(client, crea_utente, accedi, db):
     rid = int(r.headers["location"].rsplit("/", 1)[1])
     rep = db.get(ReportBando, rid)
     assert rep.contenuto["sintesi"].startswith("Contributo per la digitalizzazione")
-    assert "Campo da verificare sul bando: regime" in rep.contenuto["cosa_serve"]
+    assert "Da verificare sul bando: regime di aiuto" in rep.contenuto["cosa_serve"]
     # Prima dell'approvazione niente PDF
     r = client.get(f"/report/{rid}/pdf")
     assert r.status_code == 303

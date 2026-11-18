@@ -61,7 +61,16 @@ def contenuto_iniziale(b: Bando, o: Opportunita | None) -> dict[str, str]:
             if r.importo_max:
                 agevolazione += f", fino a {r.importo_max:,.0f} €".replace(",", ".")
             perche.append("Agevolazione: " + agevolazione)
-        verificare += [f"Campo da verificare sul bando: {c}" for c in (r.da_verificare or [])]
+        from app.extraction.schema import CAMPI
+
+        etichette = {c.nome: c.descrizione.split(" (")[0] for c in CAMPI}
+        etichette.update(
+            {"date": "Date di apertura e chiusura", "importi": "Importi dell'agevolazione"}
+        )
+        verificare += [
+            f"Da verificare sul bando: {etichette.get(c, c.replace('_', ' ')).lower()}"
+            for c in (r.da_verificare or [])
+        ]
     scadenze = []
     if b.data_apertura:
         scadenze.append(f"Apertura: {b.data_apertura:%d/%m/%Y}")

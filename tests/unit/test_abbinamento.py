@@ -186,3 +186,65 @@ def test_settore_solo_a_inizio_parola_e_enti_locali():
     locale.ente, locale.titolo = "Comune di Treviglio", "Contributi alle MPMI"
     esito = valuta_bando(c, locale)
     assert esito is not None and esito.punteggio < 45  # non escluso, ma sotto soglia
+
+
+def test_regole_trovate_simulando_il_lavoro_dello_studio():
+    """Casi trovati usando la piattaforma come il consulente (18/11/2026)."""
+    from app.opportunita.abbinamento import Contesto, valuta_bando_con_motivo
+
+    oggi = date(2026, 11, 18)
+    officina = _cliente(
+        ateco_primario=N(codice="25.62", versione="2007"),
+        forma_giuridica="S.r.l.",
+        dimensione_manuale=None,
+        dipendenti=18,
+        fatturato=Decimal("2400000"),
+        totale_attivo=None,
+        data_costituzione=date(2009, 4, 15),
+        plafond_de_minimis_manuale=None,
+    )
+
+    def bando(titolo="Contributi alle imprese", descrizione=None, raw=None, ente=None, **req):
+        b = _bando(titolo=titolo, **req)
+        b.descrizione, b.raw, b.ente = descrizione, raw or {}, ente
+        b.data_apertura, b.data_chiusura = req.pop("apertura", None), None
+        return b
+
+    ctx = Contesto(oggi=oggi)
+    # settori della fonte nazionale
+    _, motivo = valuta_bando_con_motivo(
+        officina, bando(raw={"Settore_Attivita": ["Turismo", "Cultura", "Commercio"]}), ctx
+    )
+    assert motivo and "Settore" in motivo
+    es, _ = valuta_bando_con_motivo(
+        officina, bando(raw={"Settore_Attivita": ["Meccanica", "Turismo"]}), ctx
+    )
+    assert any("Settore ammesso" in m for m in es.soddisfatti)
+    # bando solo per professionisti: escluso per una S.r.l.
+    _, motivo = valuta_bando_con_motivo(officina, bando(tipologie_soggetto=["Professionista"]), ctx)
+    assert motivo and "professionisti" in motivo
+    # bando senza beneficiari ma chiaramente non per imprese: sotto soglia
+    es, _ = valuta_bando_con_motivo(
+        officina,
+        bando(titolo="PRESEPI 2026 per le parrocchie e i cittadini", tipologie_soggetto=None),
+        ctx,
+    )
+    assert es is not None and es.punteggio < 45
+    # testo per imprese in avvio e impresa di 17 anni: sotto soglia
+    es, _ = valuta_bando_con_motivo(
+        officina,
+        bando(descrizione="Prestiti a microimprese in fase di avviamento, anche non costituite."),
+        ctx,
+    )
+    assert es is not None and es.punteggio < 45 and any("17 anni" in m for m in es.da_verificare)
+
+
+def test_uno_o_due_settori_non_escludono():
+    """Conto Termico 3.0: la fonte indica solo «Edilizia» (tipo di intervento)."""
+    from app.opportunita.abbinamento import Contesto, valuta_bando_con_motivo
+
+    hotel = _cliente(ateco_primario=N(codice="55.10", versione="2007"))
+    b = _bando(titolo="Conto Termico 3.0", territorio="nazionale", regioni=None)
+    b.raw, b.descrizione = {"Settore_Attivita": ["Edilizia"]}, None
+    es, motivo = valuta_bando_con_motivo(hotel, b, Contesto())
+    assert motivo is None and any("tipo di intervento" in m for m in es.da_verificare)

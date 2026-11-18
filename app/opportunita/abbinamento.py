@@ -56,7 +56,8 @@ SETTORI_BANDO: tuple[tuple[tuple[str, ...], tuple[str, ...], str], ...] = (
     (("pesca", "acquacoltura", "feampa"), ("03", "10"), "pesca e acquacoltura"),
     (("cinema", "audiovisiv", "spettacolo", "teatr", "musica", "cultura", "editoria",
       "immaginario"), ("58", "59", "60", "90", "91", "93"), "cultura e spettacolo"),
-    (("turism", "ricettiv", "albergh", "alberghi"), ("55", "56", "79"), "turismo"),
+    (("turism", "ricettiv", "albergh", "alberghi", "travel market", "tour operator"),
+     ("55", "56", "79"), "turismo"),
     (("sport",), ("93",), "sport"),
 )  # fmt: skip
 
@@ -170,6 +171,7 @@ def _valuta(a: Azienda, b: Bando, ctx: Contesto) -> Esito:
         any(s in t.lower() for s in SOGGETTI_IMPRESA) for t in req.tipologie_soggetto
     ):
         raise Escluso("Bando non rivolto alle imprese: " + ", ".join(req.tipologie_soggetto[:3]))
+    _tipologie(a, b, req, e)
     # Bandi di settore (cultura, agricoltura, turismo…): solo per chi è di quel settore
     settore = _sezione_settore(b.titolo)
     if settore:
@@ -205,6 +207,8 @@ def _valuta(a: Azienda, b: Bando, ctx: Contesto) -> Esito:
     if req.territorio == "nazionale":
         e.soddisfatti.append("Bando nazionale")
         e.punteggio += 5
+    elif req.regioni and _ente_di_altre_province(a, b, e, ctx):
+        pass  # bando di una Camera di commercio, Provincia o Comune di altre province
     elif req.regioni:
         if sede is None:
             e.da_verificare.append(f"Territorio ({', '.join(req.regioni[:3])}): manca la sede")
@@ -239,7 +243,7 @@ def ente_locale(b: Bando) -> str | None:
     """Nome dell'ente locale che emette il bando (dall'ente o dall'inizio del titolo)."""
     from app.utils.ricerca import normalizza
 
-    for testo in (b.ente or "", (b.titolo or "")[:60]):
+    for testo in (getattr(b, "ente", None) or "", (b.titolo or "")[:60]):
         n = normalizza(testo).strip()
         if any(n.startswith(x) for x in ENTI_LOCALI):
             return testo.strip()[:60]
@@ -266,6 +270,194 @@ def _comune_ammesso(sede: Any, comuni: list[str], ctx: Contesto) -> bool:
         elif norm_nome(nome) == nome_sede:
             return True
     return False
+
+
+# Bandi senza beneficiari indicati che dal titolo non sono per le imprese (fonti regionali
+# come Lazio Europa pubblicano anche bandi per scuole, famiglie, cittadini ed enti)
+PAROLE_NON_IMPRESE = (
+    "studenti", "scuol", "istituti scolastici", "famiglie", "cittadini", "adozion",
+    "prima infanzia", "presepi", "comuni del lazio", "enti locali", "universita",
+    "borse di studio", "associazioni sportive", "parrocchi", "residenti", "istruzione",
+    "filiera formativa", "iefp", "its academy", "enti di formazione", "organismi di formazione",
+    "subito violenza", "vittime di",
+)  # fmt: skip
+
+
+def _ente_di_altre_province(a: Azienda, b: Bando, e: Esito, ctx: Contesto) -> bool:
+    """Bandi di Camere di commercio, Province e Comuni registrati come «regionali» dalla
+    fonte (es. CCIAA Frosinone-Latina con territorio «Lazio», trovato verificando il sito
+    ufficiale): valgono di solito solo per le loro province. Con la tabella ISTAT si
+    ricavano le province dal nome dell'ente; se la sede è altrove il punteggio scende sotto
+    la soglia (non si esclude: va verificato sul bando). True se la sede è in un'altra
+    provincia."""
+    t = ctx.territorio
+    sigla_sede = getattr(a.sede_legale, "provincia", None) if a.sede_legale else None
+    locale = ente_locale(b)
+    if t is None or not sigla_sede or not locale:
+        return False
+    from app.utils.ricerca import normalizza
+
+    testo = normalizza(locale)
+    for prefisso in (
+        "camera di commercio",
+        "cciaa",
+        "provincia di",
+        "comune di",
+        "citta metropolitana di",
+    ):
+        testo = testo.replace(prefisso, " ")
+    sigle: set[str] = set()
+    for parola in re.split(r"[-–,/]| e ", testo):
+        parola = parola.strip(" .")
+        if not parola:
+            continue
+        parole = parola.split()
+        for i in range(len(parole)):  # «i.a.a. frosinone» → prova anche «frosinone»
+            candidato = " ".join(parole[i:])
+            sigla = t.sigla(candidato)
+            if sigla is None:
+                comune = t.comune(candidato)
+                sigla = comune.sigla if comune else None
+            if sigla:
+                sigle.add(sigla)
+                break
+    # nomi di provincia scritti senza separatori («Arezzo Siena»)
+    from app.riferimenti.istat import norm_nome
+
+    piano = f" {norm_nome(testo)} "
+    for nome, sigla in t.sigla_da_provincia.items():
+        if len(nome) >= 4 and f" {nome} " in piano:
+            sigle.add(sigla)
+    if not sigle:
+        return False
+    if sigla_sede.upper() in sigle:
+        e.soddisfatti.append(f"Ente della provincia della sede ({locale})")
+        e.punteggio += 10
+        return False
+    e.da_verificare.append(
+        f"Bando di {locale}: di solito solo per le imprese di {', '.join(sorted(sigle))}"
+    )
+    e.punteggio -= 25
+    return True
+
+
+def _tipologie(a: Azienda, b: Bando, req: Any, e: Esito) -> None:
+    """Chi può partecipare, oltre il filtro «non per imprese»: bandi solo per
+    professionisti, solo per startup o PMI innovative, solo per imprese da costituire."""
+    from app.utils.ricerca import normalizza
+
+    tip = [x.lower() for x in (req.tipologie_soggetto or [])]
+    if not tip:
+        titolo = f" {normalizza(b.titolo or '')} "
+        if any(p in titolo for p in PAROLE_NON_IMPRESE):
+            e.da_verificare.append("Beneficiari non indicati: dal titolo non sembra per imprese")
+            e.punteggio -= 30
+        return
+    impresa = [
+        x
+        for x in tip
+        if "impresa" in x or any(s in x for s in ("rete", "consorzio", "cooperative"))
+    ]
+    famiglia = famiglia_forma(getattr(a, "forma_giuridica", None))
+    if not impresa:  # solo professionisti (e magari cittadini o enti)
+        if famiglia in ("società di capitali", "società di persone", "cooperativa", "consorzio"):
+            raise Escluso("Bando solo per liberi professionisti")
+        if famiglia != "professionista":
+            e.da_verificare.append("Bando per liberi professionisti")
+            e.punteggio -= 15
+        return
+    generiche = [
+        x for x in impresa if x in ("impresa", "rete d'impresa", "consorzio") or "cooperative" in x
+    ]
+    if not generiche:
+        if all("da costituire" in x for x in impresa):
+            e.da_verificare.append("Solo per imprese da costituire")
+            e.punteggio -= 20
+        elif all("innovativa" in x for x in impresa):
+            e.da_verificare.append("Solo startup o PMI innovative")
+            e.punteggio -= 15
+        else:
+            e.da_verificare.append("Beneficiari: " + ", ".join(req.tipologie_soggetto[:3]))
+            e.punteggio -= 10
+
+
+def _settori_fonte(a: Azienda, b: Bando, e: Esito) -> None:
+    """Settori ammessi indicati dalla fonte nazionale (Settore_Attivita) contro l'ATECO."""
+    from app.opportunita.settori import SETTORI, settori_possibili
+
+    ammessi = (getattr(b, "raw", None) or {}).get("Settore_Attivita") or []
+    if not ammessi or len(set(ammessi)) >= len(SETTORI):
+        return
+    primario = a.ateco_primario
+    possibili = settori_possibili(primario.codice if primario is not None else None)
+    if possibili is None:
+        e.da_verificare.append("Settori ammessi: " + ", ".join(ammessi[:4]))
+        return
+    comuni = possibili & set(ammessi)
+    if not comuni and len(set(ammessi)) <= 2:
+        # Con uno o due settori la fonte spesso indica il tipo di intervento, non chi può
+        # partecipare (es. Conto Termico 3.0: «Edilizia», ma vale per qualsiasi impresa che
+        # fa lavori di efficienza energetica). Trovato con il collaudo: non si esclude.
+        e.da_verificare.append(
+            "Settori indicati dalla fonte: "
+            + ", ".join(ammessi)
+            + " (verificare se riguardano l'impresa o il tipo di intervento)"
+        )
+        return
+    if not comuni:
+        raise Escluso(f"Settore dell'ATECO {primario.codice} non tra quelli ammessi")
+    e.soddisfatti.append("Settore ammesso: " + ", ".join(sorted(comuni)))
+    e.punteggio += 10
+
+
+AVVIO = re.compile(
+    r"fase di avvi|avviamento|nuove imprese|imprese di nuova costituzione|da costituire|"
+    r"costituite da (?:non pi[uù] di|meno di)|start[- ]?up",
+    re.IGNORECASE,
+)
+SOLO_MICRO = re.compile(r"micro[ -]?imprese", re.IGNORECASE)
+ALTRE_DIMENSIONI = re.compile(r"piccol[ae]|medi[ae]|PMI", re.IGNORECASE)
+
+
+def _segnali_nel_testo(a: Azienda, b: Bando, e: Esito, oggi: date | None) -> None:
+    """Indizi nella descrizione del bando che i dati strutturati della fonte non riportano
+    (es. «Nuovo Fondo Futuro»: la fonte indica micro, piccole e medie, ma il testo parla di
+    microimprese in fase di avviamento). Non escludono: abbassano il punteggio e lo dicono."""
+    from app.utils.impresa import anzianita_mesi, dimensione_effettiva
+
+    testo = (getattr(b, "descrizione", None) or "")[:4000]
+    if not testo:
+        return
+    if AVVIO.search(testo):
+        mesi = anzianita_mesi(getattr(a, "data_costituzione", None), oggi)
+        if mesi is None:
+            e.da_verificare.append("Il testo parla di imprese nuove o in avvio")
+            e.punteggio -= 10
+        elif mesi > 60:
+            e.da_verificare.append(
+                f"Il testo parla di imprese nuove o in avvio: l'impresa ha {mesi // 12} anni"
+            )
+            e.punteggio -= 40
+    dimensione = dimensione_effettiva(a)[0] if hasattr(a, "dipendenti") else a.dimensione_manuale
+    if (
+        dimensione in ("piccola", "media", "grande")
+        and SOLO_MICRO.search(testo)
+        and not ALTRE_DIMENSIONI.search(testo)
+    ):
+        e.da_verificare.append(f"Il testo parla solo di microimprese (impresa {dimensione})")
+        e.punteggio -= 20
+
+
+def _apertura_vecchia(b: Bando, e: Esito, oggi: date | None) -> None:
+    """Aperto da più di 18 mesi senza data di chiusura: forse la fonte non l'ha aggiornato."""
+    oggi = oggi or date.today()
+    if b.stato == "aperto" and getattr(b, "data_chiusura", None) is None:
+        apertura = getattr(b, "data_apertura", None)
+        if apertura is not None and (oggi - apertura).days > 548:
+            e.da_verificare.append(
+                f"Aperto dal {apertura:%d/%m/%Y} senza data di chiusura: verificare che sia attivo"
+            )
+            e.punteggio -= 10
 
 
 def _altri_filtri(a: Azienda, req: Any, b: Bando, e: Esito, ctx: Contesto) -> Esito:
@@ -378,6 +570,9 @@ def _altri_filtri(a: Azienda, req: Any, b: Bando, e: Esito, ctx: Contesto) -> Es
             if attivi:
                 e.da_verificare.append("Le spese del bando non coincidono con i progetti")
                 e.punteggio -= 5
+    _settori_fonte(a, b, e)
+    _apertura_vecchia(b, e, ctx.oggi)
+    _segnali_nel_testo(a, b, e, ctx.oggi)
     if b.stato == "in_arrivo":
         e.soddisfatti.append("In arrivo: c'è tempo per preparare la domanda")
     return e
