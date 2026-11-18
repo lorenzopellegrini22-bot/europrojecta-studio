@@ -356,7 +356,7 @@ I file non si scaricano sul server: si leggono solo le pagine, i documenti li ap
 ## 2026-11-18 — Pubblicazione su Vercel (installazione NuvioLab)
 L'istanza NuvioLab gira su Vercel (`europrojecta-studio.vercel.app`, funzioni a Francoforte) con database Neon in UE, per scelta del titolare. `.vercelignore` esclude segreti e dati locali; Vercel installa le dipendenze da `uv.lock`.
 **Limiti noti su Vercel:** il worker non gira (niente raccolta notturna né email del mattino automatiche), i PDF dei report non si generano (WeasyPrint senza librerie di sistema), gli allegati finiscono in `/tmp` e si perdono, niente ClamAV né backup restic. La guida `docs/messa-in-produzione.md` (VPS + Docker Compose) resta il modo completo.
-Le migrazioni su Neon si lanciano da un computer con `DATABASE_URL` del database (non pooled) e `alembic upgrade head`.
+Le migrazioni girano da sole a ogni pubblicazione (`buildCommand` in `vercel.json`, con `DATABASE_URL_UNPOOLED` di Neon): le credenziali del database restano su Vercel. Il primo titolare si crea dal browser con la pagina `/primo-accesso` (`PRIMO_ACCESSO=true`), che sparisce appena esiste un utente.
 
 ## 2026-11-18 — Verifica in due passaggi disattivabile
 Nuova impostazione `VERIFICA_DUE_PASSAGGI` (predefinita `true`). Con `false` il login con la password apre subito la sessione completa. Spenta solo sull'istanza Vercel di NuvioLab, su richiesta del titolare; le altre installazioni restano con la 2FA obbligatoria.

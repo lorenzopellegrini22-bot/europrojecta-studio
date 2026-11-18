@@ -11,7 +11,8 @@ from tests.integration.conftest import PASSWORD, codice_totp, csrf
 pytestmark = pytest.mark.integration
 
 # /disiscrizione: link nelle email ai clienti, protetto dal token firmato
-ROUTE_PUBBLICHE = {"/login", "/health", "/disiscrizione/{token}"}
+# /primo-accesso: solo con PRIMO_ACCESSO=true e nessun utente (test più sotto)
+ROUTE_PUBBLICHE = {"/login", "/health", "/disiscrizione/{token}", "/primo-accesso"}
 
 
 def _tutte_le_route(routes) -> list[APIRoute]:
@@ -94,6 +95,38 @@ def test_senza_verifica_in_due_passaggi_basta_la_password(client, crea_utente, m
     r = client.post("/login", data={"email": utente.email, "password": PASSWORD})
     assert r.status_code == 303 and r.headers["location"] == "/"
     assert client.get("/clienti").status_code == 200
+
+
+def test_primo_accesso_chiuso_di_serie_e_con_utenti(client, crea_utente, monkeypatch):
+    from app.config import get_settings
+
+    assert client.get("/primo-accesso").status_code == 404
+    crea_utente()
+    monkeypatch.setattr(get_settings(), "primo_accesso", True)
+    # esiste già un utente: la pagina non c'è e /login resta il login
+    assert client.get("/primo-accesso").status_code == 404
+    assert client.get("/login").status_code == 200
+
+
+def test_primo_accesso_crea_il_titolare(client, db, monkeypatch):
+    from app.auth import router as auth_router
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "primo_accesso", True)
+    monkeypatch.setattr(get_settings(), "verifica_due_passaggi", False)
+    monkeypatch.setattr(auth_router, "nessun_utente", lambda _db: True)
+    r = client.get("/login")
+    assert r.status_code == 303 and r.headers["location"] == "/primo-accesso"
+    dati = {"email": "Titolare@Studio.it", "nome": "Anna Bianchi", "password": "corta"}
+    r = client.post("/primo-accesso", data={**dati, "ripeti": "corta"})
+    assert r.status_code == 400 and "12 caratteri" in r.text
+    r = client.post("/primo-accesso", data={**dati, "password": PASSWORD, "ripeti": PASSWORD + "x"})
+    assert r.status_code == 400 and "non coincidono" in r.text
+    r = client.post("/primo-accesso", data={**dati, "password": PASSWORD, "ripeti": PASSWORD})
+    assert r.status_code == 303 and r.headers["location"] == "/"
+    assert client.get("/clienti").status_code == 200
+    u = db.scalar(select(Utente).where(Utente.email == "titolare@studio.it"))
+    assert u is not None and u.ruolo == "titolare" and u.nome == "Anna Bianchi"
 
 
 def test_blocco_dopo_cinque_tentativi(client, crea_utente, db):

@@ -74,6 +74,9 @@ class Settings(BaseSettings):
     # Verifica in due passaggi (app di autenticazione) obbligatoria. Si spegne solo per scelta
     # del titolare dell'installazione (VERIFICA_DUE_PASSAGGI=false): allora basta la password.
     verifica_due_passaggi: bool = True
+    # Pagina /primo-accesso per creare il primo titolare dal browser (dove non c'è la riga
+    # di comando, es. Vercel). Funziona solo finché non esiste nessun utente.
+    primo_accesso: bool = False
     cookie_secure: bool = True
     sessione_inattivita_minuti: int = Field(default=60, ge=5)
     sessione_durata_max_ore: int = Field(default=12, ge=1)

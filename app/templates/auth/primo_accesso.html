@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block titolo %}Primo accesso · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<article class="accesso">
+  <hgroup>
+    <h2 class="marchio">Europrojecta <small>Studio</small></h2>
+    <p>Crea l'account del titolare dello studio. Questa pagina sparisce appena l'account esiste.</p>
+  </hgroup>
+  {% if errore %}<div class="messaggio errore" role="alert">{{ errore }}</div>{% endif %}
+  <form method="post" action="/primo-accesso">
+    <label>Email
+      <input type="email" name="email" value="{{ email or '' }}" autocomplete="username" required autofocus>
+    </label>
+    <label>Nome e cognome
+      <input type="text" name="nome" value="{{ nome or '' }}" autocomplete="name" required>
+    </label>
+    <label>Password
+      <input type="password" name="password" autocomplete="new-password" minlength="12" required>
+      <small>Almeno 12 caratteri.</small>
+    </label>
+    <label>Ripeti la password
+      <input type="password" name="ripeti" autocomplete="new-password" minlength="12" required>
+    </label>
+    <button type="submit">Crea l'account ed entra</button>
+  </form>
+</article>
+{% endblock %}
