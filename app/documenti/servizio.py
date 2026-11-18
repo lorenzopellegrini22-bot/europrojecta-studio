@@ -355,6 +355,12 @@ def brani_utili(testo: str, budget: int) -> str:
     originale), così l'AI legge le parti con requisiti, spese, importi, regime e termini."""
     if len(testo) <= budget:
         return testo
+    # Bandi conformi al bando-tipo del Codice degli incentivi: prima le partizioni utili
+    from app.extraction.bando_tipo import riduci
+
+    ridotto = riduci(testo, budget)
+    if ridotto is not None:
+        return ridotto
     paragrafi = [p.strip() for p in re.split(r"\n\s*\n|(?<=\.)\n", testo) if p.strip()]
     punteggi = []
     for i, p in enumerate(paragrafi):

@@ -31,7 +31,7 @@ from app.models.ai import EstrazioneBando, ImpostazioniAI, UsoLLM
 
 log = logging.getLogger(__name__)
 
-VERSIONE_PROMPT = "v1"
+VERSIONE_PROMPT = "v2"  # v2: indicazioni del bando-tipo (Codice degli incentivi)
 PROMPT = (Path(__file__).parent / "prompts" / f"estrazione_{VERSIONE_PROMPT}.md").read_text(
     encoding="utf-8"
 )
