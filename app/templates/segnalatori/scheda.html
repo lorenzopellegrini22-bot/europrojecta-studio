@@ -29,7 +29,7 @@
     <thead><tr><th>Codice</th><th>Cliente</th><th>Bando</th><th>Stato</th><th>Concesso</th></tr></thead>
     <tbody>
     {% for p in pratiche %}
-      <tr><td><a href="/pratiche/{{ p.id }}">{{ p.codice }}</a></td><td>{{ p.azienda.ragione_sociale }}</td><td>{{ p.nome_bando | truncate(60) }}</td><td>{{ etichette_stato[p.stato] }}</td><td>{{ p.importo_concesso | euro }}</td></tr>
+      <tr><td class="codice"><a href="/pratiche/{{ p.id }}">{{ p.codice }}</a></td><td>{{ p.azienda.ragione_sociale }}</td><td>{{ p.nome_bando | truncate(60) }}</td><td>{{ etichette_stato[p.stato] }}</td><td>{{ p.importo_concesso | euro }}</td></tr>
     {% endfor %}
     </tbody>
   </table>

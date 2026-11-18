@@ -1,3 +1,32 @@
+// Menu laterale su schermi stretti: il pulsante "Menu" apre e chiude la navigazione.
+(() => {
+  const laterale = document.getElementById("laterale");
+  const pulsante = laterale && laterale.querySelector(".apri-menu");
+  if (!pulsante) return;
+  pulsante.addEventListener("click", () => {
+    const aperto = laterale.toggleAttribute("data-aperto");
+    pulsante.setAttribute("aria-expanded", String(aperto));
+    pulsante.textContent = aperto ? "Chiudi" : "Menu";
+  });
+})();
+
+// Tendine del menu laterale: ricordano quali sono aperte (solo in questo browser).
+// Quella con la pagina corrente parte sempre aperta.
+(() => {
+  for (const sezione of document.querySelectorAll("details.sezione[data-sezione]")) {
+    const chiave = `menu:${sezione.dataset.sezione}`;
+    if (!sezione.hasAttribute("data-corrente")) {
+      try {
+        const salvato = localStorage.getItem(chiave);
+        if (salvato !== null) sezione.open = salvato === "1";
+      } catch { /* archiviazione non disponibile: restano chiuse */ }
+    }
+    sezione.addEventListener("toggle", () => {
+      try { localStorage.setItem(chiave, sezione.open ? "1" : "0"); } catch { /* ignora */ }
+    });
+  }
+})();
+
 // Pulsanti "Copia il testo": copiano il contenuto dell'elemento indicato in data-copia.
 document.addEventListener("click", async (evento) => {
   const pulsante = evento.target.closest("[data-copia]");

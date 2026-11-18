@@ -33,6 +33,19 @@ def _euro(valore: Decimal | float | int | None) -> str:
     return f"€ {testo}"
 
 
+_CARTELLA_STATICI = Path(__file__).parent / "static"
+
+
+def _versione_statico(percorso: str) -> str:
+    """Data di modifica del file statico, da aggiungere all'indirizzo (?v=...): dopo un
+    aggiornamento il browser scarica subito il CSS e il JS nuovi invece di usare quelli vecchi."""
+    try:
+        return str(int((_CARTELLA_STATICI / percorso).stat().st_mtime))
+    except OSError:
+        return "0"
+
+
+templates.env.globals["versione_statico"] = _versione_statico
 templates.env.filters["data_ora"] = _data_ora
 templates.env.filters["euro"] = _euro
 templates.env.filters["data"] = _data

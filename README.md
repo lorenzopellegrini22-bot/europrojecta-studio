@@ -61,7 +61,7 @@ Le chiavi API si collegano da **Impostazioni → Integrazioni** (solo il titolar
 
 ## Stack
 
-Python 3.12, FastAPI (endpoint sincroni), PostgreSQL 16 + pgvector, SQLAlchemy 2 + Alembic, Jinja2 + HTMX, APScheduler nel worker, uv / ruff / pytest, Docker Compose.
+Python 3.12, FastAPI (endpoint sincroni), PostgreSQL 16 + pgvector, SQLAlchemy 2 + Alembic, Jinja2 + HTMX (stile proprio, nessun framework CSS), APScheduler nel worker, uv / ruff / pytest, Docker Compose.
 
 ## Avvio in sviluppo
 
@@ -128,7 +128,7 @@ app/
   sicurezza/     cifratura dei segreti (Fernet + HKDF da SECRET_KEY)
   integrazioni/  Impostazioni → Integrazioni: registro, salvataggio, verifiche
   templates/     Jinja2 + HTMX
-  static/        Pico.css e htmx salvati nel repository (nessun CDN)
+  static/        foglio di stile, font (Schibsted Grotesk) e htmx salvati nel repository (nessun CDN)
   jobs/          worker APScheduler (raccolte, AI, email del mattino), lock, registro job_run
   clienti/       CRM: clienti, referenti, progetti, attività, scadenze, de minimis
   importer/      import dei clienti da CSV

@@ -286,9 +286,14 @@ Riletti il brief e il preventivo e implementato quello che mancava:
   da scaricare e verificare: i confronti oggi sono per nome e per prefisso ATECO); OCR dei
   PDF scansionati; formato del «bando tipo» (da trovare la fonte ufficiale).
 
+## 2026-11-18 — Interfaccia: stile proprio al posto di Pico.css
+Tolto Pico.css: `app/static/css/app.css` è l'unico foglio di stile e disegna da solo moduli, tabelle, pulsanti e pannelli. Navigazione in una barra laterale raggruppata (Lavoro, Bandi e gare, Studio, Amministrazione) al posto del menu in alto con la tendina. Carattere unico **Schibsted Grotesk** (licenza OFL), salvato in `app/static/fonts` insieme alla licenza: nessun font da CDN.
+**Motivo:** Pico dava un aspetto generico e difficile da personalizzare. Lo studio usa l'app tutto il giorno, quindi le superfici sono neutre e il verde del marchio compare solo sull'azione principale, sulla voce di menu attiva e sulle cifre chiave. Tema sempre chiaro, anche se il computer è in modalità scura (scelta del cliente); i colori scuri restano nel CSS, attivabili con `data-tema="scuro"`.
+**Regole:** griglia di 4px; pesi 400 e 500 (600 di rado); cifre tabellari per date e importi; niente maiuscolo spaziato, gradienti, ombre colorate o emoji come icone.
+
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.
-- Jinja2 + HTMX + Pico.css salvati nel repository, nessuna risorsa da CDN.
+- Jinja2 + HTMX salvati nel repository, nessuna risorsa da CDN (Pico.css sostituito da uno stile proprio, vedi sopra).
 - Worker APScheduler con advisory lock di Postgres.
 - LLM e embeddings OpenAI sull'account del cliente, dietro interfacce sostituibili; nessun nome di modello nel codice.
 - Autenticazione propria: argon2id + TOTP + sessioni lato server.

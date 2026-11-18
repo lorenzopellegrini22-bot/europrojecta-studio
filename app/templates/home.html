@@ -23,49 +23,64 @@
 {% if pdf_da_caricare %}
 <div class="messaggio attenzione">{{ pdf_da_caricare }} PDF di bandi aperti non si possono scaricare in automatico: <a href="/documenti/da-caricare">caricali a mano</a> perché l'AI possa leggerli.</div>
 {% endif %}
-<div class="grid">
-  <article><header>Bandi aperti</header><p class="numero"><a href="/bandi?stato=aperto">{{ aperti }}</a></p></article>
-  <article><header>In arrivo</header><p class="numero"><a href="/bandi?stato=in_arrivo">{{ in_arrivo }}</a></p></article>
-  <article><header>Scadono entro 7 giorni</header><p class="numero"><a href="/bandi?stato=aperto&scadenza=7">{{ in_scadenza }}</a></p></article>
-  <article><header>Nuovi negli ultimi 7 giorni</header><p class="numero">{{ nuovi }}</p></article>
-</div>
 
-<div class="grid">
+<section class="cifre" aria-label="Bandi">
+  <a class="cifra in-evidenza" href="/bandi?stato=aperto"><span class="cifra-etichetta">Bandi aperti</span><span class="cifra-valore">{{ aperti }}</span></a>
+  <a class="cifra" href="/bandi?stato=in_arrivo"><span class="cifra-etichetta">In arrivo</span><span class="cifra-valore">{{ in_arrivo }}</span></a>
+  <a class="cifra{% if in_scadenza %} urgente{% endif %}" href="/bandi?stato=aperto&scadenza=7"><span class="cifra-etichetta">Scadono entro 7 giorni</span><span class="cifra-valore">{{ in_scadenza }}</span></a>
+  <div class="cifra"><span class="cifra-etichetta">Nuovi negli ultimi 7 giorni</span><span class="cifra-valore">{{ nuovi }}</span></div>
+</section>
+
+<div class="home-griglia">
   <article>
-    <header><strong>Le mie scadenze</strong> <small>(scadute e prossimi 7 giorni)</small></header>
-    {% if not scadenze_vicine %}<p>Nessuna scadenza. <a href="/scadenzario">Apri lo scadenzario</a>.</p>{% else %}
-    <ul>
+    <header><strong>Le mie scadenze</strong> <small>scadute e prossimi 7 giorni</small></header>
+    {% if not scadenze_vicine %}
+    <p class="vuoto">Nessuna scadenza in vista. <a href="/scadenzario">Apri lo scadenzario</a></p>
+    {% else %}
+    <ul class="scadenze">
       {% for v in scadenze_vicine[:8] %}
-      <li><span class="{% if v.data < oggi %}scaduta{% endif %}">{{ v.data | data }}</span> ·
-        {% if v.operazione %}<a href="/pratiche/{{ v.pratica.id }}?fase={{ v.fase.numero }}#op-{{ v.operazione.id }}">{{ v.titolo }}</a>{% else %}<a href="/pratiche/{{ v.pratica.id }}">{{ v.titolo }}</a>{% endif %}
-        <small>({{ v.pratica.azienda.ragione_sociale }}, {{ v.pratica.codice }})</small></li>
+      <li>
+        <span class="data{% if v.data < oggi %} scaduta{% endif %}">{{ v.data | data }}</span>
+        <span>
+          {% if v.operazione %}<a href="/pratiche/{{ v.pratica.id }}?fase={{ v.fase.numero }}#op-{{ v.operazione.id }}">{{ v.titolo }}</a>{% else %}<a href="/pratiche/{{ v.pratica.id }}">{{ v.titolo }}</a>{% endif %}
+          <small>{{ v.pratica.azienda.ragione_sociale }}, {{ v.pratica.codice }}</small>
+        </span>
+      </li>
       {% endfor %}
     </ul>
-    <a href="/scadenzario?mie=1">Tutte le mie scadenze</a>{% endif %}
+    <a href="/scadenzario?mie=1" class="piccolo">Tutte le mie scadenze</a>
+    {% endif %}
   </article>
-  <article>
-    <header><strong>Nuove opportunità per i clienti</strong></header>
-    <p class="numero"><a href="/opportunita?stato=nuova">{{ opportunita_nuove }}</a></p>
-    <a href="/opportunita" class="piccolo">Vai alle opportunità</a>
-  </article>
-  <article>
-    <header><strong>Pratiche attive</strong></header>
-    <p class="numero"><a href="/pratiche">{{ pratiche_attive }}</a></p>
-    {% if pratiche_per_stato %}<small>{% for st, n in pratiche_per_stato %}{{ etichette_pratica.get(st, st) }}: {{ n }}{% if not loop.last %} · {% endif %}{% endfor %}</small><br>{% endif %}
-    <a href="/pratiche/nuova" role="button" class="piccolo">Nuova pratica</a>
-  </article>
-</div>
 
-<div class="grid">
   <article>
-    <header><strong>Aggiornamenti ai clienti da approvare</strong></header>
-    <p class="numero"><a href="/aggiornamenti">{{ bozze_aggiornamenti }}</a></p>
-  </article>
-  <article>
-    <header><strong>Spesa AI del mese</strong></header>
-    <p class="numero">{{ budget_ai.spesa | euro }}</p>
-    <small>{% if budget_ai.budget %}su un budget di {{ budget_ai.budget | euro }}{% if budget_ai.percentuale is not none %} ({{ budget_ai.percentuale }}%){% endif %}{% else %}nessun budget impostato{% endif %}</small>
+    <header><strong>Lo studio oggi</strong></header>
+    <ul class="righe">
+      <li>
+        <span class="riga-testo">Nuove opportunità per i clienti</span>
+        <a class="riga-valore" href="/opportunita?stato=nuova">{{ opportunita_nuove }}</a>
+      </li>
+      <li>
+        <span class="riga-testo">Pratiche attive
+          {% if pratiche_per_stato %}<small>{% for st, n in pratiche_per_stato %}{{ etichette_pratica.get(st, st) }}: {{ n }}{% if not loop.last %}, {% endif %}{% endfor %}</small>{% endif %}
+        </span>
+        <a class="riga-valore" href="/pratiche">{{ pratiche_attive }}</a>
+      </li>
+      <li>
+        <span class="riga-testo">Aggiornamenti ai clienti da approvare</span>
+        <a class="riga-valore" href="/aggiornamenti">{{ bozze_aggiornamenti }}</a>
+      </li>
+      <li>
+        <span class="riga-testo">Spesa AI del mese
+          <small>{% if budget_ai.budget %}su un budget di {{ budget_ai.budget | euro }}{% if budget_ai.percentuale is not none %} ({{ budget_ai.percentuale }}%){% endif %}{% else %}nessun budget impostato{% endif %}</small>
+        </span>
+        <span class="riga-valore">{{ budget_ai.spesa | euro }}</span>
+      </li>
+    </ul>
     {% if budget_ai.superato or budget_ai.sospesa %}<p class="messaggio errore">Le chiamate AI sono ferme: {{ budget_ai.motivo or "budget del mese esaurito" }}.</p>{% endif %}
+    <footer class="gruppo-pulsanti">
+      <a href="/pratiche/nuova" role="button" class="piccolo">Nuova pratica</a>
+      <a href="/opportunita" role="button" class="secondary piccolo">Vai alle opportunità</a>
+    </footer>
   </article>
 </div>
 

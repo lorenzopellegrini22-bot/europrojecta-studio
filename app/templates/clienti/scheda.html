@@ -130,7 +130,7 @@
     {% for p in pratiche %}
       {% set f = p.fase_attiva %}
       <tr>
-        <td><a href="/pratiche/{{ p.id }}">{{ p.codice }}</a></td>
+        <td class="codice"><a href="/pratiche/{{ p.id }}">{{ p.codice }}</a></td>
         <td>{{ p.nome_bando }}</td>
         <td>{% if f %}{{ f.numero }}. {{ f.nome }}{% else %}—{% endif %}</td>
         <td>{{ etichette_stato[p.stato] }}</td>

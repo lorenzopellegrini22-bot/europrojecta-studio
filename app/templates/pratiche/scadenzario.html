@@ -57,7 +57,7 @@
         </td>
         <td>{{ v.pratica.nome_bando | truncate(60) }}</td>
         <td><a href="/clienti/{{ v.pratica.azienda_id }}">{{ v.pratica.azienda.ragione_sociale }}</a></td>
-        <td><a href="/pratiche/{{ v.pratica.id }}">{{ v.pratica.codice }}</a></td>
+        <td class="codice"><a href="/pratiche/{{ v.pratica.id }}">{{ v.pratica.codice }}</a></td>
         <td>{{ v.assegnata_a.nome if v.assegnata_a else "—" }}</td>
       </tr>
       {% endif %}

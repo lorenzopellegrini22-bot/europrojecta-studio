@@ -4,62 +4,94 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="htmx-config" content='{"includeIndicatorStyles": false}'>
+  <meta name="color-scheme" content="light">
   <title>{% block titolo %}{{ NOME_APP }}{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', path='vendor/pico.min.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
+  <link rel="preload" href="{{ url_for('static', path='fonts/schibsted-grotesk-wght-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}?v={{ versione_statico('css/app.css') }}">
   <script src="{{ url_for('static', path='vendor/htmx.min.js') }}" defer></script>
-  <script src="{{ url_for('static', path='js/app.js') }}" defer></script>
+  <script src="{{ url_for('static', path='js/app.js') }}?v={{ versione_statico('js/app.js') }}" defer></script>
+  <noscript><style>.menu, .laterale-piede { display: block !important; } .apri-menu { display: none !important; }</style></noscript>
 </head>
+{#- Menu laterale: (chiave, titolo, solo per il titolare, voci). Ogni voce: (indirizzo, etichetta,
+    prefisso che la rende attiva; None = l'indirizzo stesso). La tendina con la pagina aperta
+    parte aperta; le altre le apre e chiude chi usa l'app (app.js ricorda la scelta). -#}
+{%- set sezioni_menu = [
+  ("lavoro", "Lavoro", false, [
+    ("/clienti", "Clienti", None),
+    ("/opportunita", "Opportunità", None),
+    ("/pratiche", "Pratiche", None),
+    ("/scadenzario", "Scadenzario", None),
+  ]),
+  ("bandi", "Bandi e gare", false, [
+    ("/bandi", "Bandi", None),
+    ("/appalti", "Appalti", None),
+    ("/fonti", "Fonti dei bandi", None),
+    ("/revisione", "Revisione dei requisiti", None),
+    ("/documenti/da-caricare", "PDF da caricare", None),
+  ]),
+  ("studio", "Studio", false, [
+    ("/aggiornamenti", "Aggiornamenti ai clienti", None),
+    ("/prefattibilita", "Prefattibilità", None),
+    ("/modelli", "Modelli di pratica", None),
+    ("/segnalatori", "Segnalatori", None),
+    ("/statistiche", "Statistiche", None),
+  ]),
+  ("amministrazione", "Amministrazione", true, [
+    ("/impostazioni/integrazioni", "Impostazioni", "/impostazioni"),
+    ("/import", "Importa clienti", None),
+    ("/export", "Esporta tutti i dati", None),
+  ]),
+] -%}
+{%- macro attiva(percorso, href, prefisso) -%}
+  {%- set base = prefisso or href -%}
+  {{- "1" if (percorso == base or percorso.startswith(base ~ "/")) else "" -}}
+{%- endmacro %}
 <body hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'{% if utente %} data-inattivita="{{ inattivita_minuti }}"{% endif %}>
   {% if utente %}
   <div id="avviso-sessione" class="messaggio attenzione avviso-sessione" role="alert" hidden>
     <span id="avviso-sessione-testo">La sessione sta per scadere per inattività.</span>
     <button type="button" id="resta-collegato" class="piccolo">Resta collegato</button>
   </div>
-  <header class="container">
-    <nav>
-      <ul>
-        <li><a href="/" class="marchio contrast">Europrojecta <small>Studio</small></a></li>
-      </ul>
-      <ul>
-        <li><a href="/">Home</a></li>
-        <li><a href="/clienti">Clienti</a></li>
-        <li><a href="/opportunita">Opportunità</a></li>
-        <li><a href="/pratiche">Pratiche</a></li>
-        <li><a href="/scadenzario">Scadenzario</a></li>
-        <li><a href="/bandi">Bandi</a></li>
-        <li><a href="/appalti">Appalti</a></li>
-        <li>
-          <details class="dropdown">
-            <summary>Studio</summary>
-            <ul dir="rtl">
-              <li><a href="/aggiornamenti">Aggiornamenti ai clienti</a></li>
-              <li><a href="/prefattibilita">Prefattibilità</a></li>
-              <li><a href="/revisione">Revisione bandi (AI)</a></li>
-              <li><a href="/documenti/da-caricare">PDF da caricare</a></li>
-              <li><a href="/modelli">Modelli di pratica</a></li>
-              <li><a href="/segnalatori">Segnalatori</a></li>
-              <li><a href="/statistiche">Statistiche</a></li>
-              <li><a href="/fonti">Fonti dei bandi</a></li>
-              {% if utente.is_titolare %}<li><a href="/impostazioni/integrazioni">Impostazioni</a></li>
-              <li><a href="/import">Importa clienti</a></li>
-              <li><a href="/export">Esporta tutti i dati</a></li>{% endif %}
-              <li><a href="/account">Il mio account</a></li>
-            </ul>
-          </details>
-        </li>
-        <li>
-          <form method="post" action="/logout" class="esci">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <button type="submit" class="secondary outline">Esci</button>
-          </form>
-        </li>
-      </ul>
-    </nav>
-  </header>
-  {% endif %}
-  <main class="container">
-    {% block contenuto %}{% endblock %}
+  <div class="struttura">
+    <aside class="laterale" id="laterale">
+      <div class="laterale-testa">
+        <a href="/" class="marchio">Europrojecta <span>Studio</span></a>
+        <button type="button" class="apri-menu secondary piccolo" aria-expanded="false" aria-controls="menu-principale">Menu</button>
+      </div>
+      {%- set percorso = request.url.path %}
+      <nav class="menu" id="menu-principale" aria-label="Menu principale">
+        <ul>
+          <li><a href="/"{% if percorso == "/" %} aria-current="page"{% endif %}>Home</a></li>
+        </ul>
+        {% for chiave, titolo, solo_titolare, voci in sezioni_menu if not solo_titolare or utente.is_titolare %}
+        {%- set ns = namespace(aperta=false) %}
+        {%- for href, etichetta, prefisso in voci if attiva(percorso, href, prefisso) %}{% set ns.aperta = true %}{% endfor %}
+        <details class="sezione" data-sezione="{{ chiave }}"{% if ns.aperta %} open data-corrente{% endif %}>
+          <summary>{{ titolo }}</summary>
+          <ul>
+            {%- for href, etichetta, prefisso in voci %}
+            <li><a href="{{ href }}"{% if attiva(percorso, href, prefisso) %} aria-current="page"{% endif %}>{{ etichetta }}</a></li>
+            {%- endfor %}
+          </ul>
+        </details>
+        {% endfor %}
+      </nav>
+      <div class="laterale-piede">
+        <a href="/account" class="utente-corrente" title="Il mio account">{{ utente.nome }}</a>
+        <form method="post" action="/logout" class="esci">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="secondary outline piccolo">Esci</button>
+        </form>
+      </div>
+    </aside>
+    <main class="contenuto container">
+      {% block contenuto %}{% endblock %}
+    </main>
+  </div>
+  {% else %}
+  <main class="pubblica container">
+    {{ self.contenuto() }}
   </main>
+  {% endif %}
 </body>
 </html>

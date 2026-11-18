@@ -46,7 +46,7 @@
     {% set f = p.fase_attiva %}
     {% set av = avanzamento(p) %}
     <tr>
-      <td><a href="/pratiche/{{ p.id }}">{{ p.codice }}</a></td>
+      <td class="codice"><a href="/pratiche/{{ p.id }}">{{ p.codice }}</a></td>
       <td><a href="/clienti/{{ p.azienda_id }}">{{ p.azienda.ragione_sociale }}</a></td>
       <td>{{ p.nome_bando | truncate(70) }}</td>
       <td>{% if f %}{{ f.numero }}. {{ f.nome }}{% else %}—{% endif %}</td>
