@@ -152,36 +152,52 @@ def raccolta_appalti() -> str:
 
 
 def opportunita() -> str:
-    """Ogni mattina: abbina clienti e bandi/appalti aperti, poi invia agli utenti attivi
-    l'email con le opportunità nuove (se l'email è attiva)."""
+    """Ogni mattina (pipeline del brief, passi 6-7 ed email delle 7:00): abbinamento a regole,
+    punteggio AI, bozze periodiche degli aggiornamenti ai clienti, poi l'email del mattino a
+    ogni utente attivo. L'email parte anche senza novità; al massimo una al giorno per utente.
+    Un passo che fallisce non blocca i successivi."""
+    from app.aggiornamenti.servizio import bozze_periodiche
     from app.comunicazioni import email_disponibile, invia_registrando
+    from app.config import get_settings
     from app.extraction.servizio import impostazioni
-    from app.models import Utente
-    from app.opportunita.abbinamento import abbina, da_notificare, testo_email
+    from app.models import NotificaEmail, Utente
+    from app.notifiche import componi
+    from app.opportunita.abbinamento import abbina, da_notificare
     from app.opportunita.valutazione import esegui as valuta
 
     with get_sessionmaker()() as db:
-        esito = abbina(db)
-        try:
-            esito = f"{esito} {valuta(db)}"
-        except Exception as e:  # l'AI non deve bloccare l'email del mattino
-            db.rollback()
-            log.exception("Valutazione AI non riuscita")
-            esito = f"{esito} Valutazione AI non riuscita: {type(e).__name__}."
+        esiti = [abbina(db)]
+        for nome, passo in (("Valutazione AI", valuta), ("Bozze aggiornamenti", bozze_periodiche)):
+            try:
+                esiti.append(passo(db))
+            except Exception as e:  # un passo non deve bloccare l'email del mattino
+                db.rollback()
+                log.exception("%s non riuscita", nome)
+                esiti.append(f"{nome} non riuscita: {type(e).__name__}.")
+        esito = " ".join(esiti)
         nuove = da_notificare(db, impostazioni(db).soglia_notifica)
-        if not nuove:
-            return f"{esito} Nessuna email: niente di nuovo."
         if not email_disponibile(db):
             return f"{esito} Email non attiva: le novità sono nella pagina Opportunità."
-        testo = testo_email(nuove)
-        clienti = len({o.azienda_id for o in nuove})
+        base_url = get_settings().url_pubblico.rstrip("/")
+        soglia = datetime.now(UTC) - timedelta(hours=20)
         inviate = 0
         for u in db.scalars(select(Utente).where(Utente.attivo)):
+            gia = db.scalar(
+                select(NotificaEmail.id).where(
+                    NotificaEmail.tipo == "riepilogo_mattutino",
+                    NotificaEmail.utente_id == u.id,
+                    NotificaEmail.esito == "ok",
+                    NotificaEmail.inviata_il >= soglia,
+                )
+            )
+            if gia:
+                continue
+            oggetto, testo = componi(db, u, nuove, base_url)
             ok, _ = invia_registrando(
                 db,
-                tipo="opportunita",
+                tipo="riepilogo_mattutino",
                 destinatario=u.email,
-                oggetto=f"{len(nuove)} nuove opportunità per {clienti} clienti",
+                oggetto=oggetto,
                 testo=testo,
                 utente=u,
             )

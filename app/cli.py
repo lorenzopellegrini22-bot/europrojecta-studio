@@ -101,8 +101,36 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("collega-doppioni", help="collega i bandi doppi tra fonte nazionale e regionali")
 
     sub.add_parser("ruota-chiavi", help="ricifra i segreti con la SECRET_KEY attuale")
+    p = sub.add_parser(
+        "collaudo-prepara", help="prepara il file del collaudo (20 bandi, 10 aziende)"
+    )
+    p.add_argument("--file", required=True)
+    p = sub.add_parser("collaudo", help="esegue il collaudo del matching e scrive il report")
+    p.add_argument("--file", required=True)
+    p.add_argument("--report", default="collaudo.md")
 
     args = parser.parse_args(argv)
+    if args.comando in ("collaudo-prepara", "collaudo"):
+        import json
+        from pathlib import Path
+
+        from app import collaudo
+        from app.db import get_sessionmaker
+
+        with get_sessionmaker()() as db:
+            if args.comando == "collaudo-prepara":
+                dati = collaudo.prepara(db)
+                Path(args.file).write_text(
+                    json.dumps(dati, ensure_ascii=False, indent=2), encoding="utf-8"
+                )
+                n_bandi, n_coppie = len(dati["bandi"]), len(dati["etichette"])
+                print(f"Scritto {args.file}: {n_bandi} bandi, {n_coppie} coppie da etichettare.")
+                return 0
+            risultato = collaudo.esegui(db, collaudo.leggi_file(args.file))
+        Path(args.report).write_text(collaudo.report(risultato), encoding="utf-8")
+        esito = "SUPERATO" if risultato.superato else "NON SUPERATO"
+        print(f"Report scritto in {args.report}: {esito}")
+        return 0 if risultato.superato else 1
     if args.comando == "ruota-chiavi":
         from app.db import get_sessionmaker
         from app.sicurezza.rotazione import ruota

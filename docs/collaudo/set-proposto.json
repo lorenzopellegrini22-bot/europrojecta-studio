@@ -1,0 +1,1550 @@
+{
+  "istruzioni": "Per ogni coppia metti in «atteso»: compatibile, non_compatibile o dubbio (da decidere insieme al consulente). Poi: python -m app.cli collaudo --file ...",
+  "aziende": [
+    {
+      "chiave": "A01",
+      "ragione_sociale": "Officine Tuscia S.r.l.",
+      "forma_giuridica": "S.r.l.",
+      "dimensione": "piccola",
+      "regione": "Lazio",
+      "provincia": "VT",
+      "comune": "Viterbo",
+      "ateco": "25.62",
+      "dipendenti": 18,
+      "fatturato": 2400000,
+      "data_costituzione": "2009-04-15",
+      "progetti": [
+        {
+          "titolo": "Nuovo centro di lavoro CNC",
+          "descrizione": "Acquisto di un centro di lavoro a controllo numerico 5 assi e software CAM",
+          "categorie": [
+            "macchinari e attrezzature",
+            "digitale e software"
+          ],
+          "importo": 350000
+        }
+      ]
+    },
+    {
+      "chiave": "A02",
+      "ragione_sociale": "Agriturismo Colle Verde",
+      "forma_giuridica": "Società agricola semplice",
+      "dimensione": "micro",
+      "regione": "Umbria",
+      "provincia": "PG",
+      "comune": "Todi",
+      "ateco": "01.21",
+      "dipendenti": 4,
+      "fatturato": 380000,
+      "data_costituzione": "2012-06-01",
+      "progetti": [
+        {
+          "titolo": "Cantina ed energia",
+          "descrizione": "Ammodernamento della cantina e impianto fotovoltaico aziendale",
+          "categorie": [
+            "macchinari e attrezzature",
+            "energia e ambiente"
+          ],
+          "importo": 180000
+        }
+      ]
+    },
+    {
+      "chiave": "A03",
+      "ragione_sociale": "Studio Digitale Marche S.r.l.",
+      "forma_giuridica": "S.r.l.",
+      "dimensione": "micro",
+      "regione": "Marche",
+      "provincia": "AN",
+      "comune": "Ancona",
+      "ateco": "62.01",
+      "dipendenti": 7,
+      "fatturato": 650000,
+      "data_costituzione": "2021-09-20",
+      "progetti": [
+        {
+          "titolo": "Piattaforma SaaS",
+          "descrizione": "Sviluppo di una piattaforma software in cloud e assunzione di due sviluppatori",
+          "categorie": [
+            "digitale e software",
+            "assunzioni",
+            "ricerca e sviluppo"
+          ],
+          "importo": 220000
+        }
+      ]
+    },
+    {
+      "chiave": "A04",
+      "ragione_sociale": "Edil Firenze S.p.A.",
+      "forma_giuridica": "S.p.A.",
+      "dimensione": "media",
+      "regione": "Toscana",
+      "provincia": "FI",
+      "comune": "Firenze",
+      "ateco": "41.20",
+      "dipendenti": 85,
+      "fatturato": 21000000,
+      "data_costituzione": "1998-02-10",
+      "progetti": [
+        {
+          "titolo": "Efficienza energetica sede",
+          "descrizione": "Riqualificazione energetica della sede e mezzi a basse emissioni",
+          "categorie": [
+            "energia e ambiente",
+            "immobili e opere"
+          ],
+          "importo": 900000
+        }
+      ]
+    },
+    {
+      "chiave": "A05",
+      "ragione_sociale": "Hotel Lungomare Pesaro S.n.c.",
+      "forma_giuridica": "S.n.c.",
+      "dimensione": "piccola",
+      "regione": "Marche",
+      "provincia": "PU",
+      "comune": "Pesaro",
+      "ateco": "55.10",
+      "dipendenti": 14,
+      "fatturato": 1300000,
+      "data_costituzione": "2004-05-05",
+      "progetti": [
+        {
+          "titolo": "Ristrutturazione camere",
+          "descrizione": "Ristrutturazione delle camere e digitalizzazione delle prenotazioni",
+          "categorie": [
+            "immobili e opere",
+            "digitale e software"
+          ],
+          "importo": 400000
+        }
+      ]
+    },
+    {
+      "chiave": "A06",
+      "ragione_sociale": "Nuova Impresa Rossi",
+      "forma_giuridica": "Ditta individuale",
+      "dimensione": "micro",
+      "regione": "Lazio",
+      "provincia": "RM",
+      "comune": "Roma",
+      "ateco": "47.91",
+      "dipendenti": 1,
+      "fatturato": 60000,
+      "data_costituzione": "2025-11-01",
+      "progetti": [
+        {
+          "titolo": "Avvio e-commerce",
+          "descrizione": "Avvio di un negozio online di prodotti tipici, sito e magazzino",
+          "categorie": [
+            "avvio d'impresa",
+            "digitale e software"
+          ],
+          "importo": 45000
+        }
+      ]
+    },
+    {
+      "chiave": "A07",
+      "ragione_sociale": "Meccanica Ternana S.r.l.",
+      "forma_giuridica": "S.r.l.",
+      "dimensione": "piccola",
+      "regione": "Umbria",
+      "provincia": "TR",
+      "comune": "Terni",
+      "ateco": "28.41",
+      "dipendenti": 32,
+      "fatturato": 5200000,
+      "data_costituzione": "2001-01-15",
+      "progetti": [
+        {
+          "titolo": "Export Germania",
+          "descrizione": "Partecipazione a fiere e consulenze per l'export in Germania",
+          "categorie": [
+            "internazionalizzazione",
+            "consulenze"
+          ],
+          "importo": 80000
+        }
+      ]
+    },
+    {
+      "chiave": "A08",
+      "ragione_sociale": "Cooperativa Sociale Il Ponte",
+      "forma_giuridica": "Società cooperativa",
+      "dimensione": "piccola",
+      "regione": "Toscana",
+      "provincia": "PI",
+      "comune": "Pisa",
+      "ateco": "88.10",
+      "dipendenti": 40,
+      "fatturato": 1900000,
+      "data_costituzione": "2010-03-03",
+      "progetti": [
+        {
+          "titolo": "Formazione operatori",
+          "descrizione": "Formazione del personale e nuovi servizi di assistenza domiciliare",
+          "categorie": [
+            "formazione",
+            "assunzioni"
+          ],
+          "importo": 120000
+        }
+      ]
+    },
+    {
+      "chiave": "A09",
+      "ragione_sociale": "BioLab Siena S.r.l.",
+      "forma_giuridica": "S.r.l.",
+      "dimensione": "micro",
+      "regione": "Toscana",
+      "provincia": "SI",
+      "comune": "Siena",
+      "ateco": "72.11",
+      "dipendenti": 6,
+      "fatturato": 300000,
+      "data_costituzione": "2023-02-14",
+      "progetti": [
+        {
+          "titolo": "Brevetto diagnostico",
+          "descrizione": "Ricerca industriale su un kit diagnostico e deposito del brevetto",
+          "categorie": [
+            "ricerca e sviluppo",
+            "brevetti e proprietà intellettuale"
+          ],
+          "importo": 500000
+        }
+      ]
+    },
+    {
+      "chiave": "A10",
+      "ragione_sociale": "Trasporti Pontini S.r.l.",
+      "forma_giuridica": "S.r.l.",
+      "dimensione": "media",
+      "regione": "Lazio",
+      "provincia": "LT",
+      "comune": "Latina",
+      "ateco": "49.41",
+      "dipendenti": 120,
+      "fatturato": 28000000,
+      "data_costituzione": "1995-07-01",
+      "progetti": [
+        {
+          "titolo": "Flotta green",
+          "descrizione": "Sostituzione di 10 mezzi pesanti con veicoli a basse emissioni",
+          "categorie": [
+            "macchinari e attrezzature",
+            "energia e ambiente"
+          ],
+          "importo": 1500000
+        }
+      ]
+    }
+  ],
+  "bandi": [
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "8015",
+      "titolo": "CCIAA Frosinone Latina - Bando per il sostegno alle imprese agrituristiche 2026"
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "3443",
+      "titolo": "Fondo di Riassicurazione - Rafforzamento della struttura finanziaria e patrimoniale delle PMI - PR FESR Umbria 2021 -2027 - Azione 1.3.1"
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "809",
+      "titolo": "Contributo a fondo perduto per l’indennizzo dei danni materiali diretti subiti dalle imprese esportatrici dei territori delle province di Firenze, Livorno, Pisa, Pistoia e Prato in seguito agli eventi alluvionali verificatisi a partire dal 2 novembre 2023"
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "3629",
+      "titolo": "Avviso pubblico per la presentazione dei progetti relativi ad azioni di formazione continua"
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "3150",
+      "titolo": "Bando per la presentazione delle domande degli aiuti per la realizzazione di progetti finalizzati alla tutela della biodiversità e alla salvaguardia delle produzioni tipiche, tradizionali e biologiche"
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "1197",
+      "titolo": "Fondo rotativo regionale per il recupero di aziende in crisi  o a rischio di delocalizzazione - Regione Lazio"
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "8620",
+      "titolo": "Credito Futuro Marche - Fondo Nuovo Credito - Investimenti e Liquidità 2026 - UNI.CO"
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "8202",
+      "titolo": "Regione Valle d'Aosta - Esenzione IRAP per imprese industriali e centri di ricerca"
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "5296",
+      "titolo": "Bando Natalinsieme 2025 - Comune di San Donà di Piave"
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "7571",
+      "titolo": "Comune di Africo - Fondo di sostegno ai comuni marginali - Annualità 2021/2022/2023"
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "313",
+      "titolo": "Avviso Microcredito - PR FESR 2021-2027"
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "77",
+      "titolo": "Mobilità sostenibile - Sostegno alla filiera degli autobus elettrici - PNRR"
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "8267",
+      "titolo": "Programma di accelerazione Brava Innovation Hub 2026 - INVITALIA"
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "364",
+      "titolo": "Finanziamenti agevolati per la realizzazione di programmi di Inserimento Mercati"
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "8201",
+      "titolo": "Conto Termico 3.0 - Gestore Servizi Energetici S.p.A."
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "8818",
+      "titolo": "Comune di Treviglio - Bando per contributi a fondo perduto alle MPMI che svolgono vendita al dettaglio di beni e/o servizi, somministrazione di cibi e bevande, prestazione di servizi alla persona e commercio su area pubblica"
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "7951",
+      "titolo": "Regione Puglia - Avviso pubblico GALI - Anno 2026 - Contributi finanziari per iniziative e progetti attinenti alle competenze del Garante regionale delle persone sottoposte a misure restrittive della libertà personale"
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "3326",
+      "titolo": "Fondo Veneto Ricerca, sviluppo e innovazione: linea B - Innovazione - Disposizioni Operative afferenti alla \"Sezione Innovazione nelle PMI\" - PR Veneto FESR 2021-2027"
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "4944",
+      "titolo": "Bando Contributi per la formazione e l'aggiornamento professionale - Provincia autonoma di Bolzano"
+    },
+    {
+      "fonte": "incentivi_italia",
+      "id_esterno": "4646",
+      "titolo": "Avviso pubblico FRI Calabria per sostenere attività di innovazione tecnologica ed industriale - PR Calabria 21/27 - Az. 1.1.1,1.3.1 e FSC 21/27"
+    }
+  ],
+  "etichette": [
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:8015",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:3443",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:809",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:3629",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:3150",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:1197",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:8620",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:8202",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:5296",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:7571",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:313",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:77",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:8267",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:364",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:8201",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:8818",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:7951",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:3326",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:4944",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A01",
+      "bando": "incentivi_italia:4646",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:8015",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:3443",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:809",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:3629",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:3150",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:1197",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:8620",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:8202",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:5296",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:7571",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:313",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:77",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:8267",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:364",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:8201",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:8818",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:7951",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:3326",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:4944",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A02",
+      "bando": "incentivi_italia:4646",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:8015",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:3443",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:809",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:3629",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:3150",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:1197",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:8620",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:8202",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:5296",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:7571",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:313",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:77",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:8267",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:364",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:8201",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:8818",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:7951",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:3326",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:4944",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A03",
+      "bando": "incentivi_italia:4646",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:8015",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:3443",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:809",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:3629",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:3150",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:1197",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:8620",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:8202",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:5296",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:7571",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:313",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:77",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:8267",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:364",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:8201",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:8818",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:7951",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:3326",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:4944",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A04",
+      "bando": "incentivi_italia:4646",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:8015",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:3443",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:809",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:3629",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:3150",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:1197",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:8620",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:8202",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:5296",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:7571",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:313",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:77",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:8267",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:364",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:8201",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:8818",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:7951",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:3326",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:4944",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A05",
+      "bando": "incentivi_italia:4646",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:8015",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:3443",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:809",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:3629",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:3150",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:1197",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:8620",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:8202",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:5296",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:7571",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:313",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:77",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:8267",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:364",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:8201",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:8818",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:7951",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:3326",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:4944",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A06",
+      "bando": "incentivi_italia:4646",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:8015",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:3443",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:809",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:3629",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:3150",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:1197",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:8620",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:8202",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:5296",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:7571",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:313",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:77",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:8267",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:364",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:8201",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:8818",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:7951",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:3326",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:4944",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A07",
+      "bando": "incentivi_italia:4646",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:8015",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:3443",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:809",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:3629",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:3150",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:1197",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:8620",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:8202",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:5296",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:7571",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:313",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:77",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:8267",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:364",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:8201",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:8818",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:7951",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:3326",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:4944",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A08",
+      "bando": "incentivi_italia:4646",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:8015",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:3443",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:809",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:3629",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:3150",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:1197",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:8620",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:8202",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:5296",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:7571",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:313",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:77",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:8267",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:364",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:8201",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:8818",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:7951",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:3326",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:4944",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A09",
+      "bando": "incentivi_italia:4646",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:8015",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:3443",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:809",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:3629",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:3150",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:1197",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:8620",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:8202",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:5296",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:7571",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:313",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:77",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:8267",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:364",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:8201",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:8818",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:7951",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:3326",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:4944",
+      "atteso": "da_etichettare",
+      "nota": ""
+    },
+    {
+      "azienda": "A10",
+      "bando": "incentivi_italia:4646",
+      "atteso": "da_etichettare",
+      "nota": ""
+    }
+  ]
+}

@@ -16,6 +16,7 @@ Un cliente senza SOA né CPV di interesse non riceve appalti (va completato il p
 Il punteggio (0-100) ordina le opportunità; per ogni cliente si tengono le migliori.
 """
 
+import re
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from decimal import Decimal
@@ -65,7 +66,8 @@ def _sezione_settore(titolo: str) -> tuple[tuple[str, ...], str] | None:
 
     t = f" {normalizza(titolo)} "
     for parole, divisioni, nome in SETTORI_BANDO:
-        if any(p in t for p in parole):
+        # solo a inizio parola: «sport» non deve trovare «esportatrici» o «trasporti»
+        if any(re.search(rf"(?<![a-z]){re.escape(p)}", t) for p in parole):
             return divisioni, nome
     return None
 
@@ -206,9 +208,31 @@ def _valuta(a: Azienda, b: Bando, ctx: Contesto) -> Esito:
         else:
             raise Escluso(f"Bando per altre regioni ({', '.join(req.regioni[:3])})")
     else:
-        e.da_verificare.append("Territorio del bando non indicato")
-        e.punteggio -= 5
+        locale = ente_locale(b)
+        if locale:
+            # Ente locale con territorio non indicato: quasi sempre vale solo lì. Non si
+            # esclude (potrebbe essere la sede), ma il punteggio scende sotto la soglia.
+            e.da_verificare.append(f"Bando di un ente locale ({locale}): verificare il territorio")
+            e.punteggio -= 20
+        else:
+            e.da_verificare.append("Territorio del bando non indicato")
+            e.punteggio -= 5
     return _altri_filtri(a, req, b, e, ctx)
+
+
+ENTI_LOCALI = ("comune di ", "provincia di ", "citta metropolitana", "unione dei comuni",
+               "camera di commercio", "cciaa ", "gal ", "regione ")  # fmt: skip
+
+
+def ente_locale(b: Bando) -> str | None:
+    """Nome dell'ente locale che emette il bando (dall'ente o dall'inizio del titolo)."""
+    from app.utils.ricerca import normalizza
+
+    for testo in (b.ente or "", (b.titolo or "")[:60]):
+        n = normalizza(testo).strip()
+        if any(n.startswith(x) for x in ENTI_LOCALI):
+            return testo.strip()[:60]
+    return None
 
 
 def _altri_filtri(a: Azienda, req: Any, b: Bando, e: Esito, ctx: Contesto) -> Esito:
@@ -511,28 +535,6 @@ def da_notificare(db: Session, soglia_ai: int = 0) -> list[Opportunita]:
             .order_by(Opportunita.azienda_id, Opportunita.punteggio.desc())
         )
     )
-
-
-def testo_email(opportunita: list[Opportunita], base_url: str = "") -> str:
-    righe = ["Buongiorno,", "", "ecco le nuove opportunità trovate per i clienti dello studio:"]
-    per_cliente: dict[int, list[Opportunita]] = {}
-    for o in opportunita:
-        per_cliente.setdefault(o.azienda_id, []).append(o)
-    for lista in per_cliente.values():
-        righe += ["", f"■ {lista[0].azienda.ragione_sociale}"]
-        for o in lista[:10]:
-            tipo = "Bando" if o.bando_id else "Appalto"
-            scad = f" – scade il {o.scadenza:%d/%m/%Y}" if o.scadenza else ""
-            fonte = "AI" if o.punteggio_ai is not None else "regole"
-            righe.append(
-                f"  • {tipo}: {o.titolo[:140]}{scad} (pertinenza {o.punteggio}/100, {fonte})"
-            )
-            if o.motivazione_ai:
-                righe.append(f"    {o.motivazione_ai[:300]}")
-        if len(lista) > 10:
-            righe.append(f"  … e altre {len(lista) - 10}")
-    righe += ["", "Le trovi tutte nella pagina Opportunità di Europrojecta Studio."]
-    return "\n".join(righe)
 
 
 def riepilogo_motivi(o: Opportunita) -> dict[str, Any]:

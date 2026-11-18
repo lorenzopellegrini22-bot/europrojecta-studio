@@ -51,7 +51,21 @@
   <article>
     <header><strong>Pratiche attive</strong></header>
     <p class="numero"><a href="/pratiche">{{ pratiche_attive }}</a></p>
+    {% if pratiche_per_stato %}<small>{% for st, n in pratiche_per_stato %}{{ etichette_pratica.get(st, st) }}: {{ n }}{% if not loop.last %} · {% endif %}{% endfor %}</small><br>{% endif %}
     <a href="/pratiche/nuova" role="button" class="piccolo">Nuova pratica</a>
+  </article>
+</div>
+
+<div class="grid">
+  <article>
+    <header><strong>Aggiornamenti ai clienti da approvare</strong></header>
+    <p class="numero"><a href="/aggiornamenti">{{ bozze_aggiornamenti }}</a></p>
+  </article>
+  <article>
+    <header><strong>Spesa AI del mese</strong></header>
+    <p class="numero">{{ budget_ai.spesa | euro }}</p>
+    <small>{% if budget_ai.budget %}su un budget di {{ budget_ai.budget | euro }}{% if budget_ai.percentuale is not none %} ({{ budget_ai.percentuale }}%){% endif %}{% else %}nessun budget impostato{% endif %}</small>
+    {% if budget_ai.superato or budget_ai.sospesa %}<p class="messaggio errore">Le chiamate AI sono ferme: {{ budget_ai.motivo or "budget del mese esaurito" }}.</p>{% endif %}
   </article>
 </div>
 

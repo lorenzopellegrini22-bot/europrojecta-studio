@@ -32,15 +32,16 @@ from app.documenti.router import router as documenti_router
 from app.documenti.servizio import da_caricare as documenti_da_caricare
 from app.esportazione import router as export_router
 from app.extraction.router import router as estrazione_router
+from app.extraction.servizio import stato_budget
 from app.importer.router import router as import_router
 from app.integrazioni import servizio as servizio_integrazioni
 from app.integrazioni.router import router as integrazioni_router
-from app.models import Bando, Fonte, FonteRun, Opportunita, Pratica, Utente
+from app.models import AggiornamentoCliente, Bando, Fonte, FonteRun, Opportunita, Pratica, Utente
 from app.models.pratiche import STATI_PRATICA_CONCLUSI
 from app.opportunita.router import router as opportunita_router
 from app.pratiche.prefattibilita import router as prefattibilita_router
 from app.pratiche.router import router as pratiche_router
-from app.pratiche.servizio import scadenze
+from app.pratiche.servizio import ETICHETTE_STATO_PRATICA, scadenze
 from app.pratiche.statistiche import router as statistiche_router
 from app.web import render
 
@@ -195,6 +196,18 @@ def home(
                 select(func.count()).select_from(Opportunita).where(Opportunita.stato == "nuova")
             ),
             "scadenze_vicine": scadenze_vicine,
+            "pratiche_per_stato": db.execute(
+                select(Pratica.stato, func.count())
+                .where(Pratica.stato.not_in(STATI_PRATICA_CONCLUSI))
+                .group_by(Pratica.stato)
+            ).all(),
+            "etichette_pratica": ETICHETTE_STATO_PRATICA,
+            "bozze_aggiornamenti": db.scalar(
+                select(func.count())
+                .select_from(AggiornamentoCliente)
+                .where(AggiornamentoCliente.stato == "bozza")
+            ),
+            "budget_ai": stato_budget(db),
             "oggi": oggi,
         },
     )

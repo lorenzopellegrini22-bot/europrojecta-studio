@@ -171,3 +171,18 @@ def test_nuovi_filtri_con_motivo_di_esclusione():
         Contesto(progetti=[progetto], oggi=oggi),
     )
     assert es.progetto_id == 7 and any("Linea" in m for m in es.soddisfatti)
+
+
+def test_settore_solo_a_inizio_parola_e_enti_locali():
+    from app.opportunita.abbinamento import _sezione_settore, ente_locale
+
+    # «esportatrici» contiene «sport»: prima escludeva il bando per tutti (trovato dal collaudo)
+    assert _sezione_settore("Indennizzo danni alle imprese esportatrici") is None
+    assert _sezione_settore("Contributi alle associazioni sportive")[1] == "sport"
+    assert ente_locale(N(ente="COMUNE DI TREVIGLIO", titolo="Bando MPMI")) == "COMUNE DI TREVIGLIO"
+    assert ente_locale(N(ente="Ministero delle Imprese", titolo="Bando nazionale")) is None
+    c = _cliente()
+    locale = _bando(territorio="sconosciuto", regioni=None)
+    locale.ente, locale.titolo = "Comune di Treviglio", "Contributi alle MPMI"
+    esito = valuta_bando(c, locale)
+    assert esito is not None and esito.punteggio < 45  # non escluso, ma sotto soglia
