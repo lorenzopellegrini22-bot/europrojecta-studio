@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block titolo %}Configura la verifica in due passaggi · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<article class="accesso">
+  <hgroup>
+    <h2>Proteggi l'accesso</h2>
+    <p>La verifica in due passaggi è obbligatoria. Serve una sola volta per configurarla.</p>
+  </hgroup>
+  {% if errore %}<div class="messaggio errore" role="alert">{{ errore }}</div>{% endif %}
+  <ol>
+    <li>Apri un'app di autenticazione sul telefono (Google Authenticator, Microsoft Authenticator, 1Password…).</li>
+    <li>Inquadra il QR code.</li>
+    <li>Scrivi qui sotto il codice a 6 cifre che compare nell'app.</li>
+  </ol>
+  <div class="qr">{{ qr_svg | safe }}</div>
+  <details>
+    <summary>Non riesci a inquadrare il QR code?</summary>
+    <p>Inserisci a mano questa chiave nell'app:</p>
+    <p class="segreto-manuale">{{ segreto }}</p>
+  </details>
+  <form method="post" action="/2fa/configura">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Codice a 6 cifre
+      <input type="text" name="codice" inputmode="numeric" autocomplete="one-time-code" required autofocus>
+    </label>
+    <button type="submit">Attiva</button>
+  </form>
+</article>
+{% endblock %}

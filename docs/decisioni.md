@@ -34,6 +34,42 @@ Dettagli in `docs/fonti/incentivi-italia.md`.
 ## 2026-11-18 — Repository privato su GitHub con CI GitHub Actions
 La CI esegue ruff, pytest su `pgvector/pgvector:pg16` e la build dell'immagine Docker.
 
+## 2026-11-18 — Pagina Impostazioni → Integrazioni per tutte le chiavi API
+**Richiesta del committente:** la piattaforma deve avere impostazioni da cui collegare tutte le chiavi API necessarie.
+**Decisione:**
+- Una tabella generica `integrazione`, una riga per servizio: OpenAI, SMTP, WhatsApp Business.
+- Campi normali in chiaro (`config`); segreti cifrati uno per uno (`segreti`), con l'anteprima delle ultime 4 cifre (`anteprime`).
+- L'API key di OpenAI sta qui, non in `impostazioni_ai`. In `impostazioni_ai` (fase 3) restano modelli, budget e prezzi.
+- Ordine di precedenza: valore salvato dall'app > variabile d'ambiente > predefinito.
+- Un campo segreto lasciato vuoto mantiene la chiave salvata; per cancellarla c'è la casella "Rimuovi".
+- "Verifica connessione":
+  - OpenAI: elenca i modelli, una chiamata che non consuma token;
+  - SMTP: connessione, TLS e login, senza inviare email;
+  - WhatsApp: arriva con il canale in fase 5.
+- Solo il titolare vede e modifica le integrazioni. L'audit registra quali campi cambiano, mai i valori dei segreti.
+**Motivo:** un solo punto di configurazione, comprensibile per il consulente. Aggiungere un servizio vuol dire descriverlo in `app/integrazioni/registro.py` e allargare il check constraint.
+
+## 2026-11-18 — Cifratura dei segreti: Fernet con chiave derivata via HKDF da SECRET_KEY
+- Libreria `cryptography`, Fernet (AES-128-CBC + HMAC-SHA256).
+- Una chiave diversa per ogni scopo (`integrazione:openai:api_key`, `totp`, …), derivata con HKDF-SHA256.
+- Token di sessione e codici di recupero non si cifrano: si salva solo un'impronta HMAC con chiave derivata, quindi non sono rileggibili.
+- **Rischio:** se `SECRET_KEY` cambia, i segreti salvati non si decifrano più. La pagina lo segnala ("Da reinserire") e la 2FA si azzera con `python -m app.cli reimposta-2fa`. Per una futura rotazione delle chiavi servirà MultiFernet.
+
+## 2026-11-18 — Accesso anticipato dalla fase 1
+La pagina delle chiavi non può essere pubblica, quindi il login è stato fatto subito:
+- argon2id;
+- TOTP obbligatorio con QR code generato sul server (segno, SVG inline, nessuna risorsa esterna);
+- 10 codici di recupero monouso;
+- blocco di 15 minuti dopo 5 tentativi falliti (password o codice);
+- sessioni lato server con scadenza per inattività (60 min) e assoluta (12 h), nuovo token dopo la 2FA;
+- token CSRF più controllo di Origin/Referer su ogni richiesta che modifica dati;
+- CSP senza risorse esterne.
+Un codice TOTP non si può riusare: si salva l'ultimo intervallo usato.
+Gli utenti si creano con `python -m app.cli crea-utente`.
+
+## 2026-11-18 — Docker non installato sul PC di sviluppo
+Il disco C: si è riempito durante la build dell'immagine. Docker Desktop è stato disinstallato su indicazione del committente. I test di integrazione (Postgres + pgvector) girano nella CI di GitHub. In locale vengono saltati se manca `TEST_DATABASE_URL`, oppure si possono puntare a un Postgres raggiungibile.
+
 ---
 
 ## Decisioni dal brief (riassunto)

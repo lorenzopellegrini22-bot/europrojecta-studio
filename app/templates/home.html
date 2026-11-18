@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block contenuto %}
+<hgroup>
+  <h1>Buongiorno, {{ utente.nome }}</h1>
+  <p>Gestionale clienti e bandi per la finanza agevolata.</p>
+</hgroup>
+
+<article>
+  <header><strong>Primi passi</strong></header>
+  <ol>
+    {% if utente.is_titolare %}
+    <li><a href="/impostazioni/integrazioni">Collega le chiavi API</a> (OpenAI, email, WhatsApp).</li>
+    {% endif %}
+    <li>Aziende clienti, bandi e matching arrivano nelle prossime fasi.</li>
+  </ol>
+</article>
+{% endblock %}

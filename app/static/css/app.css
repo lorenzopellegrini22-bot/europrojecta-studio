@@ -1,0 +1,109 @@
+/* Stili dell'app sopra Pico.css. Colori: verde scuro coerente con il marchio. */
+:root {
+  --ep-verde: #1f5f3f;
+  --ep-ok: #1e7a46;
+  --ep-errore: #b3261e;
+  --ep-attenzione: #8a5a00;
+}
+
+[data-theme="light"],
+:root:not([data-theme="dark"]) {
+  --pico-primary: var(--ep-verde);
+  --pico-primary-background: var(--ep-verde);
+  --pico-primary-border: var(--ep-verde);
+  --pico-primary-hover: #17482f;
+  --pico-primary-hover-background: #17482f;
+}
+
+.marchio {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.marchio small {
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.accesso {
+  max-width: 28rem;
+  margin: 4rem auto;
+}
+
+.qr svg {
+  display: block;
+  margin: 1rem auto;
+  max-width: 220px;
+  height: auto;
+}
+
+.segreto-manuale {
+  font-family: var(--pico-font-family-monospace);
+  word-break: break-all;
+}
+
+.codici {
+  columns: 2;
+  font-family: var(--pico-font-family-monospace);
+  font-size: 1.1rem;
+}
+
+.messaggio {
+  padding: 0.75rem 1rem;
+  border-radius: var(--pico-border-radius);
+  margin-bottom: 1rem;
+  border-left: 4px solid;
+}
+.messaggio.errore {
+  border-color: var(--ep-errore);
+  background: color-mix(in srgb, var(--ep-errore) 10%, transparent);
+}
+.messaggio.ok {
+  border-color: var(--ep-ok);
+  background: color-mix(in srgb, var(--ep-ok) 10%, transparent);
+}
+.messaggio.attenzione {
+  border-color: var(--ep-attenzione);
+  background: color-mix(in srgb, var(--ep-attenzione) 10%, transparent);
+}
+
+.griglia-integrazioni {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: 1rem;
+}
+.griglia-integrazioni article {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.griglia-integrazioni article footer {
+  margin-top: auto;
+}
+
+.stato {
+  display: inline-block;
+  font-size: 0.8rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 1rem;
+  border: 1px solid currentColor;
+}
+.stato.ok { color: var(--ep-ok); }
+.stato.errore { color: var(--ep-errore); }
+.stato.neutro { opacity: 0.7; }
+
+.provenienza {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+nav .esci {
+  margin: 0;
+}
+nav .esci button {
+  padding: 0.3rem 0.8rem;
+  margin: 0;
+}
+
+.htmx-indicator { display: none; }
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator { display: inline; }

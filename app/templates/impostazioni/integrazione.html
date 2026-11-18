@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% set t = stato.tipo %}
+{% block titolo %}{{ t.nome }} · Integrazioni · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<nav aria-label="breadcrumb">
+  <ul>
+    <li><a href="/impostazioni/integrazioni">Integrazioni</a></li>
+    <li>{{ t.nome }}</li>
+  </ul>
+</nav>
+
+<hgroup>
+  <h1>{{ t.nome }}</h1>
+  <p>{{ t.descrizione }}</p>
+</hgroup>
+
+{% if salvato %}<div class="messaggio ok" role="status">Impostazioni salvate.</div>{% endif %}
+{% for e in stato.errori %}<div class="messaggio errore">{{ e }}</div>{% endfor %}
+{% if errori %}<div class="messaggio errore" role="alert">Controlla i campi evidenziati.</div>{% endif %}
+{% for n in t.note %}<div class="messaggio attenzione">{{ n }}</div>{% endfor %}
+
+<form method="post" action="/impostazioni/integrazioni/{{ t.codice }}" autocomplete="off">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% for c in t.campi %}
+    {% set sc = stato.campi[c.nome] %}
+    {% set err = errori.get(c.nome) %}
+    <label>
+      {{ c.etichetta }}{% if not c.obbligatorio %} <small>(facoltativo)</small>{% endif %}
+      {% if c.segreto %}
+        <input type="password" name="{{ c.nome }}" autocomplete="new-password"
+               placeholder="{% if sc.anteprima %}Salvata: {{ sc.anteprima }} — lascia vuoto per non cambiarla{% else %}Incolla qui{% endif %}"
+               {% if err %}aria-invalid="true"{% endif %}>
+      {% elif c.tipo == "select" %}
+        <select name="{{ c.nome }}" {% if err %}aria-invalid="true"{% endif %}>
+          {% for o in c.opzioni %}
+          <option value="{{ o }}" {% if (dati and dati[c.nome] == o) or (not dati and sc.valore == o) %}selected{% endif %}>{{ o | upper }}</option>
+          {% endfor %}
+        </select>
+      {% else %}
+        <input type="{{ c.tipo }}" name="{{ c.nome }}"
+               value="{% if dati %}{{ dati[c.nome] }}{% elif sc.provenienza == 'app' %}{{ sc.valore }}{% endif %}"
+               placeholder="{% if sc.provenienza in ('ambiente', 'predefinito') %}{{ sc.valore }}{% endif %}"
+               {% if err %}aria-invalid="true"{% endif %}>
+      {% endif %}
+      {% if err %}<small>{{ err }}</small>
+      {% elif c.aiuto %}<small>{{ c.aiuto }}</small>{% endif %}
+      {% if sc.provenienza == "ambiente" %}<small class="provenienza">Valore attuale dalla variabile d'ambiente {{ c.variabile_ambiente }}: quello inserito qui prevale.</small>{% endif %}
+    </label>
+    {% if c.segreto and sc.provenienza == "app" %}
+    <label>
+      <input type="checkbox" name="rimuovi_{{ c.nome }}" value="1">
+      Rimuovi {{ c.etichetta | lower }} salvata
+    </label>
+    {% endif %}
+  {% endfor %}
+  <button type="submit">Salva</button>
+</form>
+
+{% if t.verificabile %}
+<article id="verifica">
+  {% include "impostazioni/_esito_verifica.html" %}
+</article>
+{% endif %}
+{% endblock %}

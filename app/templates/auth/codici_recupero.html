@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block titolo %}Codici di recupero · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<article class="accesso">
+  <hgroup>
+    <h2>Codici di recupero</h2>
+    <p>Verifica in due passaggi attivata.</p>
+  </hgroup>
+  <div class="messaggio attenzione">
+    Salva questi codici in un posto sicuro (es. il gestore di password): <strong>non verranno più mostrati</strong>.
+    Ognuno vale per un solo accesso, se perdi il telefono.
+  </div>
+  <ul class="codici">
+    {% for c in codici %}<li>{{ c }}</li>{% endfor %}
+  </ul>
+  <a href="/" role="button">Ho salvato i codici, continua</a>
+</article>
+{% endblock %}

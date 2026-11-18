@@ -27,6 +27,13 @@ class Settings(BaseSettings):
     # Fuso orario per i job pianificati (raccolta notturna, email del mattino).
     fuso_orario: str = "Europe/Rome"
 
+    # Sessioni e login
+    cookie_secure: bool = True
+    sessione_inattivita_minuti: int = Field(default=60, ge=5)
+    sessione_durata_max_ore: int = Field(default=12, ge=1)
+    login_max_tentativi: int = Field(default=5, ge=1)
+    login_blocco_minuti: int = Field(default=15, ge=1)
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block titolo %}Verifica in due passaggi · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<article class="accesso">
+  <hgroup>
+    <h2>Codice di verifica</h2>
+    <p>Inserisci il codice a 6 cifre dell'app di autenticazione, oppure un codice di recupero.</p>
+  </hgroup>
+  {% if errore %}<div class="messaggio errore" role="alert">{{ errore }}</div>{% endif %}
+  <form method="post" action="/login/2fa">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Codice
+      <input type="text" name="codice" inputmode="numeric" autocomplete="one-time-code" required autofocus>
+    </label>
+    <button type="submit">Verifica</button>
+  </form>
+</article>
+{% endblock %}

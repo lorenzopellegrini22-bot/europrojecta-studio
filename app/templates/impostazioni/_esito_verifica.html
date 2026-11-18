@@ -1,0 +1,16 @@
+<header><strong>Verifica connessione</strong></header>
+{% if messaggio is defined %}
+  <div class="messaggio {{ 'ok' if ok else 'errore' }}" role="status">{{ messaggio }}</div>
+{% elif stato.verificata_il %}
+  <div class="messaggio {{ 'ok' if stato.verifica_ok else 'errore' }}">
+    {{ stato.verifica_messaggio }} <small class="provenienza">({{ stato.verificata_il | data_ora }})</small>
+  </div>
+{% else %}
+  <p>Salva le impostazioni, poi controlla che funzionino.</p>
+{% endif %}
+<button type="button" class="secondary"
+        hx-post="/impostazioni/integrazioni/{{ stato.tipo.codice }}/verifica"
+        hx-target="#verifica" hx-swap="innerHTML"
+        {% if not stato.configurata %}disabled{% endif %}>
+  Verifica connessione <span class="htmx-indicator">…</span>
+</button>

@@ -20,6 +20,14 @@ Schema completo, confermato in fase 0. Le tabelle entrano nel database fase per 
 | `log_accesso` | email_tentata, utente_id?, esito, ip, user_agent, creato_il | esito ∈ ok, password_errata, totp_errato, bloccato, utente_inesistente |
 | `audit_log` | utente_id?, entita, entita_id, azione, differenze (jsonb), creato_il | azione ∈ crea, modifica, elimina, esporta, invia |
 
+## Integrazioni — già implementata (migrazione 0002)
+
+| Tabella | Colonne principali | Vincoli e note |
+|---|---|---|
+| `integrazione` | codice (PK), config (jsonb), segreti (jsonb: campo → valore cifrato), anteprime (jsonb: campo → ultime 4 cifre), verificata_il, verifica_ok, verifica_messaggio, aggiornato_da | codice ∈ openai, smtp, whatsapp. Qui sta anche l'API key di OpenAI (non in `impostazioni_ai`) |
+
+Anche le tabelle di accesso (`utente`, `codice_recupero`, `sessione`, `log_accesso`, `audit_log`) sono già nella migrazione 0002. `utente` ha in più `totp_ultimo_intervallo` (contro il riuso dei codici) e `sessione` ha `csrf_token`.
+
 ## CRM — F1
 
 | Tabella | Colonne principali | Vincoli e note |
@@ -71,7 +79,7 @@ Schema completo, confermato in fase 0. Le tabelle entrano nel database fase per 
 | Tabella | Colonne principali | Note |
 |---|---|---|
 | `estrazione_bando` | bando_id, modello, versione_prompt, versione_schema, hash_input, output (jsonb), stato_revisione, token_ingresso, token_uscita, costo_stimato, errore | stato_revisione ∈ da_revisionare, revisionato |
-| `impostazioni_ai` | api_key_cifrata, api_key_ultime4, modello_estrazione, modello_scoring, modello_embeddings, budget_mensile_eur, prezzi (jsonb: modello → prezzo per milione di token in ingresso e in uscita), sospesa_fino_al, motivo_sospensione | una sola riga (`CHECK (id = 1)`) |
+| `impostazioni_ai` | modello_estrazione, modello_scoring, modello_embeddings, budget_mensile_eur, prezzi (jsonb: modello → prezzo per milione di token in ingresso e in uscita), sospesa_fino_al, motivo_sospensione | una sola riga (`CHECK (id = 1)`) |
 | `uso_llm` | operazione, modello, token_ingresso, token_uscita, costo_stimato, esito, errore, creato_il | operazione ∈ estrazione, scoring, embedding, aggiornamento |
 
 ## Matching — F4

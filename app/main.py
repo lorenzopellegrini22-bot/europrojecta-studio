@@ -1,23 +1,98 @@
-"""Applicazione FastAPI: montaggio dei router e /health.
+"""Applicazione FastAPI: middleware di sicurezza, router, /health.
 
 Gli endpoint sono sincroni (def, non async def): con un solo utente l'async non serve.
+Tutte le pagine richiedono il login, tranne /login e /health (c'è un test che lo verifica).
 """
 
 import logging
+from pathlib import Path
 from typing import Annotated
+from urllib.parse import urlsplit
 
-from fastapi import Depends, FastAPI
-from fastapi.responses import JSONResponse
+from fastapi import Depends, FastAPI, Request
+from fastapi.responses import JSONResponse, RedirectResponse, Response
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app import NOME_APP
+from app.auth.dipendenze import CsrfNonValido, NonAutenticato, Proibito, utente_corrente
+from app.auth.router import router as auth_router
 from app.db import get_db
+from app.integrazioni.router import router as integrazioni_router
+from app.models import Utente
+from app.web import render
 
 log = logging.getLogger(__name__)
 
 app = FastAPI(title=NOME_APP, docs_url=None, redoc_url=None, openapi_url=None)
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
+
+METODI_CHE_MODIFICANO = {"POST", "PUT", "PATCH", "DELETE"}
+
+CSP = (
+    "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; "
+    "object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+)
+
+
+def _stessa_origine(request: Request) -> bool:
+    """Origin (o in mancanza Referer) deve corrispondere all'host richiesto."""
+    host = request.headers.get("host", "")
+    origine = request.headers.get("origin") or request.headers.get("referer")
+    if not origine or origine == "null":
+        return False
+    return urlsplit(origine).netloc == host
+
+
+@app.middleware("http")
+async def sicurezza(request: Request, call_next):  # type: ignore[no-untyped-def]
+    if request.method in METODI_CHE_MODIFICANO and not _stessa_origine(request):
+        return Response("Richiesta da un'origine non ammessa.", status_code=403)
+    risposta: Response = await call_next(request)
+    risposta.headers["Content-Security-Policy"] = CSP
+    risposta.headers["X-Frame-Options"] = "DENY"
+    risposta.headers["X-Content-Type-Options"] = "nosniff"
+    risposta.headers["Referrer-Policy"] = "same-origin"
+    risposta.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    if not request.url.path.startswith("/static"):
+        risposta.headers["Cache-Control"] = "no-store"
+    return risposta
+
+
+@app.exception_handler(NonAutenticato)
+def _non_autenticato(request: Request, _: NonAutenticato) -> Response:
+    if request.headers.get("hx-request"):
+        # HTMX: reindirizza l'intera pagina, non il frammento
+        return Response(status_code=401, headers={"HX-Redirect": "/login"})
+    return RedirectResponse("/login", status_code=303)
+
+
+@app.exception_handler(Proibito)
+def _proibito(request: Request, _: Proibito) -> Response:
+    return render(
+        request, "errore.html", {"messaggio": "Non hai i permessi per questa pagina."}, 403
+    )
+
+
+@app.exception_handler(CsrfNonValido)
+def _csrf(request: Request, _: CsrfNonValido) -> Response:
+    return render(
+        request,
+        "errore.html",
+        {"messaggio": "La pagina è scaduta. Ricaricala e riprova."},
+        403,
+    )
+
+
+app.include_router(auth_router)
+app.include_router(integrazioni_router)
+
+
+@app.get("/")
+def home(request: Request, utente: Annotated[Utente, Depends(utente_corrente)]) -> Response:
+    return render(request, "home.html")
 
 
 @app.get("/health")

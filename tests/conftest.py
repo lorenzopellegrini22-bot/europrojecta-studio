@@ -18,6 +18,11 @@ from sqlalchemy.engine import make_url
 os.environ.setdefault("DATABASE_URL", "postgresql+psycopg://test:test@localhost:5432/non_usato")
 os.environ.setdefault("SECRET_KEY", "chiave-di-test-lunga-almeno-trentadue-caratteri")
 os.environ.setdefault("AMBIENTE", "test")
+# Il TestClient lavora su http://testserver: con Secure=true non rimanderebbe il cookie.
+os.environ["COOKIE_SECURE"] = "false"
+# Nessuna chiave reale deve finire nei test.
+for _var in ("OPENAI_API_KEY", "SMTP_HOST", "SMTP_PASSWORD", "WHATSAPP_ACCESS_TOKEN"):
+    os.environ.pop(_var, None)
 
 
 def _url_servizio() -> str:
