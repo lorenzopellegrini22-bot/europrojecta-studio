@@ -26,6 +26,7 @@ dependencies = [
     "numpy>=2",
     "weasyprint>=70.0",
     "openpyxl>=3.1.5",
+    "pymupdf>=2.1",
 ]
 
 [dependency-groups]

@@ -33,7 +33,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Librerie per i PDF (WeasyPrint)
-        run: sudo apt-get update && sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core
+        run: sudo apt-get update && sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core tesseract-ocr tesseract-ocr-ita
       - run: uv sync --frozen
       - name: Ruff
         run: |

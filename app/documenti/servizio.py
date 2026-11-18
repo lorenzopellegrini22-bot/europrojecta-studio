@@ -40,6 +40,7 @@ logging.getLogger("pypdf").setLevel(logging.ERROR)
 
 MAX_PER_BANDO = 3
 MAX_MB = 25
+MIN_TESTO = 200  # sotto questa soglia il PDF è considerato senza testo
 MAX_PAGINE = 300
 PER_NOTTE = 60
 RIPROVA_DOPO = timedelta(days=7)
@@ -180,6 +181,13 @@ def testo_pdf(dati: bytes) -> tuple[str, int]:
     testo = "\n".join(testi)
     testo = re.sub(r"[ \t ]+", " ", testo)
     testo = re.sub(r"\n{3,}", "\n\n", testo).strip()
+    if len(testo) < MIN_TESTO:
+        # Probabilmente una scansione: si prova con l'OCR (se Tesseract è installato)
+        from app.documenti.ocr import ocr_pdf
+
+        letto = ocr_pdf(dati)
+        if len(letto) > len(testo):
+            testo = re.sub(r"\n{3,}", "\n\n", re.sub(r"[ \t]+", " ", letto)).strip()
     return testo, len(lettore.pages)
 
 
@@ -254,7 +262,11 @@ def _scarica_e_leggi(
     doc.dimensione = len(dati)
     doc.pagine = pagine
     doc.testo_estratto = testo or None
-    doc.errore = None if len(testo) >= 200 else "PDF senza testo (probabilmente una scansione)."
+    doc.errore = (
+        None
+        if len(testo) >= MIN_TESTO
+        else "PDF senza testo leggibile (scansione non letta dall'OCR)."
+    )
     return bool(testo)
 
 
@@ -418,7 +430,9 @@ def carica_a_mano(
     documento.testo_estratto = testo or None
     documento.scaricato_il = datetime.now(UTC)
     documento.errore = (
-        None if len(testo) >= 200 else "PDF senza testo (probabilmente una scansione)."
+        None
+        if len(testo) >= MIN_TESTO
+        else "PDF senza testo leggibile (scansione non letta dall'OCR)."
     )
     return documento
 
