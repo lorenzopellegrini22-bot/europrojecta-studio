@@ -3,6 +3,8 @@
     uv run python -m app.cli crea-utente --email nome@studio.it --nome "Nome Cognome"
     uv run python -m app.cli crea-utente --email collab@studio.it --nome "..." --ruolo collaboratore
     uv run python -m app.cli reimposta-2fa --email nome@studio.it
+    uv run python -m app.cli raccogli-bandi [--forza] [--fonte incentivi_italia]
+    uv run python -m app.cli pulizia
 
 Non esiste una registrazione pubblica: gli utenti si creano solo da qui.
 """
@@ -80,10 +82,35 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("reimposta-2fa", help="azzera la 2FA di un utente")
     p.add_argument("--email", required=True)
 
+    p = sub.add_parser("raccogli-bandi", help="esegue subito la raccolta dei bandi")
+    p.add_argument(
+        "--forza",
+        action="store_true",
+        help="riscarica anche se il file è invariato e ricalcola i requisiti di tutti i bandi",
+    )
+    p.add_argument("--fonte", help="solo questa fonte (codice)")
+
+    sub.add_parser("pulizia", help="elimina sessioni scadute e log vecchi")
+
     args = parser.parse_args(argv)
     if args.comando == "crea-utente":
         return crea_utente(args.email, args.nome, args.ruolo)
-    return reimposta_2fa(args.email)
+    if args.comando == "reimposta-2fa":
+        return reimposta_2fa(args.email)
+
+    import logging
+
+    from app.jobs import attivita
+    from app.jobs.esecuzione import esegui_job
+
+    logging.basicConfig(level="INFO", format="%(asctime)s %(levelname)s %(message)s")
+    if args.comando == "raccogli-bandi":
+        esito = esegui_job(
+            "raccolta_bandi", lambda: attivita.raccolta_bandi(forza=args.forza, solo=args.fonte)
+        )
+    else:
+        esito = esegui_job("pulizia", attivita.pulizia)
+    return 0 if esito == "ok" else 1
 
 
 if __name__ == "__main__":

@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     # Fuso orario per i job pianificati (raccolta notturna, email del mattino).
     fuso_orario: str = "Europe/Rome"
 
+    # Orari dei job notturni (HH:MM, nel fuso orario sopra)
+    raccolta_orario: str = Field(default="02:30", pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+    pulizia_orario: str = Field(default="04:00", pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+
     # Sessioni e login
     cookie_secure: bool = True
     sessione_inattivita_minuti: int = Field(default=60, ge=5)

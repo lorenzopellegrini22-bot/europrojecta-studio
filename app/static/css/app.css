@@ -108,3 +108,27 @@ nav .esci button {
 .htmx-indicator { display: none; }
 .htmx-request .htmx-indicator,
 .htmx-request.htmx-indicator { display: inline; }
+
+/* Bandi */
+.numero { font-size: 2rem; font-weight: 700; margin: 0; }
+.numero a { text-decoration: none; }
+.filtri .grid { gap: 0.5rem; }
+.azioni-filtri { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; }
+.azioni-filtri button { width: auto; margin: 0; }
+.tabella-bandi td { vertical-align: top; }
+.stato-aperto { color: var(--ep-ok); }
+.stato-in_arrivo { color: #1d4f91; }
+.stato-chiuso { opacity: 0.6; }
+.stato-sconosciuto { color: var(--ep-attenzione); }
+.scade-presto { color: var(--ep-errore); font-weight: 600; }
+.da-verificare {
+  font-size: 0.75rem;
+  color: var(--ep-attenzione);
+  border: 1px solid currentColor;
+  border-radius: 1rem;
+  padding: 0 0.4rem;
+}
+.non-noto { opacity: 0.6; }
+.testo-bando { white-space: pre-line; }
+.paginazione { display: flex; gap: 1.5rem; justify-content: center; align-items: center; }
+.attribuzione { opacity: 0.7; }

@@ -1,0 +1,13 @@
+{% macro badge_stato(stato) -%}
+  {%- set etichette = {"aperto": "Aperto", "in_arrivo": "In arrivo", "chiuso": "Chiuso", "sconosciuto": "Date non note"} -%}
+  <span class="stato stato-{{ stato }}">{{ etichette.get(stato, stato) }}</span>
+{%- endmacro %}
+
+{% macro territorio(req) -%}
+  {%- if not req -%}—
+  {%- elif req.territorio == "nazionale" -%}Nazionale
+  {%- elif req.territorio == "comunale" -%}{{ (req.comuni or [])[:3] | join(", ") }}{% if (req.comuni or []) | length > 3 %} e altri{% endif %}{% if req.regioni %} ({{ req.regioni | join(", ") }}){% endif %}
+  {%- elif req.regioni -%}{{ req.regioni[:3] | join(", ") }}{% if req.regioni | length > 3 %} +{{ req.regioni | length - 3 }}{% endif %}
+  {%- else -%}Non indicato
+  {%- endif -%}
+{%- endmacro %}

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% from "bandi/_macro.html" import badge_stato, territorio %}
+{% block titolo %}Bandi · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<hgroup>
+  <h1>Bandi</h1>
+  <p>{{ totale }} bandi trovati. Fonte: Incentivi Italia, aggiornata ogni notte.</p>
+</hgroup>
+
+<form method="get" action="/bandi" class="filtri">
+  <input type="search" name="q" value="{{ filtri.q }}" placeholder="Cerca nel titolo, ente o descrizione" aria-label="Cerca">
+  <div class="grid">
+    <select name="stato" aria-label="Stato">
+      {% for v, e in [("attivi", "Aperti e in arrivo"), ("aperto", "Solo aperti"), ("in_arrivo", "Solo in arrivo"), ("chiuso", "Chiusi"), ("sconosciuto", "Date non note"), ("tutti", "Tutti")] %}
+      <option value="{{ v }}" {% if filtri.stato == v %}selected{% endif %}>{{ e }}</option>
+      {% endfor %}
+    </select>
+    <select name="regione" aria-label="Regione">
+      <option value="">Tutti i territori</option>
+      <option value="nazionali" {% if filtri.regione == "nazionali" %}selected{% endif %}>Solo nazionali</option>
+      {% for r in regioni %}
+      <option value="{{ r }}" {% if filtri.regione == r %}selected{% endif %}>{{ r }} (+ nazionali)</option>
+      {% endfor %}
+    </select>
+    <select name="forma" aria-label="Forma di agevolazione">
+      <option value="">Tutte le forme</option>
+      {% for f in forme %}
+      <option value="{{ f }}" {% if filtri.forma == f %}selected{% endif %}>{{ f }}</option>
+      {% endfor %}
+    </select>
+    <select name="scadenza" aria-label="Scadenza">
+      <option value="">Qualsiasi scadenza</option>
+      {% for g in scadenze %}
+      <option value="{{ g }}" {% if filtri.scadenza == g %}selected{% endif %}>Scade entro {{ g }} giorni</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="azioni-filtri">
+    <button type="submit">Filtra</button>
+    <a href="/bandi" class="secondary">Azzera filtri</a>
+  </div>
+</form>
+
+{% if not bandi %}
+  <article>
+    <p>Nessun bando trovato con questi filtri.</p>
+    {% if totale == 0 and not filtri.q and filtri.stato == "attivi" and not filtri.regione %}
+    <p>Se la raccolta non è ancora stata eseguita, vai su <a href="/fonti">Fonti</a>.</p>
+    {% endif %}
+  </article>
+{% else %}
+<div class="overflow-auto">
+<table class="striped tabella-bandi">
+  <thead>
+    <tr><th>Bando</th><th>Territorio</th><th>Agevolazione</th><th>Scadenza</th><th>Stato</th></tr>
+  </thead>
+  <tbody>
+    {% for b in bandi %}
+    <tr>
+      <td>
+        <a href="/bandi/{{ b.id }}">{{ b.titolo }}</a>
+        {% if b.ente %}<br><small>{{ b.ente }}</small>{% endif %}
+      </td>
+      <td><small>{{ territorio(b.requisiti) }}</small></td>
+      <td><small>{{ (b.requisiti.forma_agevolazione or []) | join(", ") if b.requisiti else "—" }}</small></td>
+      <td>
+        {% if b.data_chiusura %}
+          {{ b.data_chiusura | data }}
+          {% set giorni = (b.data_chiusura - oggi).days %}
+          {% if 0 <= giorni <= 30 %}<br><small class="scade-presto">tra {{ giorni }} gg</small>{% endif %}
+        {% else %}<small>Senza scadenza</small>{% endif %}
+      </td>
+      <td>{{ badge_stato(b.stato) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% if pagine > 1 %}
+<nav class="paginazione" aria-label="Pagine">
+  {% set base = "/bandi?q=" ~ (filtri.q | urlencode) ~ "&stato=" ~ filtri.stato ~ "&regione=" ~ (filtri.regione | urlencode) ~ "&forma=" ~ (filtri.forma | urlencode) ~ "&scadenza=" ~ (filtri.scadenza or "") %}
+  {% if pagina > 1 %}<a href="{{ base }}&pagina={{ pagina - 1 }}">← Precedente</a>{% endif %}
+  <span>Pagina {{ pagina }} di {{ pagine }}</span>
+  {% if pagina < pagine %}<a href="{{ base }}&pagina={{ pagina + 1 }}">Successiva →</a>{% endif %}
+</nav>
+{% endif %}
+{% endif %}
+{% endblock %}

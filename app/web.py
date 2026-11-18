@@ -1,6 +1,6 @@
 """Template Jinja2 e filtri di formattazione."""
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -22,6 +22,10 @@ def _data_ora(valore: datetime | None) -> str:
     return valore.astimezone(ZoneInfo(get_settings().fuso_orario)).strftime("%d/%m/%Y %H:%M")
 
 
+def _data(valore: date | None) -> str:
+    return valore.strftime("%d/%m/%Y") if valore else "—"
+
+
 def _euro(valore: Decimal | float | int | None) -> str:
     if valore is None:
         return "—"
@@ -31,6 +35,7 @@ def _euro(valore: Decimal | float | int | None) -> str:
 
 templates.env.filters["data_ora"] = _data_ora
 templates.env.filters["euro"] = _euro
+templates.env.filters["data"] = _data
 templates.env.globals["NOME_APP"] = NOME_APP
 
 

@@ -56,6 +56,15 @@ def url_db_test() -> Iterator[str]:
 
 @pytest.fixture(scope="session")
 def engine_test(url_db_test: str) -> Iterator[Engine]:
+    """Engine del database di test. Anche il codice che apre sessioni da solo (job, CLI)
+    deve usare questo database: si punta DATABASE_URL qui e si svuotano le cache."""
+    from app.config import get_settings
+    from app.db import get_engine, get_sessionmaker
+
+    os.environ["DATABASE_URL"] = url_db_test
+    for funzione in (get_settings, get_engine, get_sessionmaker):
+        funzione.cache_clear()
     engine = create_engine(url_db_test)
     yield engine
     engine.dispose()
+    get_engine().dispose()

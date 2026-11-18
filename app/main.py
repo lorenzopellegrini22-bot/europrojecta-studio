@@ -5,6 +5,7 @@ Tutte le pagine richiedono il login, tranne /login e /health (c'è un test che l
 """
 
 import logging
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Annotated
 from urllib.parse import urlsplit
@@ -12,16 +13,18 @@ from urllib.parse import urlsplit
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import text
+from sqlalchemy import func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app import NOME_APP
 from app.auth.dipendenze import CsrfNonValido, NonAutenticato, Proibito, utente_corrente
 from app.auth.router import router as auth_router
+from app.bandi.router import router as bandi_router
 from app.db import get_db
+from app.integrazioni import servizio as servizio_integrazioni
 from app.integrazioni.router import router as integrazioni_router
-from app.models import Utente
+from app.models import Bando, Fonte, FonteRun, Utente
 from app.web import render
 
 log = logging.getLogger(__name__)
@@ -88,11 +91,56 @@ def _csrf(request: Request, _: CsrfNonValido) -> Response:
 
 app.include_router(auth_router)
 app.include_router(integrazioni_router)
+app.include_router(bandi_router)
 
 
 @app.get("/")
-def home(request: Request, utente: Annotated[Utente, Depends(utente_corrente)]) -> Response:
-    return render(request, "home.html")
+def home(
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    utente: Annotated[Utente, Depends(utente_corrente)],
+) -> Response:
+    oggi = date.today()
+    aperti = db.scalar(select(func.count()).select_from(Bando).where(Bando.stato == "aperto"))
+    in_arrivo = db.scalar(select(func.count()).select_from(Bando).where(Bando.stato == "in_arrivo"))
+    in_scadenza = db.scalar(
+        select(func.count())
+        .select_from(Bando)
+        .where(Bando.stato == "aperto", Bando.data_chiusura.between(oggi, oggi + timedelta(7)))
+    )
+    # "Nuovi" = comparsi dopo la prima raccolta riuscita (la prima importa tutto lo storico)
+    prima_raccolta = db.scalar(select(func.min(FonteRun.fine)).where(FonteRun.esito == "ok"))
+    nuovi = 0
+    if prima_raccolta is not None:
+        nuovi = db.scalar(
+            select(func.count())
+            .select_from(Bando)
+            .where(
+                Bando.stato.in_(("aperto", "in_arrivo")),
+                Bando.visto_la_prima_volta > prima_raccolta,
+                Bando.visto_la_prima_volta >= datetime.now(UTC) - timedelta(days=7),
+            )
+        )
+    fonti_in_errore = db.scalars(select(Fonte).where(Fonte.fallimenti_consecutivi >= 2)).all()
+    ultima = db.scalar(select(func.max(Fonte.ultimo_successo)))
+    integrazioni = (
+        [servizio_integrazioni.stato(db, c) for c in ("openai", "smtp")]
+        if utente.is_titolare
+        else []
+    )
+    return render(
+        request,
+        "home.html",
+        {
+            "aperti": aperti,
+            "in_arrivo": in_arrivo,
+            "in_scadenza": in_scadenza,
+            "nuovi": nuovi,
+            "fonti_in_errore": fonti_in_errore,
+            "ultima_raccolta": ultima,
+            "integrazioni": integrazioni,
+        },
+    )
 
 
 @app.get("/health")

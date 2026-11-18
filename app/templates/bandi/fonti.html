@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block titolo %}Fonti dei bandi · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<hgroup>
+  <h1>Fonti dei bandi</h1>
+  <p>La raccolta parte in automatico ogni notte alle <strong>{{ orario }}</strong>. Se il file della fonte non è cambiato, aggiorna solo gli stati dei bandi.</p>
+</hgroup>
+
+{% if avviata %}<div class="messaggio ok" role="status">Raccolta avviata: ricarica la pagina tra un minuto per vedere l'esito.</div>{% endif %}
+
+<div class="grid">
+  <article><header>Aperti</header><p class="numero">{{ conteggi.get("aperto", 0) }}</p></article>
+  <article><header>In arrivo</header><p class="numero">{{ conteggi.get("in_arrivo", 0) }}</p></article>
+  <article><header>Chiusi</header><p class="numero">{{ conteggi.get("chiuso", 0) }}</p></article>
+  <article><header>Date non note</header><p class="numero">{{ conteggi.get("sconosciuto", 0) }}</p></article>
+</div>
+
+{% for f in fonti %}
+<article>
+  <header>
+    <strong>{{ f.nome }}</strong>
+    {% if not f.attiva %}<span class="stato neutro">Disattivata</span>
+    {% elif f.fallimenti_consecutivi >= 2 %}<span class="stato errore">{{ f.fallimenti_consecutivi }} errori consecutivi</span>
+    {% elif f.ultimo_successo %}<span class="stato ok">Funzionante</span>
+    {% else %}<span class="stato neutro">Mai eseguita</span>{% endif %}
+  </header>
+  <p>
+    Ultima raccolta riuscita: <strong>{{ f.ultimo_successo | data_ora }}</strong><br>
+    Versione del file elaborata: {{ f.ultimo_last_modified or "—" }} · record nel file: {{ f.ultimo_conteggio or "—" }}<br>
+    <small><a href="{{ f.url }}" target="_blank" rel="noopener noreferrer">{{ f.url }}</a></small>
+  </p>
+</article>
+{% endfor %}
+
+{% if utente.is_titolare %}
+<form method="post" action="/fonti/raccogli">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <button type="submit" class="secondary" {% if in_corso %}disabled{% endif %}>
+    {% if in_corso %}Raccolta in corso…{% else %}Esegui la raccolta adesso{% endif %}
+  </button>
+</form>
+{% endif %}
+
+<h2>Ultime esecuzioni</h2>
+{% if not runs %}
+<p>Nessuna raccolta ancora eseguita.</p>
+{% else %}
+<div class="overflow-auto">
+<table class="striped">
+  <thead><tr><th>Inizio</th><th>Fonte</th><th>Esito</th><th>Letti</th><th>Nuovi</th><th>Modificati</th><th>Chiusi</th><th>Messaggio</th></tr></thead>
+  <tbody>
+  {% for r in runs %}
+    <tr>
+      <td><small>{{ r.inizio | data_ora }}</small></td>
+      <td><small>{{ r.fonte.nome.split(" (")[0] }}</small></td>
+      <td><span class="stato {{ 'ok' if r.esito in ('ok', 'invariato') else ('errore' if r.esito in ('errore', 'fermato_sanita') else 'neutro') }}">{{ r.esito | replace("_", " ") }}</span></td>
+      <td>{{ r.record_letti }}</td>
+      <td>{{ r.nuovi }}</td>
+      <td>{{ r.modificati }}</td>
+      <td>{{ r.chiusi }}</td>
+      <td><small>{{ r.messaggio or "" }}</small></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

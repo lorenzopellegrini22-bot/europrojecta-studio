@@ -2,16 +2,37 @@
 {% block contenuto %}
 <hgroup>
   <h1>Buongiorno, {{ utente.nome }}</h1>
-  <p>Gestionale clienti e bandi per la finanza agevolata.</p>
+  <p>
+    {% if ultima_raccolta %}Bandi aggiornati il {{ ultima_raccolta | data_ora }}.
+    {% else %}La raccolta dei bandi non è ancora stata eseguita.{% endif %}
+  </p>
 </hgroup>
 
+{% for f in fonti_in_errore %}
+<div class="messaggio errore" role="alert">
+  La fonte «{{ f.nome }}» non funziona da {{ f.fallimenti_consecutivi }} raccolte consecutive. <a href="/fonti">Vedi i dettagli</a>.
+</div>
+{% endfor %}
+{% for s in integrazioni if not s.configurata or s.verifica_ok == false %}
+<div class="messaggio attenzione">
+  {{ s.tipo.nome }}: {% if not s.configurata %}non ancora collegata{% else %}l'ultima verifica non è riuscita{% endif %}.
+  <a href="/impostazioni/integrazioni/{{ s.tipo.codice }}">Sistema</a>
+</div>
+{% endfor %}
+
+<div class="grid">
+  <article><header>Bandi aperti</header><p class="numero"><a href="/bandi?stato=aperto">{{ aperti }}</a></p></article>
+  <article><header>In arrivo</header><p class="numero"><a href="/bandi?stato=in_arrivo">{{ in_arrivo }}</a></p></article>
+  <article><header>Scadono entro 7 giorni</header><p class="numero"><a href="/bandi?stato=aperto&scadenza=7">{{ in_scadenza }}</a></p></article>
+  <article><header>Nuovi negli ultimi 7 giorni</header><p class="numero">{{ nuovi }}</p></article>
+</div>
+
 <article>
-  <header><strong>Primi passi</strong></header>
-  <ol>
-    {% if utente.is_titolare %}
-    <li><a href="/impostazioni/integrazioni">Collega le chiavi API</a> (OpenAI, email, WhatsApp).</li>
-    {% endif %}
-    <li>Aziende clienti, bandi e matching arrivano nelle prossime fasi.</li>
-  </ol>
+  <header><strong>Prossimi passi</strong></header>
+  <ul>
+    <li><a href="/bandi">Consulta i bandi</a> per regione, forma di agevolazione e scadenza.</li>
+    {% if utente.is_titolare %}<li><a href="/impostazioni/integrazioni">Collega le chiavi API</a> (OpenAI, email, WhatsApp).</li>{% endif %}
+    <li>Aziende clienti e matching automatico arrivano nelle prossime fasi.</li>
+  </ul>
 </article>
 {% endblock %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% from "bandi/_macro.html" import badge_stato, territorio %}
+{% block titolo %}{{ bando.titolo[:60] }} · {{ NOME_APP }}{% endblock %}
+{% macro riga(etichetta, campo, valore, prov=none) -%}
+  {%- set chiave_prov = prov or campo -%}
+  <tr>
+    <th scope="row">{{ etichetta }}</th>
+    <td>
+      {% if valore is none or valore == [] %}<span class="non-noto">Non indicato</span>
+      {% elif valore is string or valore is number %}{{ valore }}
+      {% else %}{{ valore | join(", ") }}{% endif %}
+      {% if req and campo in (req.da_verificare or []) %} <span class="da-verificare">da verificare</span>{% endif %}
+      {% if req and req.provenienza.get(chiave_prov) %}<small class="provenienza"> · {{ req.provenienza[chiave_prov] }}</small>{% endif %}
+    </td>
+  </tr>
+{%- endmacro %}
+{% block contenuto %}
+<nav aria-label="breadcrumb">
+  <ul><li><a href="/bandi">Bandi</a></li><li>Scheda</li></ul>
+</nav>
+
+<hgroup>
+  <h1>{{ bando.titolo }}</h1>
+  <p>{{ bando.ente or "Ente non indicato" }} · {{ badge_stato(bando.stato) }}</p>
+</hgroup>
+
+<div class="grid">
+  <article>
+    <header><strong>Date</strong></header>
+    <p>Apertura: <strong>{{ bando.data_apertura | data }}</strong><br>
+       Chiusura: <strong>{{ bando.data_chiusura | data if bando.data_chiusura else "non indicata" }}</strong>
+       {% if bando.data_chiusura and bando.data_chiusura >= oggi %}<small> (tra {{ (bando.data_chiusura - oggi).days }} giorni)</small>{% endif %}
+    </p>
+    {% if bando.note_apertura_chiusura %}<p><small>{{ bando.note_apertura_chiusura }}</small></p>{% endif %}
+  </article>
+  <article>
+    <header><strong>Link</strong></header>
+    <ul>
+      {% if bando.link_ufficiale %}<li><a href="{{ bando.link_ufficiale }}" target="_blank" rel="noopener noreferrer">Pagina ufficiale</a></li>{% endif %}
+      {% if bando.link_domande %}<li><a href="{{ bando.link_domande }}" target="_blank" rel="noopener noreferrer">Piattaforma per le domande</a></li>{% endif %}
+      {% if bando.id_rna %}<li>ID nel Registro Nazionale Aiuti: {{ bando.id_rna }}</li>{% endif %}
+    </ul>
+  </article>
+</div>
+
+{% if req %}
+<article>
+  <header><strong>Requisiti</strong> <small>(«fonte» = dato strutturato di Incentivi Italia; «da verificare» = incerto o non presente nella fonte)</small></header>
+  <div class="overflow-auto">
+  <table>
+    <tbody>
+      <tr><th scope="row">Territorio</th><td>{{ territorio(req) }}{% if "territorio" in (req.da_verificare or []) %} <span class="da-verificare">da verificare</span>{% endif %}</td></tr>
+      {{ riga("Zone speciali", "aree_speciali", req.aree_speciali) }}
+      {{ riga("Dimensioni d'impresa", "dimensioni", req.dimensioni) }}
+      {{ riga("Codici ATECO" ~ (" (" ~ req.ateco_versione ~ ")" if req.ateco_versione else ""), "ateco", req.ateco_ammessi or "Tutti i settori ammissibili", "ateco_ammessi") }}
+      {{ riga("Beneficiari", "tipologie_soggetto", req.tipologie_soggetto) }}
+      {{ riga("Settori", "settori", req.settori) }}
+      {{ riga("Forma di agevolazione", "forma_agevolazione", req.forma_agevolazione) }}
+      {{ riga("Finalità", "finalita", req.finalita) }}
+      {{ riga("Agevolazione minima", "importo_min", req.importo_min | euro if req.importo_min else none) }}
+      {{ riga("Agevolazione massima", "importo_max", req.importo_max | euro if req.importo_max else none) }}
+      {{ riga("Spesa ammessa", "spesa", ((req.spesa_min | euro) ~ " – " ~ (req.spesa_max | euro)) if (req.spesa_min or req.spesa_max) else none, "spesa_min") }}
+      {{ riga("Dotazione", "dotazione", req.dotazione | euro if req.dotazione else none) }}
+      {{ riga("Regime di aiuto", "regime", req.regime) }}
+      {{ riga("Modalità", "modalita", req.modalita) }}
+      {{ riga("Spese ammissibili", "categorie_spesa", req.categorie_spesa) }}
+    </tbody>
+  </table>
+  </div>
+</article>
+{% endif %}
+
+{% if bando.descrizione %}
+<article>
+  <header><strong>Descrizione dalla fonte</strong></header>
+  <p class="testo-bando">{{ bando.descrizione }}</p>
+</article>
+{% endif %}
+
+<p><small>
+  Visto per la prima volta il {{ bando.visto_la_prima_volta | data_ora }} · ultimo aggiornamento {{ bando.aggiornato_il | data_ora }}
+  {% if versioni %} · {{ versioni }} versioni precedenti salvate{% endif %}
+  {% if bando.scomparso_dal_feed_il %} · <strong>non più presente nella fonte dal {{ bando.scomparso_dal_feed_il | data_ora }}</strong>{% endif %}
+</small></p>
+<p><small class="attribuzione">{{ attribuzione }}</small></p>
+{% endblock %}
