@@ -1,6 +1,8 @@
-"""Report PDF su un bando: bozza precompilata, approvazione, PDF (dove c'è WeasyPrint)."""
+"""Report PDF su un bando: bozza precompilata, approvazione, PDF (WeasyPrint o PyMuPDF)."""
 
 import io
+import sys
+import unicodedata
 
 import pytest
 from sqlalchemy import select
@@ -12,15 +14,7 @@ from tests.integration.test_pratiche import _bando, _cliente
 pytestmark = pytest.mark.integration
 
 
-def _weasyprint_disponibile() -> bool:
-    try:
-        import weasyprint  # noqa: F401
-    except (ImportError, OSError):
-        return False
-    return True
-
-
-def test_report_bozza_approvazione_pdf(client, crea_utente, accedi, db):
+def test_report_bozza_approvazione_pdf(client, crea_utente, accedi, db, monkeypatch):
     accedi(crea_utente())
     a = _cliente(client, db)
     b = _bando(db)
@@ -69,15 +63,18 @@ def test_report_bozza_approvazione_pdf(client, crea_utente, accedi, db):
     assert r.headers["location"] == f"/report/{rid}"
     assert len(list(db.scalars(select(ReportBando).where(ReportBando.azienda_id == a.id)))) == 1
 
-    r = client.get(f"/report/{rid}/pdf")
-    if _weasyprint_disponibile():
+    def controlla_pdf(risposta) -> None:
         from pypdf import PdfReader
 
-        assert r.status_code == 200 and r.content.startswith(b"%PDF")
-        testo = " ".join(
-            " ".join(p.extract_text() for p in PdfReader(io.BytesIO(r.content)).pages).split()
-        ).lower()
+        assert risposta.status_code == 200 and risposta.content.startswith(b"%PDF")
+        pagine = PdfReader(io.BytesIO(risposta.content)).pages
+        testo = " ".join(" ".join(p.extract_text() for p in pagine).split())
+        testo = unicodedata.normalize("NFKC", testo).lower()  # legature come «ﬀ» → «ff»
         assert "sintesi corretta dal consulente" in testo and a.ragione_sociale.lower() in testo
-        assert "cc by 4.0" in testo
-    else:
-        assert r.status_code == 303 and "WeasyPrint" in client.get(r.headers["location"]).text
+        assert "cc by 4.0" in testo and "pagina 1 di" in testo
+
+    # WeasyPrint dove ci sono le sue librerie (Docker), altrimenti PyMuPDF
+    controlla_pdf(client.get(f"/report/{rid}/pdf"))
+    # Senza WeasyPrint (Vercel): sempre PyMuPDF
+    monkeypatch.setitem(sys.modules, "weasyprint", None)
+    controlla_pdf(client.get(f"/report/{rid}/pdf"))

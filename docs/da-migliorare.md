@@ -68,8 +68,7 @@ Aggiornato il 18/11/2026, dopo una nuova verifica su dati reali:
 4. **Import reale:** chiedere al consulente l'export del CRM attuale e fare la prova a vuoto.
 5. **PDF del dataset nazionale che non sono link diretti** (pagine dei ministeri): da
    valutare caso per caso. Fatti: OCR, bando-tipo, tabelle ISTAT (18/11/2026).
-6. **Pubblicazione su Vercel**: senza worker né file persistenti mancano raccolte notturne,
-   email del mattino, allegati, antivirus, PDF e OCR. Decidere se usare Docker su VPS.
+6. **Vercel** (fatto il 18-19/11/2026): job via Vercel Cron, documenti nel database, backup cifrato su S3, report con PyMuPDF, OCR con l'AI. Restano: antivirus sui file caricati, limite di 300 s per job, storage S3 dei backup da attivare con l'account del cliente.
 7. **Categorie SOA per le gare TED**: oggi dal file ANAC importato o dal riassunto AI.
 8. **Permessi dei collaboratori** da confermare: oggi non possono esportare, eliminare,
    importare né cambiare impostazioni e modelli.

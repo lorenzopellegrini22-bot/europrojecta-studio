@@ -1,16 +1,16 @@
 <!doctype html>
-{# Template del PDF (WeasyPrint): non viene servito dal browser, quindi lo stile è qui dentro #}
+{# Template del PDF (WeasyPrint o PyMuPDF su Vercel): non passa dal browser, lo stile è qui dentro #}
 <html lang="it">
 <head>
 <meta charset="utf-8">
 <title>{{ b.titolo }}</title>
 <style>
   @page { size: A4; margin: 2cm 2cm 2.2cm; @bottom-center { content: "{{ consulente }} · pagina " counter(page) " di " counter(pages); font-size: 8pt; color: #666; } }
-  body { font-family: "DejaVu Sans", Arial, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #222; }
-  .testata { border-bottom: 2px solid #1f5f3f; padding-bottom: .4cm; margin-bottom: .6cm; }
-  .testata small { color: #1f5f3f; font-weight: bold; letter-spacing: .05em; text-transform: uppercase; }
-  h1 { font-size: 16pt; margin: .2cm 0; color: #1f5f3f; }
-  h2 { font-size: 12pt; color: #1f5f3f; margin: .6cm 0 .2cm; border-bottom: 1px solid #ddd; }
+  body { font-family: "DejaVu Sans", Arial, Helvetica, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #222; }
+  .testata { border-bottom: 2px solid #0544d4; padding-bottom: .4cm; margin-bottom: .6cm; }
+  .testata small { color: #0544d4; font-weight: bold; letter-spacing: .05em; text-transform: uppercase; }
+  h1 { font-size: 16pt; margin: .2cm 0; color: #0544d4; }
+  h2 { font-size: 12pt; color: #0544d4; margin: .6cm 0 .2cm; border-bottom: 1px solid #ddd; }
   .per { color: #555; }
   .testo { white-space: pre-wrap; }
   .fonte { margin-top: 1cm; font-size: 8pt; color: #666; border-top: 1px solid #ddd; padding-top: .2cm; }

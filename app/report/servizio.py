@@ -125,16 +125,58 @@ def html(r: ReportBando, b: Bando, consulente: str) -> str:
 
 
 def pdf(r: ReportBando, b: Bando, consulente: str) -> bytes:
+    """PDF con WeasyPrint dove ci sono le sue librerie di sistema (Docker); altrimenti
+    (Vercel, Windows) con PyMuPDF, che non ha bisogno di nulla fuori da Python."""
+    documento = html(r, b, consulente)
     try:
         from weasyprint import HTML
-    except (ImportError, OSError) as e:
-        raise ErrorePDF(
-            "La generazione dei PDF non è disponibile su questo computer (mancano le librerie "
-            "di WeasyPrint): funziona nell'installazione Docker."
-        ) from e
-    risultato = HTML(string=html(r, b, consulente)).write_pdf()
+    except (ImportError, OSError):
+        risultato = _pdf_pymupdf(documento, consulente)
+    else:
+        risultato = bytes(HTML(string=documento).write_pdf())
     r.pdf_generato_il = datetime.now(UTC)
-    return bytes(risultato)
+    return risultato
+
+
+MARGINE = 56.7  # 2 cm in punti tipografici
+
+
+def _pdf_pymupdf(documento: str, consulente: str) -> bytes:
+    try:
+        import pymupdf
+    except ImportError as e:
+        raise ErrorePDF("La generazione dei PDF non è disponibile su questa installazione.") from e
+    import io
+    import re
+
+    # MuPDF non conosce @page con le regole annidate (il piede di WeasyPrint): si toglie,
+    # il piede si aggiunge sotto a mano
+    documento = re.sub(r"@page\s*\{(?:[^{}]|\{[^{}]*\})*\}", "", documento)
+    buffer = io.BytesIO()
+    storia = pymupdf.Story(html=documento)
+    scrittore = pymupdf.DocumentWriter(buffer)
+    pagina_a4 = pymupdf.paper_rect("a4")
+    area = pagina_a4 + (MARGINE, MARGINE, -MARGINE, -MARGINE - 6)
+    altro = True
+    while altro:
+        dispositivo = scrittore.begin_page(pagina_a4)
+        altro, _ = storia.place(area)
+        storia.draw(dispositivo)
+        scrittore.end_page()
+    scrittore.close()
+    # Piede di pagina come nel modello WeasyPrint: «consulente · pagina N di M»
+    doc = pymupdf.open("pdf", buffer.getvalue())
+    for i, pagina in enumerate(doc, start=1):
+        piede = f"{consulente} · pagina {i} di {doc.page_count}"
+        larghezza = pymupdf.get_text_length(piede, fontname="helv", fontsize=8)
+        pagina.insert_text(
+            ((pagina_a4.width - larghezza) / 2, pagina_a4.height - MARGINE / 2),
+            piede,
+            fontname="helv",
+            fontsize=8,
+            color=(0.4, 0.4, 0.4),
+        )
+    return doc.tobytes(garbage=3, deflate=True)
 
 
 def aggiorna(r: ReportBando, form: dict[str, Any]) -> None:
