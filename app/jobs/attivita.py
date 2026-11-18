@@ -181,3 +181,11 @@ def estrazione_bandi() -> str:
 
     with get_sessionmaker()() as db:
         return esegui(db)
+
+
+def documenti_bandi() -> str:
+    """Ogni notte, prima dell'estrazione: scarica e legge i PDF dei bandi attivi."""
+    from app.documenti.servizio import esegui
+
+    with get_sessionmaker()() as db:
+        return esegui(db)

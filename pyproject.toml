@@ -21,6 +21,7 @@ dependencies = [
     "openai>=3.54.0",
     "httpx>=0.28",
     "beautifulsoup4>=4.12",
+    "pypdf>=5",
 ]
 
 [dependency-groups]

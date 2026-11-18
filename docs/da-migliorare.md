@@ -19,6 +19,7 @@ Aggiornato il 18/11/2026, dopo una nuova verifica su dati reali:
 - **Clienti:**
   - referenti, ATECO, dati dimensionali, segnalatori;
   - compilazione dal Registro Imprese (Openapi).
+- **PDF dei bandi** (link diretti e allegati dei portali regionali), letti dall'AI;
 - **Estrazione dei requisiti con l'AI** (fase 3):
   - citazioni verificate, regola manuale > fonte > AI;
   - pagina di revisione, budget e consumi.
@@ -45,7 +46,7 @@ Aggiornato il 18/11/2026, dopo una nuova verifica su dati reali:
 
 ## Da fare, in ordine di priorità
 1. **Punteggio delle opportunità con l'AI.** Oggi l'abbinamento è a regole: territorio, dimensione, ATECO, settore, SOA, CPV. Con l'estrazione dei requisiti (fase 3) si aggiungono similarità e motivazione scritta.
-2. **PDF dei bandi.** L'AI oggi legge i campi descrittivi della fonte. Per i bandi con un link diretto al PDF va aggiunto lo scarico del documento (sha256 e testo estratto, tabella `documento_bando`), così l'estrazione ha più informazioni. Va anche verificato il formato ufficiale del «bando tipo» del Codice degli incentivi, da indicare al modello.
+2. **Formato del «bando tipo»** del Codice degli incentivi: da trovare e verificare per indicarlo al modello. Mancano anche l'OCR dei PDF scansionati e i PDF del dataset nazionale che non sono link diretti.
 3. **Doppioni tra fonte nazionale e regionale.** Lo stesso bando può comparire due volte; il collegamento arriva con la fase 3.
 4. **Ordinamento per pertinenza** nella ricerca dei bandi. Oggi l'ordine è per scadenza; servirebbe prima il titolo che contiene le parole cercate.
 5. **Categorie SOA per le gare TED.** Arrivano solo dal file ANAC importato (collegato per CIG) o dal riassunto AI. Si potrebbe leggere anche il disciplinare in PDF.

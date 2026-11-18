@@ -228,6 +228,21 @@ Implementata secondo il brief (sezioni 8 e 10).
 - **Modelli:** in Impostazioni → Intelligenza artificiale (estrazione, valutazione, embeddings), con il «Modello per i riassunti» dell'integrazione come riserva. Anche i riassunti degli appalti registrano i consumi e rispettano il budget.
 - **Non ancora fatti:** download e lettura dei PDF dei bandi, embeddings e punteggio AI delle opportunità (fase 4).
 
+## 2026-11-18 — PDF dei bandi letti dall'AI
+**Misura sui dati reali:**
+- **Dataset nazionale:** solo 30 bandi attivi su 761 hanno un link diretto a un PDF. Gli altri rimandano a pagine di ministeri e regioni, che il brief non vuole far navigare in automatico.
+- **Portali regionali** (Toscana e Lazio): gli allegati PDF sono nella pagina del bando. Ora si salvano durante la raccolta (Lazio: una richiesta in più per bando, perché la REST API non li contiene).
+**Regole:**
+- solo link diretti a un PDF, solo bandi aperti o in arrivo;
+- al massimo 3 PDF per bando, scelti per utilità: bando, avviso, disciplinare e decreti prima di contatti, modulistica e rendicontazione;
+- robots.txt di ogni sito rispettato: nella prima prova 9 PDF non sono stati scaricati per questo;
+- 1 richiesta al secondo per dominio, massimo 25 MB, controllo che sia davvero un PDF;
+- il testo si estrae con `pypdf` (licenza BSD); i PDF scansionati vengono segnalati, l'OCR non è previsto;
+- sha256, testo e percorso in `documento_bando`;
+- un PDF condiviso da più bandi si scarica una volta per esecuzione; quelli falliti si ritentano dopo 7 giorni, al massimo 3 volte.
+**All'AI:** il testo della fonte più i brani dei PDF con più parole chiave (beneficiari, spese, agevolazione, regime, termini…), fino a 40.000 caratteri. Quando arriva un PDF nuovo cambia l'hash dell'input e il bando viene rianalizzato.
+**Prima prova reale:** 25 PDF tentati, 15 letti (tra cui il decreto di 63 pagine del bando Internazionalizzazione 2026 della Toscana), 9 vietati dal robots.txt, 1 non trovato.
+
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.
 - Jinja2 + HTMX + Pico.css salvati nel repository, nessuna risorsa da CDN.

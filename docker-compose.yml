@@ -27,6 +27,7 @@ services:
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'"
     volumes:
       - allegati:/srv/dati/allegati
+      - documenti_bandi:/srv/dati/documenti_bandi
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
@@ -43,6 +44,7 @@ services:
     command: python -m app.jobs.worker
     volumes:
       - allegati:/srv/dati/allegati
+      - documenti_bandi:/srv/dati/documenti_bandi
     depends_on:
       app:
         condition: service_started
@@ -51,3 +53,5 @@ volumes:
   dati_db:
   # File caricati nelle pratiche: da includere nei backup (fase 7)
   allegati:
+  # PDF pubblici dei bandi (si possono riscaricare: backup facoltativo)
+  documenti_bandi:

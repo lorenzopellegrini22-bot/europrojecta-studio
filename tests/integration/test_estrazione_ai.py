@@ -246,3 +246,52 @@ def test_pagina_impostazioni_ai(client, crea_utente, accedi, db, ai_pronta):
     assert imp.modello_estrazione == "altro-modello" and imp.budget_mensile_eur == Decimal("25.50")
     assert imp.prezzi == {"altro-modello": {"ingresso": "1.5", "uscita": "6"}}
     assert imp.estrazioni_per_notte == 100
+
+
+def test_pdf_dei_bandi_letti_dall_ai(
+    client, crea_utente, accedi, db, ai_pronta, tmp_path, monkeypatch
+):
+    import httpx
+
+    from app.config import get_settings
+    from app.documenti import servizio as documenti
+    from app.models import DocumentoBando
+    from tests.unit.test_documenti import TESTO_BANDO, pdf_con_testo
+
+    monkeypatch.setattr(get_settings(), "cartella_allegati", str(tmp_path / "allegati"))
+    monkeypatch.setattr(documenti.http, "INTERVALLO_MINIMO_SECONDI", 0)
+    accedi(crea_utente())
+    url = f"https://ente.test/{uuid.uuid4().hex}/DD_Bando.pdf"
+    bandi = []
+    for _ in range(2):
+        b = _bando_senza_date(db)
+        b.raw = {"documenti_pdf": [{"titolo": "Bando", "url": url}]}
+        bandi.append(b)
+    db.commit()
+    # prima estrazione senza PDF
+    servizio.esegui(db, client=ClientFinto(), oggi=date(2026, 11, 18))
+
+    richieste = []
+
+    def gestore(req: httpx.Request) -> httpx.Response:
+        richieste.append(str(req.url))
+        if req.url.path == "/robots.txt":
+            return httpx.Response(404)
+        return httpx.Response(200, content=pdf_con_testo(TESTO_BANDO))
+
+    with httpx.Client(transport=httpx.MockTransport(gestore)) as c:
+        esito = documenti.esegui(db, client=c, limite=50)
+    assert "letti" in esito
+    assert sum(1 for r in richieste if r == url) == 1  # stesso PDF per due bandi: uno scarico
+    docs = list(db.scalars(select(DocumentoBando).where(DocumentoBando.url == url)))
+    assert len(docs) == 2 and all("de minimis" in d.testo_estratto for d in docs)
+
+    # il testo per l'AI contiene il PDF, quindi il bando viene rianalizzato
+    testo = servizio.testo_bando(bandi[0], db)
+    assert "DOCUMENTO PDF: Bando" in testo and "Spese ammissibili" in testo
+    finto = ClientFinto()
+    servizio.esegui(db, client=finto, oggi=date(2026, 11, 18))
+    assert any("DOCUMENTO PDF" in c["input"] for c in finto.chiamate)
+
+    pagina = client.get(f"/bandi/{bandi[0].id}").text
+    assert "Documenti PDF" in pagina and "1 pagine lette" in pagina

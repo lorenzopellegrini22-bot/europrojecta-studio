@@ -165,3 +165,18 @@ def leggi_pacchetto(percorso: Path) -> dict[str, Any]:
     if not isinstance(dati, dict):
         raise ErroreFormato("Pacchetto non valido")
     return dati
+
+
+def pdf_nella_pagina(testo_html: str, base: str) -> list[dict[str, str]]:
+    """Link diretti a PDF in una pagina (allegati del bando), con il testo del link."""
+    from urllib.parse import urljoin
+
+    s = zuppa(testo_html)
+    visti: dict[str, str] = {}
+    for a in s.select("a[href]"):
+        url = urljoin(base, a["href"].strip())
+        if not url.lower().split("?")[0].endswith(".pdf") or not url.startswith("http"):
+            continue
+        titolo = a.get_text(" ", strip=True) or url.rsplit("/", 1)[-1]
+        visti.setdefault(url, titolo[:200])
+    return [{"titolo": t, "url": u} for u, t in visti.items()]

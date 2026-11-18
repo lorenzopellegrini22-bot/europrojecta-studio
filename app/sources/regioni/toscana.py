@@ -102,6 +102,7 @@ def dettagli_pagina(testo_html: str) -> dict[str, Any]:
             out["chiusura"] = seguito
     main = s.find("main") or s
     out["testo"] = comune.testo_da_html(str(main))[: comune.MAX_CARATTERI_DESCRIZIONE]
+    out["documenti_pdf"] = comune.pdf_nella_pagina(str(main), BASE)
     return out
 
 
@@ -164,6 +165,7 @@ def record(
         "apertura": pagina.get("apertura"),
         "chiusura": pagina.get("chiusura"),
         "testo": pagina.get("testo"),
+        "documenti_pdf": pagina.get("documenti_pdf") or [],
     }
     return RecordBando(
         id_esterno=f"sviluppotoscana-{post['id']}" if post.get("id") else slug[:100],

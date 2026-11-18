@@ -13,7 +13,16 @@ from app.config import get_settings
 from app.db import get_db
 from app.jobs import attivita
 from app.jobs.esecuzione import esegui_job
-from app.models import Bando, BandoRequisiti, BandoVersione, Fonte, FonteRun, JobRun, Utente
+from app.models import (
+    Bando,
+    BandoRequisiti,
+    BandoVersione,
+    DocumentoBando,
+    Fonte,
+    FonteRun,
+    JobRun,
+    Utente,
+)
 from app.sources.incentivi_italia import ATTRIBUZIONE
 from app.utils.ricerca import condizione, separa_regione
 from app.utils.territorio import REGIONI
@@ -125,6 +134,13 @@ def scheda(request: Request, db: Db, _: Autenticato, bando_id: int) -> Response:
         "bandi/scheda.html",
         {
             "bando": bando,
+            "documenti": list(
+                db.scalars(
+                    select(DocumentoBando)
+                    .where(DocumentoBando.bando_id == bando.id)
+                    .order_by(DocumentoBando.id)
+                )
+            ),
             "req": bando.requisiti,
             "versioni": versioni,
             "attribuzione": ATTRIBUZIONE,

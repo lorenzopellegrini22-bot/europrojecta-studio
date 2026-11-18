@@ -49,6 +49,15 @@
       {% if bando.link_domande %}<li><a href="{{ bando.link_domande }}" target="_blank" rel="noopener noreferrer">Piattaforma per le domande</a></li>{% endif %}
       {% if bando.id_rna %}<li>ID nel Registro Nazionale Aiuti: {{ bando.id_rna }}</li>{% endif %}
     </ul>
+    {% if documenti %}
+    <p><strong>Documenti PDF</strong> <small>(letti dall'AI quando hanno testo)</small></p>
+    <ul>
+      {% for d in documenti %}
+      <li><a href="{{ d.url }}" target="_blank" rel="noopener noreferrer">{{ d.titolo | truncate(80) }}</a>
+        <small>{% if d.testo_estratto %}· {{ d.pagine }} pagine lette{% elif d.errore %}· {{ d.errore }}{% else %}· da scaricare{% endif %}</small></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
     <a href="/pratiche/nuova?bando_id={{ bando.id }}" role="button" class="piccolo">Apri una pratica per questo bando</a>
   </article>
 </div>

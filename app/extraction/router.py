@@ -176,7 +176,7 @@ def scheda_revisione(request: Request, bando_id: int, db: Db, _: Autenticato) ->
                 "manuale": manuali.get(c.colonna or c.nome),
             }
         )
-    testo_bando = servizio.testo_bando(b)
+    testo_bando = servizio.testo_bando(b, db)
     return render(
         request,
         "revisione/scheda.html",

@@ -35,7 +35,7 @@ VERSIONE_PROMPT = "v1"
 PROMPT = (Path(__file__).parent / "prompts" / f"estrazione_{VERSIONE_PROMPT}.md").read_text(
     encoding="utf-8"
 )
-MAX_CARATTERI = 24_000
+MAX_CARATTERI = 40_000  # testo della fonte + brani dei PDF
 # Campi testuali della fonte nazionale utili all'estrazione (oltre a titolo e descrizione)
 CAMPI_RAW = {
     "Costi_Ammessi": "Costi ammessi",
@@ -93,7 +93,7 @@ def configurazione(db: Session) -> tuple[Configurazione | None, str]:
     return Configurazione(modello=modello, api_key=valori["api_key"], impostazioni=imp), ""
 
 
-def testo_bando(b: Bando) -> str:
+def testo_bando(b: Bando, db: Session | None = None) -> str:
     parti = [f"Titolo: {b.titolo}"]
     if b.ente:
         parti.append(f"Ente: {b.ente}")
@@ -109,7 +109,12 @@ def testo_bando(b: Bando) -> str:
         parti.append(f"{etichetta}: {v}")
     if b.note_apertura_chiusura:
         parti.append(f"Note: {b.note_apertura_chiusura}")
-    return "\n".join(parti)[:MAX_CARATTERI]
+    base = "\n".join(parti)[:MAX_CARATTERI]
+    if db is not None and b.id is not None:
+        from app.documenti.servizio import testo_per_ai
+
+        base += testo_per_ai(db, b.id, MAX_CARATTERI - len(base))
+    return base
 
 
 def hash_input(testo: str, modello: str) -> str:
@@ -209,7 +214,7 @@ def estrai_bando(db: Session, bando: Bando, conf: Configurazione, client: Any) -
     """Estrae, verifica, salva e ricalcola i requisiti di un bando."""
     import openai
 
-    testo = testo_bando(bando)
+    testo = testo_bando(bando, db)
     estrazione = EstrazioneBando(
         bando_id=bando.id,
         modello=conf.modello,
@@ -269,7 +274,7 @@ def da_estrarre(db: Session, modello: str, limite: int) -> list[Bando]:
     )
     scelti = []
     for b in candidati:
-        if ultimi.get(b.id) != hash_input(testo_bando(b), modello):
+        if ultimi.get(b.id) != hash_input(testo_bando(b, db), modello):
             scelti.append(b)
             if len(scelti) >= limite:
                 break

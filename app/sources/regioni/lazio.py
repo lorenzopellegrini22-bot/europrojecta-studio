@@ -207,6 +207,8 @@ def record_da_post(
         "class_list": post.get("class_list"),
         "stato_dichiarato": stato,
         "testo": testo[: comune.MAX_CARATTERI_DESCRIZIONE],
+        "documenti_pdf": post.get("documenti_pdf")
+        or comune.pdf_nella_pagina((post.get("content") or {}).get("rendered") or "", sito),
     }
     return RecordBando(
         id_esterno=f"{sigla}-{post['id']}",
@@ -251,6 +253,11 @@ class RegioneLazio:
                 del siti[LAZIO_EUROPA]["stati"][sl]
         for base, dati in siti.items():
             dati["post"] = comune.post_wordpress(client, base, "bandi", list(dati["stati"]))
+            # Allegati PDF: stanno nella pagina del bando, non nel contenuto della REST API
+            for post in dati["post"].values():
+                if post.get("link", "").startswith(base):
+                    pagina = http.pagina(client, post["link"])
+                    post["documenti_pdf"] = comune.pdf_nella_pagina(pagina.text, base)
         enti = comune.termini_wordpress(client, LAZIO_EUROPA, "enti")
         return comune.salva_pacchetto({"siti": siti, "enti": enti})
 

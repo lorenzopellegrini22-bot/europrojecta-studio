@@ -5,6 +5,7 @@ from app.models.appalti import Appalto
 from app.models.auth import AuditLog, CodiceRecupero, LogAccesso, Sessione, Utente
 from app.models.bandi import Bando, BandoRequisiti, BandoVersione, Fonte, FonteRun
 from app.models.crm import Azienda, AziendaAteco, Referente, Sede, Segnalatore
+from app.models.documenti import DocumentoBando
 from app.models.impostazioni import Integrazione
 from app.models.jobs import JobRun
 from app.models.opportunita import Opportunita
@@ -24,6 +25,7 @@ from app.models.pratiche import (
 )
 
 __all__ = [
+    "DocumentoBando",
     "UsoLLM",
     "ImpostazioniAI",
     "EstrazioneBando",
