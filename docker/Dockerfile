@@ -20,7 +20,7 @@ COPY migrations ./migrations
 COPY app ./app
 
 RUN useradd --system --uid 10001 europrojecta \
-    && mkdir -p /srv/dati/allegati \
+    && mkdir -p /srv/dati/allegati /srv/dati/documenti_bandi \
     && chown -R europrojecta /srv/dati
 ENV CARTELLA_ALLEGATI=/srv/dati/allegati
 USER europrojecta
