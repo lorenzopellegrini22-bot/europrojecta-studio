@@ -26,6 +26,7 @@ JOB: dict[str, tuple[str, Callable[[], str]]] = {
     "promemoria": ("promemoria", attivita.promemoria_scadenze),
     "pulizia": ("pulizia", attivita.pulizia),
     "riferimenti-istat": ("riferimenti_istat", attivita.riferimenti_istat),
+    "backup": ("backup_esterno", attivita.backup_esterno),
 }
 
 router = APIRouter(prefix="/cron")

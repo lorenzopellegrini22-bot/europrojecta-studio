@@ -37,7 +37,7 @@ def test_cron_esegue_il_job(client, monkeypatch):
     assert chiamate == [("prova_cron", "fatto")]
 
 
-def test_cron_conosce_tutti_i_job_del_worker():
+def test_cron_conosce_i_job_del_worker_e_il_backup_esterno():
     assert {job for job, _ in cron.JOB.values()} == {
         "raccolta_bandi",
         "raccolta_appalti",
@@ -47,4 +47,5 @@ def test_cron_conosce_tutti_i_job_del_worker():
         "promemoria",
         "pulizia",
         "riferimenti_istat",
+        "backup_esterno",
     }

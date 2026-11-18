@@ -105,6 +105,13 @@ class ErroreRaccolta(Exception):
     """Almeno una fonte non è stata raccolta correttamente."""
 
 
+def backup_esterno() -> str:
+    """Backup cifrato su storage S3 (Vercel e simili): vedi app/backup_esterno.py."""
+    from app.backup_esterno import esegui
+
+    return esegui()
+
+
 def pulizia() -> str:
     """Elimina le sessioni scadute e i log degli accessi più vecchi di un anno."""
     ora = datetime.now(UTC)

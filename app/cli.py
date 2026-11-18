@@ -109,8 +109,30 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("collaudo", help="esegue il collaudo del matching e scrive il report")
     p.add_argument("--file", required=True)
     p.add_argument("--report", default="collaudo.md")
+    sub.add_parser("backup-ora", help="backup cifrato subito sullo storage S3 (BACKUP_S3_*)")
+    p = sub.add_parser("backup-decifra", help="apre un backup cifrato (serve BACKUP_PASSPHRASE)")
+    p.add_argument("--file", required=True, help="il file .zip.cifrato scaricato dallo storage")
+    p.add_argument("--uscita", required=True, help="dove scrivere lo zip in chiaro")
 
     args = parser.parse_args(argv)
+    if args.comando == "backup-decifra":
+        from pathlib import Path
+
+        from app.backup_esterno import ErroreBackup, decifra_file
+        from app.config import get_settings
+
+        passphrase = get_settings().backup_passphrase
+        if passphrase is None:
+            print("Imposta BACKUP_PASSPHRASE (la passphrase dei backup).")
+            return 1
+        try:
+            decifra_file(Path(args.file), Path(args.uscita), passphrase.get_secret_value())
+        except ErroreBackup as e:
+            Path(args.uscita).unlink(missing_ok=True)
+            print(e)
+            return 1
+        print(f"Backup aperto: {args.uscita}")
+        return 0
     if args.comando in ("collaudo-prepara", "collaudo"):
         import json
         from pathlib import Path
@@ -190,6 +212,8 @@ def main(argv: list[str] | None = None) -> int:
         esito = esegui_job("raccolta_appalti", attivita.raccolta_appalti)
     elif args.comando == "promemoria":
         esito = esegui_job("promemoria", attivita.promemoria_scadenze)
+    elif args.comando == "backup-ora":
+        esito = esegui_job("backup_esterno", attivita.backup_esterno)
     else:
         esito = esegui_job("pulizia", attivita.pulizia)
     return 0 if esito == "ok" else 1

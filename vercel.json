@@ -6,6 +6,7 @@
   },
   "buildCommand": "if [ -n \"$DATABASE_URL_UNPOOLED\" ]; then DATABASE_URL=\"$DATABASE_URL_UNPOOLED\" uv run --frozen --no-dev alembic upgrade head; else echo 'Nessun database collegato: migrazioni saltate'; fi",
   "crons": [
+    { "path": "/cron/backup", "schedule": "0 23 * * *" },
     { "path": "/cron/raccolta-bandi", "schedule": "30 0 * * *" },
     { "path": "/cron/raccolta-appalti", "schedule": "30 1 * * *" },
     { "path": "/cron/documenti-bandi", "schedule": "30 2 * * *" },

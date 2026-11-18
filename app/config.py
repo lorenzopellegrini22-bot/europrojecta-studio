@@ -53,6 +53,16 @@ class Settings(BaseSettings):
     clamav_porta: int = 3310
     # Job notturni via HTTP (Vercel Cron, app/jobs/cron.py): vuoto = rotte /cron spente
     cron_secret: SecretStr | None = None
+    # Backup giornaliero cifrato su storage S3 (app/backup_esterno.py), dove non c'è restic.
+    # La passphrase serve per aprire i backup: va conservata anche fuori dall'app.
+    backup_passphrase: SecretStr | None = None
+    backup_s3_endpoint: str | None = None  # es. https://<account>.r2.cloudflarestorage.com
+    backup_s3_bucket: str | None = None
+    backup_s3_regione: str = "auto"  # R2: auto; B2/AWS/Scaleway: la regione del bucket
+    backup_s3_chiave: str | None = None
+    backup_s3_segreto: SecretStr | None = None
+    backup_s3_prefisso: str = "europrojecta-backup"
+    backup_giorni: int = Field(default=30, ge=1)
     # Avviso email quando una fonte dei bandi fallisce N raccolte di seguito
     avviso_fonte_dopo: int = Field(default=2, ge=1)
 
