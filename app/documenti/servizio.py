@@ -228,7 +228,7 @@ def _scarica_e_leggi(
     db: Session, client: httpx.Client, robots: Robots, doc: DocumentoBando
 ) -> bool:
     if not robots.permesso(doc.url):
-        doc.errore = "Vietato dal robots.txt del sito: non scaricato."
+        doc.errore = VIETATO_ROBOTS
         doc.tentativi = MAX_TENTATIVI  # non si ritenta
         return False
     try:
@@ -370,3 +370,59 @@ def testo_per_ai(db: Session, bando_id: int, budget: int) -> str:
         brani = brani_utili(d.testo_estratto or "", parte)
         pezzi.append(f"\n\nDOCUMENTO PDF: {d.titolo or d.url}\n{brani}")
     return "".join(pezzi)[:budget]
+
+
+# --- Caricamento manuale -----------------------------------------------------------------
+
+VIETATO_ROBOTS = "Vietato dal robots.txt del sito: non scaricato."
+
+
+def carica_a_mano(
+    db: Session,
+    bando_id: int,
+    dati: bytes,
+    nome_file: str,
+    documento: DocumentoBando | None = None,
+) -> DocumentoBando:
+    """PDF scaricato dal consulente con il browser (es. siti che vietano lo scarico
+    automatico) e caricato nell'app: si salva e si legge come quelli scaricati di notte."""
+    if len(dati) > MAX_MB * 1024 * 1024:
+        raise ErroreDocumento(f"PDF troppo grande (oltre {MAX_MB} MB).")
+    if not dati[:1024].lstrip().startswith(b"%PDF"):
+        raise ErroreDocumento("Il file non è un PDF.")
+    testo, pagine = testo_pdf(dati)
+    if documento is None:
+        documento = DocumentoBando(
+            bando_id=bando_id,
+            url=f"caricato-a-mano:{secrets.token_hex(8)}",
+            titolo=nome_file[:200],
+            tentativi=0,
+        )
+        db.add(documento)
+    documento.sha256 = hashlib.sha256(dati).hexdigest()
+    documento.percorso = _salva(dati)
+    documento.mime = "application/pdf"
+    documento.dimensione = len(dati)
+    documento.pagine = pagine
+    documento.testo_estratto = testo or None
+    documento.scaricato_il = datetime.now(UTC)
+    documento.errore = (
+        None if len(testo) >= 200 else "PDF senza testo (probabilmente una scansione)."
+    )
+    return documento
+
+
+def da_caricare(db: Session) -> list[tuple[Bando, DocumentoBando]]:
+    """PDF dei bandi attivi che la notte non ha potuto scaricare (robots.txt o errori)."""
+    return list(
+        db.execute(
+            select(Bando, DocumentoBando)
+            .join(DocumentoBando, DocumentoBando.bando_id == Bando.id)
+            .where(
+                Bando.stato.in_(("aperto", "in_arrivo")),
+                DocumentoBando.sha256.is_(None),
+                DocumentoBando.errore.is_not(None),
+            )
+            .order_by(Bando.data_chiusura.asc().nulls_last(), Bando.id)
+        ).all()
+    )

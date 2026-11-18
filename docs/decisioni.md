@@ -241,6 +241,11 @@ Implementata secondo il brief (sezioni 8 e 10).
 - sha256, testo e percorso in `documento_bando`;
 - un PDF condiviso da più bandi si scarica una volta per esecuzione; quelli falliti si ritentano dopo 7 giorni, al massimo 3 volte.
 **All'AI:** il testo della fonte più i brani dei PDF con più parole chiave (beneficiari, spese, agevolazione, regime, termini…), fino a 40.000 caratteri. Quando arriva un PDF nuovo cambia l'hash dell'input e il bando viene rianalizzato.
+**PDF bloccati (robots.txt o errori):**
+- la scheda del bando mostra il motivo, il link al PDF e il pulsante «Carica il PDF»;
+- la pagina «PDF da caricare» e un avviso in home li elencano tutti;
+- il consulente apre il link nel browser (il robots.txt vale per i programmi, non per le persone), salva e carica: il testo si legge subito e l'AI lo usa alla notte successiva.
+
 **Prima prova reale:** 25 PDF tentati, 15 letti (tra cui il decreto di 63 pagine del bando Internazionalizzazione 2026 della Toscana), 9 vietati dal robots.txt, 1 non trovato.
 
 ## Decisioni dal brief (riassunto)

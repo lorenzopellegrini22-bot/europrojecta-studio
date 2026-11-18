@@ -11,6 +11,7 @@ from typing import Any
 from sqlalchemy import (
     CheckConstraint,
     DateTime,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -27,12 +28,16 @@ from app.models.bandi import Bando
 from app.models.crm import Azienda
 
 STATI_OPPORTUNITA = ("nuova", "vista", "interessante", "scartata", "in_pratica")
+FEEDBACK = ("utile", "non_pertinente", "gia_noto")
 
 
 class Opportunita(ConTimestamp, Base):
     __tablename__ = "opportunita"
     __table_args__ = (
         CheckConstraint(f"stato IN {STATI_OPPORTUNITA}", name="ck_opportunita_stato"),
+        CheckConstraint(
+            f"feedback IS NULL OR feedback IN {FEEDBACK}", name="ck_opportunita_feedback"
+        ),
         CheckConstraint(
             "(bando_id IS NOT NULL)::int + (appalto_id IS NOT NULL)::int = 1",
             name="ck_opportunita_uno_solo",
@@ -58,7 +63,23 @@ class Opportunita(ConTimestamp, Base):
     )
     bando_id: Mapped[int | None] = mapped_column(ForeignKey("bando.id", ondelete="CASCADE"))
     appalto_id: Mapped[int | None] = mapped_column(ForeignKey("appalto.id", ondelete="CASCADE"))
+    # Punteggio mostrato: quello dell'AI se c'è, altrimenti quello delle regole
     punteggio: Mapped[int] = mapped_column(Integer)
+    punteggio_regole: Mapped[int | None] = mapped_column(Integer)
+    # Valutazione AI (fase 4): solo dati anonimi del cliente
+    similarita: Mapped[float | None] = mapped_column(Float)
+    punteggio_ai: Mapped[int | None] = mapped_column(Integer)
+    motivazione_ai: Mapped[str | None] = mapped_column(Text)
+    # {"soddisfatti": [...], "da_verificare": [...], "mancanti": [...]}
+    requisiti_ai: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    modello_ai: Mapped[str | None] = mapped_column(String(100))
+    hash_input_ai: Mapped[str | None] = mapped_column(String(64))
+    valutata_il: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    feedback: Mapped[str | None] = mapped_column(String(20))
+    feedback_il: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    feedback_utente_id: Mapped[int | None] = mapped_column(
+        ForeignKey("utente.id", ondelete="SET NULL")
+    )
     # {"soddisfatti": [...], "da_verificare": [...]}
     motivi: Mapped[dict[str, Any]] = mapped_column(JSONB)
     stato: Mapped[str] = mapped_column(String(20), default="nuova", index=True)

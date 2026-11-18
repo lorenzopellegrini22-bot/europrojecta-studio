@@ -1,6 +1,6 @@
 """Tutti i modelli: importarli qui li registra su Base.metadata (serve ad Alembic e ai test)."""
 
-from app.models.ai import BandoOverride, EstrazioneBando, ImpostazioniAI, UsoLLM
+from app.models.ai import BandoOverride, Embedding, EstrazioneBando, ImpostazioniAI, UsoLLM
 from app.models.appalti import Appalto
 from app.models.auth import AuditLog, CodiceRecupero, LogAccesso, Sessione, Utente
 from app.models.bandi import Bando, BandoRequisiti, BandoVersione, Fonte, FonteRun
@@ -25,6 +25,7 @@ from app.models.pratiche import (
 )
 
 __all__ = [
+    "Embedding",
     "DocumentoBando",
     "UsoLLM",
     "ImpostazioniAI",

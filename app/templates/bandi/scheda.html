@@ -49,15 +49,40 @@
       {% if bando.link_domande %}<li><a href="{{ bando.link_domande }}" target="_blank" rel="noopener noreferrer">Piattaforma per le domande</a></li>{% endif %}
       {% if bando.id_rna %}<li>ID nel Registro Nazionale Aiuti: {{ bando.id_rna }}</li>{% endif %}
     </ul>
+    <div id="documenti">
+    {% set msg = request.query_params.get("msg") %}
+    {% if msg %}<div class="messaggio {{ 'ok' if request.query_params.get('esito') == 'ok' else 'errore' }}" role="status">{{ msg }}</div>{% endif %}
     {% if documenti %}
     <p><strong>Documenti PDF</strong> <small>(letti dall'AI quando hanno testo)</small></p>
     <ul>
       {% for d in documenti %}
-      <li><a href="{{ d.url }}" target="_blank" rel="noopener noreferrer">{{ d.titolo | truncate(80) }}</a>
-        <small>{% if d.testo_estratto %}· {{ d.pagine }} pagine lette{% elif d.errore %}· {{ d.errore }}{% else %}· da scaricare{% endif %}</small></li>
+      <li>
+        {% if d.url.startswith("caricato-a-mano:") %}{{ d.titolo | truncate(80) }} <small class="etichetta">caricato a mano</small>
+        {% else %}<a href="{{ d.url }}" target="_blank" rel="noopener noreferrer">{{ d.titolo | truncate(80) }}</a>{% endif %}
+        <small>{% if d.testo_estratto %}· {{ d.pagine }} pagine lette{% elif d.errore %}· {{ "il sito non permette lo scarico automatico" if "robots" in d.errore else d.errore }}{% else %}· da scaricare stanotte{% endif %}</small>
+        {% if not d.sha256 and d.errore %}
+        <form method="post" action="/bandi/{{ bando.id }}/documenti" enctype="multipart/form-data" class="carica-file">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="documento_id" value="{{ d.id }}">
+          <small>Apri il link, salva il PDF e caricalo qui:</small>
+          <input type="file" name="file" accept="application/pdf,.pdf" required aria-label="PDF">
+          <button class="piccolo">Carica il PDF</button>
+        </form>
+        {% endif %}
+      </li>
       {% endfor %}
     </ul>
     {% endif %}
+    <details>
+      <summary>Aggiungi un altro PDF del bando</summary>
+      <form method="post" action="/bandi/{{ bando.id }}/documenti" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="file" name="file" accept="application/pdf,.pdf" required aria-label="PDF">
+        <button class="piccolo">Carica</button>
+        <small>Ad esempio il bando completo o il disciplinare scaricati dal sito dell'ente.</small>
+      </form>
+    </details>
+    </div>
     <a href="/pratiche/nuova?bando_id={{ bando.id }}" role="button" class="piccolo">Apri una pratica per questo bando</a>
   </article>
 </div>

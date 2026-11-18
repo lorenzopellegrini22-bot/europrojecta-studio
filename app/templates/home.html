@@ -20,6 +20,9 @@
 </div>
 {% endfor %}
 
+{% if pdf_da_caricare %}
+<div class="messaggio attenzione">{{ pdf_da_caricare }} PDF di bandi aperti non si possono scaricare in automatico: <a href="/documenti/da-caricare">caricali a mano</a> perché l'AI possa leggerli.</div>
+{% endif %}
 <div class="grid">
   <article><header>Bandi aperti</header><p class="numero"><a href="/bandi?stato=aperto">{{ aperti }}</a></p></article>
   <article><header>In arrivo</header><p class="numero"><a href="/bandi?stato=in_arrivo">{{ in_arrivo }}</a></p></article>

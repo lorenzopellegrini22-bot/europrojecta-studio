@@ -295,3 +295,51 @@ def test_pdf_dei_bandi_letti_dall_ai(
 
     pagina = client.get(f"/bandi/{bandi[0].id}").text
     assert "Documenti PDF" in pagina and "1 pagine lette" in pagina
+
+
+def test_pdf_vietato_caricato_a_mano(
+    client, crea_utente, accedi, db, ai_pronta, tmp_path, monkeypatch
+):
+    import io
+
+    from app.config import get_settings
+    from app.documenti import servizio as documenti
+    from app.models import DocumentoBando
+    from tests.unit.test_documenti import TESTO_BANDO, pdf_con_testo
+
+    monkeypatch.setattr(get_settings(), "cartella_allegati", str(tmp_path / "allegati"))
+    accedi(crea_utente())
+    b = _bando_senza_date(db)
+    d = DocumentoBando(
+        bando_id=b.id,
+        url="https://ente.test/riservato/bando.pdf",
+        titolo="Bando",
+        tentativi=3,
+        errore=documenti.VIETATO_ROBOTS,
+    )
+    db.add(d)
+    db.commit()
+    elenco = client.get("/documenti/da-caricare").text
+    assert "Il sito non permette lo scarico automatico" in elenco
+    assert "https://ente.test/riservato/bando.pdf" in elenco
+    scheda = client.get(f"/bandi/{b.id}").text
+    assert "Carica il PDF" in scheda
+    token = csrf(client, f"/bandi/{b.id}")
+    r = client.post(
+        f"/bandi/{b.id}/documenti",
+        data={"csrf_token": token, "documento_id": str(d.id)},
+        files={"file": ("bando.pdf", io.BytesIO(pdf_con_testo(TESTO_BANDO)), "application/pdf")},
+    )
+    assert r.status_code == 303 and "esito=ok" in r.headers["location"]
+    db.expire_all()
+    d = db.get(DocumentoBando, d.id)
+    assert d.sha256 and "de minimis" in d.testo_estratto and d.errore is None
+    assert "DOCUMENTO PDF" in servizio.testo_bando(db.get(Bando, b.id), db)
+    assert "Il sito non permette" not in client.get("/documenti/da-caricare").text
+    # un file che non è un PDF viene rifiutato
+    r = client.post(
+        f"/bandi/{b.id}/documenti",
+        data={"csrf_token": token},
+        files={"file": ("nota.pdf", io.BytesIO(b"testo"), "application/pdf")},
+    )
+    assert "esito=errore" in r.headers["location"]

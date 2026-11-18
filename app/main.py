@@ -26,6 +26,8 @@ from app.bandi.router import router as bandi_router
 from app.clienti.router import router as clienti_router
 from app.clienti.segnalatori import router as segnalatori_router
 from app.db import get_db
+from app.documenti.router import router as documenti_router
+from app.documenti.servizio import da_caricare as documenti_da_caricare
 from app.extraction.router import router as estrazione_router
 from app.integrazioni import servizio as servizio_integrazioni
 from app.integrazioni.router import router as integrazioni_router
@@ -112,6 +114,7 @@ app.include_router(statistiche_router)
 app.include_router(appalti_router)
 app.include_router(opportunita_router)
 app.include_router(estrazione_router)
+app.include_router(documenti_router)
 
 
 @app.get("/")
@@ -166,6 +169,7 @@ def home(
             "ultima_raccolta": ultima,
             "integrazioni": integrazioni,
             "pratiche_attive": pratiche_attive,
+            "pdf_da_caricare": len(documenti_da_caricare(db)),
             "opportunita_nuove": db.scalar(
                 select(func.count()).select_from(Opportunita).where(Opportunita.stato == "nuova")
             ),

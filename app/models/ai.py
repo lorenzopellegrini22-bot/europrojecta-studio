@@ -13,11 +13,13 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     BigInteger,
     CheckConstraint,
     Date,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     Numeric,
@@ -47,6 +49,11 @@ class ImpostazioniAI(Base):
     # modello → {"ingresso": €/milione token, "uscita": €/milione token}
     prezzi: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     estrazioni_per_notte: Mapped[int] = mapped_column(Integer, default=50, server_default="50")
+    # Valutazione delle opportunità (fase 4)
+    valutazioni_per_notte: Mapped[int] = mapped_column(Integer, default=100, server_default="100")
+    valutazioni_per_cliente: Mapped[int] = mapped_column(Integer, default=10, server_default="10")
+    soglia_similarita: Mapped[float] = mapped_column(Float, default=0.2, server_default="0.2")
+    soglia_notifica: Mapped[int] = mapped_column(Integer, default=60, server_default="60")
     sospesa_fino_al: Mapped[date | None] = mapped_column(Date)
     motivo_sospensione: Mapped[str | None] = mapped_column(Text)
     avviso_80_inviato_mese: Mapped[str | None] = mapped_column(String(7))  # "2026-11"
@@ -108,4 +115,26 @@ class UsoLLM(Base):
     errore: Mapped[str | None] = mapped_column(Text)
     creato_il: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), index=True
+    )
+
+
+class Embedding(Base):
+    """Vettore di un testo (bando, appalto o profilo anonimo di un cliente) per un modello.
+    Colonna `vector` senza dimensione fissa (docs/decisioni.md): si ricalcola solo se cambia
+    l'hash del testo o il modello."""
+
+    __tablename__ = "embedding"
+    __table_args__ = (
+        UniqueConstraint("entita", "entita_id", "modello", name="uq_embedding_entita_modello"),
+        CheckConstraint("entita IN ('bando', 'appalto', 'azienda')", name="ck_embedding_entita"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    entita: Mapped[str] = mapped_column(String(20))
+    entita_id: Mapped[int] = mapped_column(BigInteger)
+    modello: Mapped[str] = mapped_column(String(100))
+    hash_testo: Mapped[str] = mapped_column(String(64))
+    vettore: Mapped[Any] = mapped_column(Vector())
+    creato_il: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )

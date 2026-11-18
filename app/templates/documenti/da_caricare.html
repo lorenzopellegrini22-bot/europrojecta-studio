@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block titolo %}PDF da caricare · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<hgroup>
+  <h1>PDF da caricare a mano</h1>
+  <p>PDF dei bandi aperti che la raccolta notturna non ha potuto scaricare. Aprili con il link, salvali e caricali: l'AI li leggerà alla prossima analisi.</p>
+</hgroup>
+{% set msg = request.query_params.get("msg") %}
+{% if msg %}<div class="messaggio {{ 'ok' if request.query_params.get('esito') == 'ok' else 'errore' }}" role="status">{{ msg }}</div>{% endif %}
+
+<details class="guida">
+  <summary><span class="icona-info" aria-hidden="true">i</span> Perché alcuni PDF non si scaricano da soli</summary>
+  <p>Alcuni siti pubblici chiedono ai programmi automatici di non scaricare i loro file (lo dicono nel file «robots.txt»). L'app rispetta questa richiesta. Una persona invece può aprire e salvare il PDF normalmente dal browser: basta un clic sul link e poi «Carica».</p>
+  <p>Altri PDF non si scaricano per un errore del sito (pagina non trovata, sito irraggiungibile): l'app riprova da sola dopo 7 giorni, ma puoi caricarli subito.</p>
+</details>
+
+{% if not righe %}
+<article><p>Nessun PDF da caricare: tutti i documenti dei bandi aperti sono stati letti.</p></article>
+{% else %}
+<div class="overflow-auto">
+<table class="striped">
+  <thead><tr><th>Bando</th><th>Documento</th><th>Motivo</th><th>Carica</th></tr></thead>
+  <tbody>
+  {% for b, d in righe %}
+    <tr>
+      <td><a href="/bandi/{{ b.id }}">{{ b.titolo | truncate(80) }}</a><br><small>scade il {{ b.data_chiusura | data }}</small></td>
+      <td>{% if not d.url.startswith("caricato-a-mano:") %}<a href="{{ d.url }}" target="_blank" rel="noopener noreferrer">{{ d.titolo | truncate(60) }}</a>{% else %}{{ d.titolo }}{% endif %}</td>
+      <td><small>{{ "Il sito non permette lo scarico automatico" if d.errore == vietato else d.errore }}</small></td>
+      <td>
+        <form method="post" action="/bandi/{{ b.id }}/documenti" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="documento_id" value="{{ d.id }}">
+          <input type="hidden" name="torna" value="elenco">
+          <input type="file" name="file" accept="application/pdf,.pdf" required aria-label="PDF">
+          <button class="piccolo">Carica</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}
