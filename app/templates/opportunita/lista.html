@@ -14,7 +14,7 @@
 
 {% if messaggio %}<div class="messaggio {{ 'ok' if esito == 'ok' else 'errore' }}" role="status">{{ messaggio }}</div>{% endif %}
 {% if senza_profilo %}
-<div class="messaggio attenzione">{{ senza_profilo }} clienti non hanno né categorie SOA né categorie di interesse: per loro si cercano solo i bandi. Completa il profilo nella scheda del cliente (sezione «Opportunità»).</div>
+<div class="messaggio attenzione">{% if senza_profilo == 1 %}1 cliente non ha{% else %}{{ senza_profilo }} clienti non hanno{% endif %} né categorie SOA né categorie di interesse: per loro si cercano solo i bandi. Completa il profilo nella scheda del cliente (sezione «Opportunità»).</div>
 {% endif %}
 
 <form method="get" action="/opportunita" class="filtri">

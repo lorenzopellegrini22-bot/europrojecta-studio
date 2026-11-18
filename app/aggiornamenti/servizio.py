@@ -94,11 +94,24 @@ def destinatario(a: Azienda, canale: str | None = None) -> tuple[Referente | Non
 
 
 def _contenuto(db: Session, a: Azienda, dal: date, soglia: int) -> dict[str, Any]:
-    nuovi_bandi = db.scalar(
-        select(func.count())
-        .select_from(Bando)
-        .where(Bando.visto_la_prima_volta >= datetime.combine(dal, datetime.min.time(), UTC))
-    )
+    # Bandi davvero nuovi nel periodo: si conta da dopo la prima raccolta (che importa tutto
+    # l'archivio storico: contarla direbbe al cliente migliaia di «nuovi» bandi, falso)
+    from app.models import FonteRun
+
+    prima_raccolta = db.scalar(select(func.min(FonteRun.fine)).where(FonteRun.esito == "ok"))
+    inizio = datetime.combine(dal, datetime.min.time(), UTC)
+    if prima_raccolta is None:
+        nuovi_bandi = 0
+    else:
+        nuovi_bandi = db.scalar(
+            select(func.count())
+            .select_from(Bando)
+            .where(
+                Bando.visto_la_prima_volta >= max(inizio, prima_raccolta),
+                Bando.stato.in_(("aperto", "in_arrivo")),
+                Bando.bando_canonico_id.is_(None),
+            )
+        )
     gia_citati: set[int] = set()
     for (citati,) in db.execute(
         select(AggiornamentoCliente.bandi_citati).where(
@@ -297,6 +310,9 @@ def testo_finale(ag: AggiornamentoCliente, consulente: Utente, base_url: str) ->
     }
     oggetto, testo = ag.oggetto, ag.testo
     for k, v in sostituzioni.items():
+        # «per Rossi S.r.l.» a fine frase: niente doppio punto
+        if v.endswith("."):
+            oggetto, testo = oggetto.replace(k + ".", v), testo.replace(k + ".", v)
         oggetto, testo = oggetto.replace(k, v), testo.replace(k, v)
     if ag.canale == "email" and r is not None:
         testo += (
@@ -330,7 +346,11 @@ def invia(
         )
         if not canale.disponibile():
             esito = Esito(
-                ok=False, errore=f"Il canale {ag.canale} non è collegato o è disattivato."
+                ok=False,
+                errore=(
+                    f"Il canale {'email' if ag.canale == 'email' else 'WhatsApp'} non è "
+                    "collegato o è disattivato: collegalo in Impostazioni → Integrazioni."
+                ),
             )
         else:
             oggetto, testo = testo_finale(ag, consulente, base_url)

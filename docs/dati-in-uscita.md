@@ -22,6 +22,7 @@ Elenco di tutti i dati che lasciano il server, verso chi e perché. Va aggiornat
 | Server SMTP del consulente: email del mattino e aggiornamenti | Ogni mattina alle 07:00 agli utenti dello studio; aggiornamenti ai clienti solo dopo approvazione | Email del mattino: opportunità, scadenze, stato fonti, spesa AI. Aggiornamenti: testo approvato al referente con consenso, con il link di disiscrizione | Dati di altri clienti | **Attiva** (se collegata) |
 | WhatsApp Business Platform (Meta, `graph.facebook.com`), se collegata | Solo aggiornamenti approvati, ai referenti con consenso WhatsApp | Numero del referente, nome del referente e testo dell'aggiornamento, dentro il modello approvato | Dati di altri clienti | **Attiva** (se collegata) |
 | Storage esterno dei backup (`RESTIC_REPOSITORY`) | Ogni notte (01:30) | Dump del database e allegati, **cifrati con restic** prima di uscire | Dati in chiaro, la passphrase | **Attiva** (in produzione) |
+| ISTAT (`www.istat.it`) | Ogni mese (giorno 1, 03:40) e con `carica-istat` | Due GET dei file pubblici (elenco dei comuni, tavola di raccordo ATECO), con user agent identificabile | Qualsiasi dato | **Attiva** |
 
 ## Regole
 - Nessun invio a un destinatario non elencato qui.

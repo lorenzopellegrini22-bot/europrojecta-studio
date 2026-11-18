@@ -415,6 +415,11 @@ AVVIO = re.compile(
     r"costituite da (?:non pi[uù] di|meno di)|start[- ]?up",
     re.IGNORECASE,
 )
+CRISI = re.compile(
+    r"(?:aziende|imprese) in (?:crisi|difficolt)|rischio di delocalizzazione|"
+    r"crisi d'impresa|crisi aziendale",
+    re.IGNORECASE,
+)
 SOLO_MICRO = re.compile(r"micro[ -]?imprese", re.IGNORECASE)
 ALTRE_DIMENSIONI = re.compile(r"piccol[ae]|medi[ae]|PMI", re.IGNORECASE)
 
@@ -438,6 +443,9 @@ def _segnali_nel_testo(a: Azienda, b: Bando, e: Esito, oggi: date | None) -> Non
                 f"Il testo parla di imprese nuove o in avvio: l'impresa ha {mesi // 12} anni"
             )
             e.punteggio -= 40
+    if CRISI.search(f"{getattr(b, 'titolo', '')} {testo[:600]}"):
+        e.da_verificare.append("Bando per imprese in crisi o in difficoltà")
+        e.punteggio -= 20
     dimensione = dimensione_effettiva(a)[0] if hasattr(a, "dipendenti") else a.dimensione_manuale
     if (
         dimensione in ("piccola", "media", "grande")
@@ -765,7 +773,9 @@ def abbina(db: Session, oggi: date | None = None) -> str:
             if chiave not in tenute and o.stato in ("nuova", "vista"):
                 db.delete(o)
     db.commit()
-    return f"Opportunità: {len(clienti)} clienti valutati, {totale_nuove} nuove."
+    clienti_txt = "1 cliente valutato" if len(clienti) == 1 else f"{len(clienti)} clienti valutati"
+    nuove_txt = "1 nuova" if totale_nuove == 1 else f"{totale_nuove} nuove"
+    return f"Opportunità: {clienti_txt}, {nuove_txt}."
 
 
 def da_notificare(db: Session, soglia_ai: int = 0) -> list[Opportunita]:

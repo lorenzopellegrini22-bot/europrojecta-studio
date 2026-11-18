@@ -291,6 +291,38 @@ Tolto Pico.css: `app/static/css/app.css` è l'unico foglio di stile e disegna da
 **Motivo:** Pico dava un aspetto generico e difficile da personalizzare. Lo studio usa l'app tutto il giorno, quindi le superfici sono neutre e il verde del marchio compare solo sull'azione principale, sulla voce di menu attiva e sulle cifre chiave. Tema sempre chiaro, anche se il computer è in modalità scura (scelta del cliente); i colori scuri restano nel CSS, attivabili con `data-tema="scuro"`.
 **Regole:** griglia di 4px; pesi 400 e 500 (600 di rado); cifre tabellari per date e importi; niente maiuscolo spaziato, gradienti, ombre colorate o emoji come icone.
 
+## 2026-11-18 — ISTAT, OCR, bando-tipo e prova della piattaforma come lo studio
+
+- **Tabelle ISTAT** (fonti ufficiali verificate): elenco dei comuni dal link permanente
+  ISTAT e tavola di raccordo ATECO 2025 ↔ 2007 agg. 2022 (versione del 15/07/2026).
+  Caricate con `carica-istat` e ogni mese dal worker; colonne cercate per nome. Usi: codice
+  ISTAT della sede, comuni dei bandi confrontati per codice, province per sigla, ATECO di
+  versioni diverse convertiti (si esclude solo senza alcuna corrispondenza).
+- **OCR** con PyMuPDF + Tesseract (italiano), solo per i PDF senza testo; testo marcato come
+  OCR per l'AI. Tesseract è nell'immagine Docker e in CI (test con un PDF di sola immagine).
+- **Bando-tipo** (decreto MIMIT 18/06/2026, GURI n. 164 del 17/07/2026, Allegato I): le 15
+  partizioni nel prompt v2 e, nei PDF lunghi conformi, prima le partizioni con i requisiti.
+  Il cambio di versione del prompt fa ristrutturare i bandi aperti, gradualmente (limite per
+  notte e budget).
+- **Prova da utente** (cliente reale inserito dal form, opportunità, pratica, report,
+  aggiornamento) e **verifica sui siti ufficiali**. Problemi trovati e corretti:
+  - proposte non pertinenti (famiglie, scuole, presepi, professionisti): ora contano i
+    settori della fonte, i tipi di beneficiario e le parole del titolo;
+  - CCIAA Frosinone-Latina registrata dalla fonte come «Lazio» ma valida solo per FR e LT
+    (verificato sul sito della Camera): province ricavate dal nome dell'ente;
+  - «Nuovo Fondo Futuro» primo per un'impresa di 17 anni, ma il testo è per microimprese in
+    avviamento: segnali nella descrizione;
+  - esclusione sbagliata del Conto Termico 3.0 (settore «Edilizia» = tipo di intervento):
+    con 1-2 settori non si esclude;
+  - aggiornamento al cliente che diceva «6141 nuovi bandi» (l'archivio iniziale): ora solo i
+    bandi davvero nuovi;
+  - ricerca «digitalizzazione» che non trovava «digitale»: sinonimi del settore;
+  - etichette tecniche nel report PDF, doppio messaggio di errore, testi al plurale.
+- **Nota sulla pubblicazione su Vercel** (fatta da un collaboratore): Vercel esegue l'app
+  web ma non il worker (raccolte notturne, email del mattino), non conserva i file caricati
+  e non ha ClamAV, WeasyPrint e Tesseract. Per l'uso reale serve l'installazione Docker
+  (`docs/messa-in-produzione.md`) o un servizio esterno per job e file.
+
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.
 - Jinja2 + HTMX salvati nel repository, nessuna risorsa da CDN (Pico.css sostituito da uno stile proprio, vedi sopra).

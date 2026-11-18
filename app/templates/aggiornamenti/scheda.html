@@ -4,7 +4,7 @@
 <nav aria-label="breadcrumb"><ul><li><a href="/aggiornamenti">Aggiornamenti</a></li><li><a href="/clienti/{{ ag.azienda_id }}">{{ ag.azienda.ragione_sociale }}</a></li><li>{{ etichette[ag.stato] }}</li></ul></nav>
 <h1>Aggiornamento per {{ ag.azienda.ragione_sociale }}</h1>
 {% if msg %}<div class="messaggio {{ 'ok' if esito == 'ok' else 'errore' }}" role="status">{{ msg }}</div>{% endif %}
-{% if ag.errore %}<div class="messaggio errore">Ultimo tentativo non riuscito: {{ ag.errore }}</div>{% endif %}
+{% if ag.errore and not msg %}<div class="messaggio errore">Ultimo tentativo non riuscito: {{ ag.errore }}</div>{% endif %}
 
 <div class="grid">
 {% if ag.stato == "inviato" %}

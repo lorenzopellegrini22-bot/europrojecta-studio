@@ -110,6 +110,7 @@ uv run python -m app.jobs.worker
 | `uv run python -m app.cli collega-doppioni` | Collega i bandi doppi tra fonte nazionale e regionali |
 | `uv run python -m app.cli collaudo-prepara --file F` / `collaudo --file F --report R` | Collaudo del matching (`docs/collaudo/`) |
 | `uv run python -m app.cli ruota-chiavi` | Ricifra i segreti dopo il cambio di `SECRET_KEY` |
+| `uv run python -m app.cli carica-istat` | Scarica comuni e raccordo ATECO dai file ufficiali ISTAT |
 
 I test di integrazione creano un database con nome casuale a partire da `TEST_DATABASE_URL`, applicano le migrazioni e lo eliminano alla fine.
 

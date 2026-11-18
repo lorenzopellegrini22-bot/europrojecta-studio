@@ -26,3 +26,11 @@ def test_separa_regione():
 
 def test_normalizza():
     assert normalizza("Società PERCHÉ") == "societa perche"
+
+
+def test_sinonimi_del_settore():
+    from app.utils.ricerca import termini
+
+    gruppi = termini("digitalizzazione")
+    assert any("digital" in g for g in gruppi)
+    assert any("export" in g for g in termini("internazionalizzazione imprese"))

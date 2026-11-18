@@ -33,6 +33,12 @@ SINONIMI = (
     ("pmi", "piccole e medie imprese", "micro, piccole e medie"),
     ("e-commerce", "ecommerce", "commercio elettronico"),
     ("fotovoltaic", "solare"),
+    # aggiunti provando la ricerca come il consulente: «digitalizzazione» non trovava
+    # «Digital Transformation» né «Bonus Export Digitale»
+    ("digitalizz", "digital"),
+    ("efficientamento energetico", "efficienza energetica", "risparmio energetico"),
+    ("internazionalizz", "export"),
+    ("assunzion", "occupazion", "nuova occupazione"),
 )
 MAX_PAROLE = 8
 

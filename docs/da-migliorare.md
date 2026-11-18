@@ -66,10 +66,10 @@ Aggiornato il 18/11/2026, dopo una nuova verifica su dati reali:
 3. **Messa in produzione:** VPS in UE, dominio, storage esterno per restic
    (`docs/messa-in-produzione.md`). I file sono pronti e verificati in CI.
 4. **Import reale:** chiedere al consulente l'export del CRM attuale e fare la prova a vuoto.
-5. **Formato del «bando tipo»** del Codice degli incentivi: da trovare la fonte ufficiale.
-   Mancano anche l'OCR dei PDF scansionati e i PDF del dataset nazionale che non sono link diretti.
-6. **Tabella ISTAT dei comuni** e raccordo **ATECO 2007/2025**: oggi i territori si
-   confrontano per nome e gli ATECO per prefisso.
+5. **PDF del dataset nazionale che non sono link diretti** (pagine dei ministeri): da
+   valutare caso per caso. Fatti: OCR, bando-tipo, tabelle ISTAT (18/11/2026).
+6. **Pubblicazione su Vercel**: senza worker né file persistenti mancano raccolte notturne,
+   email del mattino, allegati, antivirus, PDF e OCR. Decidere se usare Docker su VPS.
 7. **Categorie SOA per le gare TED**: oggi dal file ANAC importato o dal riassunto AI.
 8. **Permessi dei collaboratori** da confermare: oggi non possono esportare, eliminare,
    importare né cambiare impostazioni e modelli.
