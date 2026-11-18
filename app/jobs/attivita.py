@@ -1,6 +1,7 @@
 """I job pianificati del worker. Ognuno si può lanciare anche a mano dalla riga di comando
 (python -m app.cli raccogli-bandi / pulizia)."""
 
+import logging
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import delete, select
@@ -10,6 +11,7 @@ from app.models import Fonte, LogAccesso, Sessione
 from app.sources.registro import FONTI
 from app.sources.runner import esegui_raccolta
 
+log = logging.getLogger(__name__)
 CONSERVAZIONE_LOG_ACCESSI_GIORNI = 365
 
 
@@ -145,12 +147,20 @@ def opportunita() -> str:
     """Ogni mattina: abbina clienti e bandi/appalti aperti, poi invia agli utenti attivi
     l'email con le opportunità nuove (se l'email è attiva)."""
     from app.comunicazioni import email_disponibile, invia_registrando
+    from app.extraction.servizio import impostazioni
     from app.models import Utente
     from app.opportunita.abbinamento import abbina, da_notificare, testo_email
+    from app.opportunita.valutazione import esegui as valuta
 
     with get_sessionmaker()() as db:
         esito = abbina(db)
-        nuove = da_notificare(db)
+        try:
+            esito = f"{esito} {valuta(db)}"
+        except Exception as e:  # l'AI non deve bloccare l'email del mattino
+            db.rollback()
+            log.exception("Valutazione AI non riuscita")
+            esito = f"{esito} Valutazione AI non riuscita: {type(e).__name__}."
+        nuove = da_notificare(db, impostazioni(db).soglia_notifica)
         if not nuove:
             return f"{esito} Nessuna email: niente di nuovo."
         if not email_disponibile(db):

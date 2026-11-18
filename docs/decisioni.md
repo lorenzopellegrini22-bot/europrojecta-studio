@@ -226,7 +226,7 @@ Implementata secondo il brief (sezioni 8 e 10).
   - per ogni campo: valore, confidenza e citazione, con il testo del bando a fianco e le citazioni evidenziate;
   - «Conferma», «Correggi» e «Annulla» la correzione (`bando_override`).
 - **Modelli:** in Impostazioni → Intelligenza artificiale (estrazione, valutazione, embeddings), con il «Modello per i riassunti» dell'integrazione come riserva. Anche i riassunti degli appalti registrano i consumi e rispettano il budget.
-- **Non ancora fatti:** download e lettura dei PDF dei bandi, embeddings e punteggio AI delle opportunità (fase 4).
+- **Fatti dopo:** lettura dei PDF dei bandi e punteggio AI delle opportunità (sezioni seguenti).
 
 ## 2026-11-18 — PDF dei bandi letti dall'AI
 **Misura sui dati reali:**
@@ -247,6 +247,16 @@ Implementata secondo il brief (sezioni 8 e 10).
 - il consulente apre il link nel browser (il robots.txt vale per i programmi, non per le persone), salva e carica: il testo si legge subito e l'AI lo usa alla notte successiva.
 
 **Prima prova reale:** 25 PDF tentati, 15 letti (tra cui il decreto di 63 pagine del bando Internazionalizzazione 2026 della Toscana), 9 vietati dal robots.txt, 1 non trovato.
+
+## 2026-11-18 — Fase 4: punteggio AI delle opportunità
+
+- **Flusso del mattino (07:00):** abbinamento a regole → valutazione AI → email. Se l'AI fallisce l'email parte lo stesso con i punteggi delle regole.
+- **Preselezione:** con un modello di embeddings si confronta il profilo anonimo del cliente con la scheda del bando/gara (similarità coseno) e si valutano solo le più simili sopra la soglia, al massimo K per cliente; senza embeddings si prendono le K con il punteggio delle regole più alto. Gli embeddings sono in tabella `embedding` (pgvector) e si ricalcolano solo se cambia l'hash del testo. Il testo per gli embeddings non contiene i controlli delle regole, che dipendono dal cliente.
+- **Valutazione:** output JSON con schema rigido (punteggio 0-100, motivazione 2-3 frasi, requisiti soddisfatti / da verificare / mancanti) e griglia esplicita nel prompt (`app/opportunita/prompts/valutazione_v1.md`). Il punteggio finale è quello AI se c'è, altrimenti quello delle regole (entrambi conservati).
+- **Niente ricalcoli:** hash di versione prompt + modello + profilo + scheda; se non cambia non si richiama il modello.
+- **Limiti:** valutazioni al giorno, per cliente, budget mensile condiviso con l'estrazione; uso registrato in `uso_llm` (operazioni `embedding` e `scoring`).
+- **Email:** le opportunità valutate dall'AI entrano nell'email solo sopra la soglia (60 predefinito); quelle con solo il punteggio delle regole restano come prima.
+- **Feedback:** «Utile» (→ interessante), «Non pertinente» e «Già noto» (→ scartata, non riproposta né rivalutata). La pagina Statistiche mostra la precisione per fascia di punteggio, per tarare la soglia.
 
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.

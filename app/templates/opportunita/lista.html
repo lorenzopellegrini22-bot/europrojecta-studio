@@ -4,7 +4,7 @@
 <div class="intestazione">
   <hgroup>
     <h1>Opportunità per i clienti</h1>
-    <p>{{ totale }} bandi e appalti adatti ai clienti, aggiornati ogni mattina. Il punteggio indica la pertinenza: verifica sempre i requisiti sul bando.</p>
+    <p>{{ totale }} bandi e appalti adatti ai clienti, aggiornati ogni mattina. Il punteggio (0-100) indica la pertinenza: è dell'AI se è attiva, altrimenti delle regole. Verifica sempre i requisiti sul bando; i pulsanti «Utile / Non pertinente / Già noto» misurano la precisione (Statistiche).</p>
   </hgroup>
   <form method="post" action="/opportunita/aggiorna">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -48,7 +48,8 @@
   <div class="opportunita stato-{{ o.stato }}">
     <div class="intestazione">
       <div>
-        <span class="punteggio" title="Pertinenza">{{ o.punteggio }}</span>
+        <span class="punteggio" title="{{ 'Punteggio AI' if o.punteggio_ai is not none else 'Punteggio delle regole' }}">{{ o.punteggio }}</span>
+        <small class="etichetta">{{ "AI" if o.punteggio_ai is not none else "regole" }}</small>
         <small class="etichetta">{{ "Bando" if o.bando_id else "Appalto" }}</small>
         {% if o.stato != "nuova" %}<small class="etichetta">{{ etichette[o.stato] }}</small>{% endif %}
         {% if o.bando %}<a href="/bandi/{{ o.bando_id }}">{{ o.titolo | truncate(130) }}</a>{% else %}<a href="/appalti/{{ o.appalto_id }}">{{ o.titolo | truncate(130) }}</a>{% endif %}
@@ -57,6 +58,19 @@
           {% for m in o.motivi.soddisfatti %}<span class="motivo-ok">✓ {{ m }}</span> {% endfor %}
           {% for m in o.motivi.da_verificare %}<span class="motivo-verifica">? {{ m }}</span> {% endfor %}
         </small>
+        {% if o.motivazione_ai %}
+        <details>
+          <summary><small>Valutazione AI{% if o.punteggio_regole is not none %} (regole: {{ o.punteggio_regole }}){% endif %}</small></summary>
+          <p><small>{{ o.motivazione_ai }}</small></p>
+          {% set r = o.requisiti_ai or {} %}
+          <small>
+            {% for m in r.soddisfatti or [] %}<span class="motivo-ok">✓ {{ m }}</span> {% endfor %}
+            {% for m in r.da_verificare or [] %}<span class="motivo-verifica">? {{ m }}</span> {% endfor %}
+            {% for m in r.mancanti or [] %}<span class="motivo-manca">✗ {{ m }}</span> {% endfor %}
+          </small>
+        </details>
+        {% endif %}
+        {% if o.feedback %}<small class="etichetta">Feedback: {{ {"utile": "utile", "non_pertinente": "non pertinente", "gia_noto": "già noto"}[o.feedback] }}</small>{% endif %}
       </div>
       <div class="gruppo-pulsanti">
         <form method="post" action="/opportunita/{{ o.id }}/pratica"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="piccolo">Apri pratica</button></form>
@@ -68,6 +82,16 @@
         {% endif %}
         {% if o.stato != "scartata" %}
         <form method="post" action="/opportunita/{{ o.id }}/stato"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="stato" value="scartata"><input type="hidden" name="torna" value="{{ request.url.path }}?{{ request.url.query }}"><button class="secondary outline piccolo">Scarta</button></form>
+        {% endif %}
+        {% if not o.feedback %}
+        <form method="post" action="/opportunita/{{ o.id }}/feedback" class="feedback">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="torna" value="{{ request.url.path }}?{{ request.url.query }}">
+          <small>Il punteggio è giusto?</small>
+          <button name="feedback" value="utile" class="secondary outline piccolo">Utile</button>
+          <button name="feedback" value="non_pertinente" class="secondary outline piccolo">Non pertinente</button>
+          <button name="feedback" value="gia_noto" class="secondary outline piccolo">Già noto</button>
+        </form>
         {% endif %}
       </div>
     </div>

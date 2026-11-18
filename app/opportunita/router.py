@@ -1,5 +1,6 @@
 """Pagina Opportunità: bandi e appalti adatti ai clienti, con le azioni del consulente."""
 
+from datetime import UTC, datetime
 from typing import Annotated, Any
 from urllib.parse import quote
 
@@ -13,7 +14,7 @@ from app.auth.dipendenze import utente_corrente, verifica_csrf
 from app.comunicazioni import email_disponibile, invia_registrando
 from app.db import get_db
 from app.models import Azienda, Utente
-from app.models.opportunita import STATI_OPPORTUNITA, Opportunita
+from app.models.opportunita import FEEDBACK, STATI_OPPORTUNITA, Opportunita
 from app.opportunita.abbinamento import abbina
 from app.web import leggi_form, render, testo
 
@@ -123,6 +124,26 @@ def cambia_stato(oid: int, db: Db, utente: Autenticato, form: Form) -> Response:
         if "nota" in form:
             o.nota = testo(form, "nota")
         audit.registra(db, utente, "opportunita", o.id, "modifica", {"stato": stato})
+        db.commit()
+    torna = testo(form, "torna") or "/opportunita"
+    return RedirectResponse(torna if torna.startswith("/") else "/opportunita", status_code=303)
+
+
+@router.post("/opportunita/{oid}/feedback", dependencies=CSRF)
+def dai_feedback(oid: int, db: Db, utente: Autenticato, form: Form) -> Response:
+    """Utile / non pertinente / già noto: serve a misurare la precisione del punteggio.
+    Non pertinente e già noto tolgono l'opportunità dalla lista e non la ripropongono."""
+    o = _opportunita(db, oid)
+    feedback = testo(form, "feedback")
+    if feedback in FEEDBACK:
+        o.feedback = feedback
+        o.feedback_il = datetime.now(UTC)
+        o.feedback_utente_id = utente.id
+        if feedback == "utile" and o.stato in ("nuova", "vista"):
+            o.stato = "interessante"
+        elif feedback != "utile" and o.stato != "in_pratica":
+            o.stato = "scartata"
+        audit.registra(db, utente, "opportunita", o.id, "modifica", {"feedback": feedback})
         db.commit()
     torna = testo(form, "torna") or "/opportunita"
     return RedirectResponse(torna if torna.startswith("/") else "/opportunita", status_code=303)

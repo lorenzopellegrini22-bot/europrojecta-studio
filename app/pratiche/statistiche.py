@@ -139,6 +139,7 @@ def statistiche(request: Request, db: Db, _: Autenticato) -> Response:
     ]
     if date.today().year not in anni:
         anni.append(date.today().year)
+    from app.opportunita.valutazione import precisione
     from app.web import render
 
     return render(
@@ -150,5 +151,6 @@ def statistiche(request: Request, db: Db, _: Autenticato) -> Response:
             "anni": sorted(anni, reverse=True),
             "etichette_stato": ETICHETTE_STATO_PRATICA,
             "etichette_pf": ETICHETTE_ESITO,
+            "precisione": precisione(db),
         },
     )

@@ -286,6 +286,7 @@ def _salva(
                 bando_id=oggetto_id if tipo == "bando" else None,
                 appalto_id=oggetto_id if tipo == "appalto" else None,
                 punteggio=punteggio,
+                punteggio_regole=punteggio,
                 motivi=esito.motivi(),
                 stato="nuova",
                 trovata_il=ora,
@@ -293,7 +294,9 @@ def _salva(
             db.add(o)
             nuove += 1
         else:
-            o.punteggio = punteggio
+            o.punteggio_regole = punteggio
+            # Il punteggio finale è quello dell'AI se c'è, altrimenti quello delle regole
+            o.punteggio = o.punteggio_ai if o.punteggio_ai is not None else punteggio
             o.motivi = esito.motivi()
     return nuove, tenute
 
@@ -354,11 +357,17 @@ def abbina(db: Session, oggi: date | None = None) -> str:
     return f"Opportunità: {len(clienti)} clienti valutati, {totale_nuove} nuove."
 
 
-def da_notificare(db: Session) -> list[Opportunita]:
+def da_notificare(db: Session, soglia_ai: int = 0) -> list[Opportunita]:
+    """Opportunità nuove non ancora segnalate. Quelle valutate dall'AI entrano nell'email
+    solo se il punteggio AI raggiunge la soglia; le altre restano nella pagina."""
     return list(
         db.scalars(
             select(Opportunita)
-            .where(Opportunita.notificata_il.is_(None), Opportunita.stato == "nuova")
+            .where(
+                Opportunita.notificata_il.is_(None),
+                Opportunita.stato == "nuova",
+                or_(Opportunita.punteggio_ai.is_(None), Opportunita.punteggio_ai >= soglia_ai),
+            )
             .options(
                 selectinload(Opportunita.azienda),
                 selectinload(Opportunita.bando),
@@ -379,7 +388,12 @@ def testo_email(opportunita: list[Opportunita], base_url: str = "") -> str:
         for o in lista[:10]:
             tipo = "Bando" if o.bando_id else "Appalto"
             scad = f" – scade il {o.scadenza:%d/%m/%Y}" if o.scadenza else ""
-            righe.append(f"  • {tipo}: {o.titolo[:140]}{scad} (pertinenza {o.punteggio}/100)")
+            fonte = "AI" if o.punteggio_ai is not None else "regole"
+            righe.append(
+                f"  • {tipo}: {o.titolo[:140]}{scad} (pertinenza {o.punteggio}/100, {fonte})"
+            )
+            if o.motivazione_ai:
+                righe.append(f"    {o.motivazione_ai[:300]}")
         if len(lista) > 10:
             righe.append(f"  … e altre {len(lista) - 10}")
     righe += ["", "Le trovi tutte nella pagina Opportunità di Europrojecta Studio."]

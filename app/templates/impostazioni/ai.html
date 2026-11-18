@@ -51,10 +51,23 @@
     <header><strong>Modelli</strong></header>
     <div class="grid">
       <label>Estrazione dei bandi<input name="modello_estrazione" value="{{ imp.modello_estrazione or '' }}"></label>
-      <label>Valutazione delle opportunità <small>(prossima fase)</small><input name="modello_scoring" value="{{ imp.modello_scoring or '' }}"></label>
-      <label>Embeddings <small>(prossima fase)</small><input name="modello_embeddings" value="{{ imp.modello_embeddings or '' }}"></label>
+      <label>Punteggio delle opportunità<input name="modello_scoring" value="{{ imp.modello_scoring or '' }}"></label>
+      <label>Embeddings <small>(facoltativo)</small><input name="modello_embeddings" value="{{ imp.modello_embeddings or '' }}"></label>
     </div>
-    <small>Se il modello di estrazione è vuoto si usa il «Modello per i riassunti» dell'integrazione OpenAI.</small>
+    <small>Se il modello di estrazione o di punteggio è vuoto si usa il «Modello per i riassunti» dell'integrazione OpenAI. Senza modello di embeddings le opportunità da valutare si scelgono con il punteggio delle regole.</small>
+  </article>
+  <article>
+    <header><strong>Punteggio AI delle opportunità</strong></header>
+    <p><small>Ogni mattina, dopo l'abbinamento a regole, l'AI legge il profilo <strong>anonimo</strong> di ogni cliente (dimensione, territorio, ATECO, SOA, fatturato: mai nome, partita IVA o contatti) e la scheda del bando o della gara, e dà un punteggio da 0 a 100 con la motivazione. Un'opportunità già valutata non si rivaluta finché non cambiano i dati.</small></p>
+    <div class="grid">
+      <label>Valutazioni al giorno (massimo)<input type="number" min="0" max="5000" name="valutazioni_per_notte" value="{{ imp.valutazioni_per_notte }}"></label>
+      <label>Per ogni cliente (le più simili)<input type="number" min="0" max="200" name="valutazioni_per_cliente" value="{{ imp.valutazioni_per_cliente }}"></label>
+    </div>
+    <div class="grid">
+      <label>Similarità minima (0-1, solo con embeddings)<input name="soglia_similarita" inputmode="decimal" value="{{ imp.soglia_similarita }}"></label>
+      <label>Punteggio AI minimo per l'email del mattino<input type="number" min="0" max="100" name="soglia_notifica" value="{{ imp.soglia_notifica }}"></label>
+    </div>
+    <small>Griglia: 80-100 adatta · 60-79 probabilmente adatta · 40-59 dubbia · 0-39 non adatta. Le opportunità sotto la soglia restano visibili nella pagina Opportunità ma non arrivano per email.</small>
   </article>
   <article>
     <header><strong>Budget</strong></header>

@@ -320,6 +320,8 @@ table.scheda-gara td { vertical-align: top; }
 }
 .motivo-ok { color: var(--ep-ok); margin-right: 0.6rem; }
 .motivo-verifica { color: var(--ep-attenzione); margin-right: 0.6rem; }
+.motivo-manca { color: var(--ep-errore); margin-right: 0.6rem; }
+form.feedback { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; margin: 0; }
 .griglia-caselle {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));

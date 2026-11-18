@@ -77,4 +77,18 @@
     {% else %}<p>Nessuna verifica di prefattibilità.</p>{% endif %}
   </article>
 </div>
+<article>
+  <header><strong>Precisione del punteggio delle opportunità</strong></header>
+  <p><small>Dai pulsanti «Utile / Non pertinente / Già noto» nella pagina Opportunità. Pertinenti = utili + già note. Se una fascia alta ha molti «non pertinente», alza la soglia dell'email in Impostazioni → AI.</small></p>
+  <div class="overflow-auto">
+  <table>
+    <thead><tr><th>Punteggio</th><th>Con feedback</th><th>Pertinenti</th><th>Precisione</th></tr></thead>
+    <tbody>
+    {% for f in precisione %}
+    <tr><td>{{ f.etichetta }}</td><td>{{ f.totale }}</td><td>{{ f.pertinenti }}</td><td>{% if f.percentuale is not none %}{{ f.percentuale }}%{% else %}—{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</article>
 {% endblock %}

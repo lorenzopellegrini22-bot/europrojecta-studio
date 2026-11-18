@@ -78,6 +78,17 @@ def salva_impostazioni(db: Db, utente: Titolare, form: Form) -> Response:
     imp.budget_mensile_eur = budget if budget is not None and budget >= 0 else None
     with contextlib.suppress(ValueError):
         imp.estrazioni_per_notte = max(0, min(int(testo(form, "estrazioni_per_notte") or 50), 2000))
+    for campo, predefinito, massimo in (
+        ("valutazioni_per_notte", 100, 5000),
+        ("valutazioni_per_cliente", 10, 200),
+        ("soglia_notifica", 60, 100),
+    ):
+        with contextlib.suppress(ValueError):
+            valore = int(testo(form, campo) or predefinito)
+            setattr(imp, campo, max(0, min(valore, massimo)))
+    soglia = importo_italiano(testo(form, "soglia_similarita"))
+    if soglia is not None and 0 <= soglia <= 1:
+        imp.soglia_similarita = float(soglia)
     prezzi: dict[str, Any] = {}
     for i in range(6):
         nome = testo(form, f"prezzo_modello_{i}")
