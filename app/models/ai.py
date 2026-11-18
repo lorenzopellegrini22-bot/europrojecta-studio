@@ -34,7 +34,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base, ConTimestamp
 from app.models.auth import Utente
 
-OPERAZIONI_LLM = ("estrazione", "scoring", "embedding", "aggiornamento", "riassunto")
+OPERAZIONI_LLM = ("estrazione", "scoring", "embedding", "aggiornamento", "riassunto", "ocr")
 
 
 class ImpostazioniAI(Base):

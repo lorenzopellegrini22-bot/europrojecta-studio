@@ -20,7 +20,7 @@ import secrets
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit
 from urllib.robotparser import RobotFileParser
 
@@ -42,6 +42,7 @@ MAX_PER_BANDO = 3
 MAX_MB = 25
 MIN_TESTO = 200  # sotto questa soglia il PDF è considerato senza testo
 MAX_PAGINE = 300
+OCR_AI_PER_NOTTE = 3
 PER_NOTTE = 60
 RIPROVA_DOPO = timedelta(days=7)
 MAX_TENTATIVI = 3
@@ -140,6 +141,10 @@ class Robots:
 # --- Scarico e testo ---------------------------------------------------------------------
 
 
+if TYPE_CHECKING:
+    from app.documenti.ocr import QuotaOCR
+
+
 class ErroreDocumento(Exception):
     pass
 
@@ -163,7 +168,11 @@ def scarica_pdf(client: httpx.Client, url: str) -> bytes:
     return bytes(dati)
 
 
-def testo_pdf(dati: bytes) -> tuple[str, int]:
+def testo_pdf(
+    dati: bytes, db: Session | None = None, quota: "QuotaOCR | None" = None
+) -> tuple[str, int]:
+    """Testo del PDF. Se è una scansione: OCR con Tesseract dove c'è, altrimenti (con `db`)
+    trascrizione con l'AI dello studio, entro la `quota` della notte."""
     from pypdf import PdfReader
     from pypdf.errors import PdfReadError
 
@@ -186,6 +195,10 @@ def testo_pdf(dati: bytes) -> tuple[str, int]:
         from app.documenti.ocr import ocr_pdf
 
         letto = ocr_pdf(dati)
+        if len(letto) < MIN_TESTO and db is not None:
+            from app.documenti.ocr import ocr_ai
+
+            letto = ocr_ai(dati, db, quota) or letto
         if len(letto) > len(testo):
             testo = re.sub(r"\n{3,}", "\n\n", re.sub(r"[ \t]+", " ", letto)).strip()
     return testo, len(lettore.pages)
@@ -206,6 +219,7 @@ def elabora(
     robots: Robots,
     doc: DocumentoBando,
     gia_letti: dict[str, DocumentoBando | str] | None = None,
+    quota: "QuotaOCR | None" = None,
 ) -> bool:
     """Scarica e legge un PDF. `gia_letti` (url → documento letto o errore) evita di scaricare
     di nuovo, nella stessa esecuzione, un PDF collegato a più bandi."""
@@ -228,13 +242,17 @@ def elabora(
         ):
             setattr(doc, campo, getattr(precedente, campo))
         return bool(doc.testo_estratto)
-    ok = _scarica_e_leggi(db, client, robots, doc)
+    ok = _scarica_e_leggi(db, client, robots, doc, quota)
     gia_letti[doc.url] = doc if doc.sha256 else (doc.errore or "errore")
     return ok
 
 
 def _scarica_e_leggi(
-    db: Session, client: httpx.Client, robots: Robots, doc: DocumentoBando
+    db: Session,
+    client: httpx.Client,
+    robots: Robots,
+    doc: DocumentoBando,
+    quota: "QuotaOCR | None" = None,
 ) -> bool:
     if not robots.permesso(doc.url):
         doc.errore = VIETATO_ROBOTS
@@ -242,7 +260,7 @@ def _scarica_e_leggi(
         return False
     try:
         dati = scarica_pdf(client, doc.url)
-        testo, pagine = testo_pdf(dati)
+        testo, pagine = testo_pdf(dati, db, quota)
     except ErroreDocumento as e:
         doc.errore = str(e)
         return False
@@ -303,8 +321,12 @@ def esegui(db: Session, client: httpx.Client | None = None, limite: int = PER_NO
     try:
         robots = Robots(client)
         gia_letti: dict[str, DocumentoBando | str] = {}
+        from app.documenti.ocr import QuotaOCR
+
+        # Trascrizioni con l'AI per notte: ognuna può durare un minuto (limite di Vercel)
+        quota = QuotaOCR(OCR_AI_PER_NOTTE)
         for d in da_fare:
-            if elabora(db, client, robots, d, gia_letti):
+            if elabora(db, client, robots, d, gia_letti, quota):
                 letti += 1
             else:
                 falliti += 1
@@ -437,7 +459,7 @@ def carica_a_mano(
         antivirus.controlla_bytes(dati)
     except (antivirus.FileInfetto, antivirus.AntivirusNonDisponibile) as e:
         raise ErroreDocumento(str(e)) from e
-    testo, pagine = testo_pdf(dati)
+    testo, pagine = testo_pdf(dati, db)
     if documento is None:
         documento = DocumentoBando(
             bando_id=bando_id,
