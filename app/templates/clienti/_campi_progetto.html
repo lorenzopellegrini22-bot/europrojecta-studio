@@ -1,0 +1,18 @@
+{# Campi del progetto d'investimento: p è il progetto (o none) #}
+<label>Titolo *<input name="titolo" value="{{ p.titolo if p else '' }}" required></label>
+<label>Descrizione <small>(cosa vuole fare il cliente: è il testo confrontato con i bandi)</small>
+  <textarea name="descrizione" rows="3">{{ p.descrizione or '' if p else '' }}</textarea></label>
+<div class="grid">
+  <label>Importo stimato (€)<input name="importo_stimato" inputmode="decimal" value="{{ p.importo_stimato if p and p.importo_stimato is not none else '' }}"></label>
+  <label>Inizio previsto<input type="date" name="inizio_previsto" value="{{ p.inizio_previsto.isoformat() if p and p.inizio_previsto else '' }}"></label>
+  <label>Fine prevista<input type="date" name="fine_prevista" value="{{ p.fine_prevista.isoformat() if p and p.fine_prevista else '' }}"></label>
+  <label>Stato<select name="stato">{% for k, e in {"idea": "Idea", "in_valutazione": "In valutazione", "in_corso": "In corso", "concluso": "Concluso", "abbandonato": "Abbandonato"}.items() %}<option value="{{ k }}" {% if p and p.stato == k %}selected{% endif %}>{{ e }}</option>{% endfor %}</select></label>
+</div>
+<fieldset>
+  <legend>Spese previste</legend>
+  <div class="caselle">
+  {% for c in categorie_spesa %}
+    <label class="casella"><input type="checkbox" name="categorie" value="{{ c }}" {% if p and c in (p.categorie or []) %}checked{% endif %}> {{ c | capitalize }}</label>
+  {% endfor %}
+  </div>
+</fieldset>

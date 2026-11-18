@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block titolo %}{{ p.titolo }} · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<nav aria-label="breadcrumb"><ul><li><a href="/clienti">Clienti</a></li><li><a href="/clienti/{{ azienda.id }}#progetti">{{ azienda.ragione_sociale }}</a></li><li>Progetto</li></ul></nav>
+<h1>{{ p.titolo }}</h1>
+{% set msg = request.query_params.get("msg") %}
+{% if msg %}<div class="messaggio errore" role="alert">{{ msg }}</div>{% endif %}
+{% set categorie_spesa = categorie %}
+<form method="post" action="/clienti/{{ azienda.id }}/progetti/{{ p.id }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% include "clienti/_campi_progetto.html" %}
+  <div class="gruppo-pulsanti">
+    <button type="submit">Salva</button>
+    <a href="/clienti/{{ azienda.id }}#progetti" role="button" class="secondary outline">Annulla</a>
+  </div>
+</form>
+<details class="zona-pericolo">
+  <summary>Elimina il progetto</summary>
+  <form method="post" action="/clienti/{{ azienda.id }}/progetti/{{ p.id }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="elimina" value="1">
+    <input type="hidden" name="titolo" value="{{ p.titolo }}">
+    <button type="submit" class="pulsante-pericolo">Elimina definitivamente</button>
+  </form>
+</details>
+{% endblock %}

@@ -72,10 +72,11 @@ def testo_promemoria(nome: str, voci: list, oggi) -> str:  # type: ignore[no-unt
             if v.data < oggi
             else ("oggi" if v.data == oggi else f"il {v.data:%d/%m/%Y}")
         )
-        righe.append(
-            f"- {v.titolo} · {v.pratica.azienda.ragione_sociale} "
-            f"(pratica {v.pratica.codice}) · {quando}"
-        )
+        if v.pratica is not None:
+            dove = f"{v.pratica.azienda.ragione_sociale} (pratica {v.pratica.codice})"
+        else:
+            dove = v.promemoria.azienda.ragione_sociale
+        righe.append(f"- {v.titolo} · {dove} · {quando}")
     righe += ["", "Le trovi tutte nello Scadenzario di Europrojecta Studio."]
     return "\n".join(righe)
 

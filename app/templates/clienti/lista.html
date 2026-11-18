@@ -4,7 +4,7 @@
 <div class="intestazione">
   <hgroup>
     <h1>Clienti</h1>
-    <p>{{ aziende | length }} clienti{% if filtri.q or filtri.stato %} trovati{% endif %}.</p>
+    <p>{{ aziende | length }} clienti{% if filtri.values() | select | list %} trovati{% endif %}.</p>
   </hgroup>
   <a href="/clienti/nuovo" role="button">Nuovo cliente</a>
 </div>
@@ -17,6 +17,21 @@
       {% for st in stati %}<option value="{{ st }}" {% if filtri.stato == st %}selected{% endif %}>{{ st | capitalize }}</option>{% endfor %}
     </select>
   </div>
+  <div class="grid">
+    <select name="regione" aria-label="Regione">
+      <option value="">Tutte le regioni</option>
+      {% for r in regioni %}<option value="{{ r }}" {% if filtri.regione == r %}selected{% endif %}>{{ r }}</option>{% endfor %}
+    </select>
+    <select name="dimensione" aria-label="Dimensione">
+      <option value="">Tutte le dimensioni</option>
+      {% for d in dimensioni %}<option value="{{ d }}" {% if filtri.dimensione == d %}selected{% endif %}>{{ d | capitalize }}</option>{% endfor %}
+    </select>
+    <input name="ateco" value="{{ filtri.ateco }}" placeholder="ATECO (es. 62 o 41.20)" aria-label="ATECO">
+    <select name="tag" aria-label="Tag">
+      <option value="">Tutti i tag</option>
+      {% for t in tag_esistenti %}<option value="{{ t }}" {% if filtri.tag == t %}selected{% endif %}>{{ t }}</option>{% endfor %}
+    </select>
+  </div>
   <div class="azioni-filtri">
     <button type="submit">Cerca</button>
     <a href="/clienti" class="secondary">Azzera</a>
@@ -24,7 +39,7 @@
 </form>
 
 {% if not aziende %}
-<article><p>Nessun cliente{% if filtri.q or filtri.stato %} con questi filtri{% endif %}. <a href="/clienti/nuovo">Aggiungi un cliente</a>.</p></article>
+<article><p>Nessun cliente{% if filtri.values() | select | list %} con questi filtri{% endif %}. <a href="/clienti/nuovo">Aggiungi un cliente</a>.</p></article>
 {% else %}
 <div class="overflow-auto">
 <table class="striped">

@@ -23,6 +23,7 @@ from app.auth.account import router as account_router
 from app.auth.dipendenze import CsrfNonValido, NonAutenticato, Proibito, utente_corrente
 from app.auth.router import router as auth_router
 from app.bandi.router import router as bandi_router
+from app.clienti.crm import router as crm_router
 from app.clienti.router import router as clienti_router
 from app.clienti.segnalatori import router as segnalatori_router
 from app.db import get_db
@@ -106,6 +107,7 @@ app.include_router(auth_router)
 app.include_router(account_router)
 app.include_router(integrazioni_router)
 app.include_router(bandi_router)
+app.include_router(crm_router)
 app.include_router(clienti_router)
 app.include_router(pratiche_router)
 app.include_router(segnalatori_router)

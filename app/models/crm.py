@@ -5,7 +5,7 @@ dimensionali, de minimis, consensi, ISTAT) arrivano con la fase CRM completa, co
 migrazioni che aggiungono colonne senza cambiare queste.
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -13,6 +13,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     ForeignKey,
     Index,
@@ -68,6 +69,14 @@ class Azienda(ConTimestamp, Base):
     # Dati dimensionali (schema F1); dal Registro Imprese quando collegato
     dipendenti: Mapped[int | None] = mapped_column(Integer)
     fatturato: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
+    totale_attivo: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
+    data_costituzione: Mapped[date | None] = mapped_column(Date)
+    # Se indicato prevale sul plafond calcolato dagli aiuti registrati
+    plafond_de_minimis_manuale: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
+    frequenza_aggiornamenti: Mapped[str] = mapped_column(
+        String(20), default="nessuno", server_default="nessuno"
+    )
+    id_crm_origine: Mapped[str | None] = mapped_column(String(100))
     anno_dati: Mapped[int | None] = mapped_column(Integer)
     # Stato dell'attività al Registro Imprese (es. ATTIVA, CESSATA) e data dell'ultima lettura
     stato_attivita: Mapped[str | None] = mapped_column(String(40))
@@ -99,6 +108,7 @@ class Azienda(ConTimestamp, Base):
         order_by="(AziendaAteco.primario.desc(), AziendaAteco.codice)",
     )
     segnalatore: Mapped["Segnalatore | None"] = relationship(back_populates="aziende")
+    tag: Mapped[list["Tag"]] = relationship(secondary="azienda_tag", order_by="Tag.nome")  # noqa: F821
 
     @property
     def ateco_primario(self) -> "AziendaAteco | None":
@@ -128,6 +138,7 @@ class Sede(ConTimestamp, Base):
     comune_testo: Mapped[str | None] = mapped_column(Text)
     provincia: Mapped[str | None] = mapped_column(String(2))
     regione: Mapped[str | None] = mapped_column(String(40))
+    codice_istat: Mapped[str | None] = mapped_column(String(6))
 
     azienda: Mapped[Azienda] = relationship(back_populates="sedi")
 
@@ -145,6 +156,12 @@ class Referente(ConTimestamp, Base):
     telefono: Mapped[str | None] = mapped_column(String(40))
     principale: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     note: Mapped[str | None] = mapped_column(Text)
+    # Consenso agli aggiornamenti periodici (brief, sezione 5)
+    consenso_email: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    consenso_whatsapp: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    consenso_il: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    canale_preferito: Mapped[str | None] = mapped_column(String(10))
+    disiscritto_il: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     azienda: Mapped[Azienda] = relationship(back_populates="referenti")
 

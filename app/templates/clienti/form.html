@@ -62,6 +62,12 @@
       {{ campo("fatturato", "Fatturato (€)", extra='inputmode="decimal"') }}
       {{ campo("anno_dati", "Anno dei dati", "number", extra='min="1900" max="2100"') }}
     </div>
+    <div class="grid">
+      {{ campo("totale_attivo", "Totale di bilancio (€)", extra='inputmode="decimal"') }}
+      {{ campo("data_costituzione", "Data di costituzione", "date") }}
+      {{ campo("plafond_de_minimis_manuale", "Plafond de minimis residuo (€, se lo conosci)", extra='inputmode="decimal"') }}
+    </div>
+    <small>Con dipendenti e fatturato (o totale di bilancio) l'app stima la dimensione secondo la Raccomandazione 2003/361/CE; quella scelta a mano sopra prevale sempre. Il plafond indicato a mano prevale su quello calcolato dagli aiuti registrati.</small>
     <label>Segnalato da
       <select name="segnalatore_id" {% if errori.get("segnalatore_id") %}aria-invalid="true"{% endif %}>
         <option value="">Nessun segnalatore</option>
@@ -136,6 +142,17 @@
 
   <label>Note
     <textarea name="note" rows="3">{{ v.get("note") or "" }}</textarea>
+    <div class="grid">
+      <label>Tag <small>(separati da virgola)</small>
+        <input name="tag_testo" value="{{ v.get('tag_testo') or '' }}" list="tag-esistenti" placeholder="es. edilizia, priorità alta">
+        <datalist id="tag-esistenti">{% for t in tag_esistenti %}<option value="{{ t }}">{% endfor %}</datalist>
+      </label>
+      <label>Aggiornamenti periodici al cliente
+        <select name="frequenza_aggiornamenti" {% if errori.get("frequenza_aggiornamenti") %}aria-invalid="true"{% endif %}>
+          {% for f in frequenze %}<option value="{{ f }}" {% if (v.get("frequenza_aggiornamenti") or "nessuno") == f %}selected{% endif %}>{{ {"nessuno": "Nessuno", "settimanale": "Ogni settimana", "mensile": "Ogni mese"}[f] }}</option>{% endfor %}
+        </select>
+      </label>
+    </div>
   </label>
   <div class="azioni-filtri">
     <button type="submit">Salva</button>

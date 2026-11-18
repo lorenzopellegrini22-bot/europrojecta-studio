@@ -5,6 +5,7 @@ import re
 import string
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
@@ -292,12 +293,13 @@ def componi(testo: str | None, valori: dict[str, str]) -> str:
 @dataclass
 class VoceScadenza:
     data: date
-    tipo: str  # operazione | presentazione
+    tipo: str  # operazione | presentazione | promemoria
     titolo: str
-    pratica: Pratica
+    pratica: Pratica | None
     fase: PraticaFase | None = None
     operazione: PraticaOperazione | None = None
     assegnata_a: Utente | None = None
+    promemoria: Any = None  # Scadenza del cliente (tipo "promemoria")
 
 
 def scadenze(db: Session, dal: date, al: date, utente_id: int | None = None) -> list[VoceScadenza]:
@@ -358,7 +360,21 @@ def scadenze(db: Session, dal: date, al: date, utente_id: int | None = None) -> 
                 assegnata_a=p.responsabile,
             )
         )
-    voci.sort(key=lambda v: (v.data, v.pratica.codice))
+    # Promemoria dei clienti (scheda cliente → Scadenze), non ancora completati
+    if not utente_id:
+        from app.models.crm_esteso import Scadenza
+
+        for sc in db.scalars(
+            select(Scadenza)
+            .where(Scadenza.data.between(dal, al), Scadenza.completata.is_(False))
+            .options(selectinload(Scadenza.azienda))
+        ):
+            voci.append(
+                VoceScadenza(
+                    data=sc.data, tipo="promemoria", titolo=sc.titolo, pratica=None, promemoria=sc
+                )
+            )
+    voci.sort(key=lambda v: (v.data, v.pratica.codice if v.pratica else ""))
     return voci
 
 

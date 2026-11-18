@@ -3,7 +3,7 @@
 {% block contenuto %}
 <hgroup>
   <h1>Scadenzario</h1>
-  <p>{{ totale }} scadenze dal {{ dal | data }} al {{ al | data }}: operazioni da fare e presentazioni delle domande.</p>
+  <p>{{ totale }} scadenze dal {{ dal | data }} al {{ al | data }}: operazioni da fare, presentazioni delle domande e promemoria dei clienti.</p>
 </hgroup>
 
 <form method="get" action="/scadenzario" class="filtri">
@@ -32,6 +32,20 @@
   <table>
     <tbody>
     {% for v in voci %}
+      {% if v.tipo == "promemoria" %}
+      <tr>
+        <td><a href="/clienti/{{ v.promemoria.azienda_id }}#scadenze">{{ v.titolo }}</a><br><small>Promemoria del cliente</small></td>
+        <td></td>
+        <td><a href="/clienti/{{ v.promemoria.azienda_id }}">{{ v.promemoria.azienda.ragione_sociale }}</a></td>
+        <td colspan="2">
+          <form method="post" action="/clienti/{{ v.promemoria.azienda_id }}/scadenze/{{ v.promemoria.id }}" class="in-linea">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="torna" value="{{ request.url.path }}?{{ request.url.query }}">
+            <button name="azione" value="completa" class="secondary outline piccolo">Fatto</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
       <tr>
         <td>
           {% if v.tipo == "operazione" %}
@@ -46,6 +60,7 @@
         <td><a href="/pratiche/{{ v.pratica.id }}">{{ v.pratica.codice }}</a></td>
         <td>{{ v.assegnata_a.nome if v.assegnata_a else "—" }}</td>
       </tr>
+      {% endif %}
     {% endfor %}
     </tbody>
   </table>

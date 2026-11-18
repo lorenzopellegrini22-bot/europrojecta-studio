@@ -126,7 +126,9 @@ class Embedding(Base):
     __tablename__ = "embedding"
     __table_args__ = (
         UniqueConstraint("entita", "entita_id", "modello", name="uq_embedding_entita_modello"),
-        CheckConstraint("entita IN ('bando', 'appalto', 'azienda')", name="ck_embedding_entita"),
+        CheckConstraint(
+            "entita IN ('bando', 'appalto', 'azienda', 'progetto')", name="ck_embedding_entita"
+        ),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)

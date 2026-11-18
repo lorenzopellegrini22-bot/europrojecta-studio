@@ -45,6 +45,15 @@ class Settings(BaseSettings):
     clamav_host: str | None = None
     clamav_porta: int = 3310
 
+    # Massimali de minimis in euro su 3 anni mobili (configurabili: le norme cambiano).
+    # Generale: Reg. (UE) 2023/2831; SIEG: Reg. (UE) 2023/2832;
+    # agricolo: Reg. (UE) 1408/2013 come modificato dal Reg. (UE) 2024/3118;
+    # pesca: Reg. (UE) 2023/2391. Da ricontrollare con le norme vigenti.
+    de_minimis_generale: int = 300_000
+    de_minimis_sieg: int = 750_000
+    de_minimis_agricolo: int = 50_000
+    de_minimis_pesca: int = 40_000
+
     # Sessioni e login
     cookie_secure: bool = True
     sessione_inattivita_minuti: int = Field(default=60, ge=5)

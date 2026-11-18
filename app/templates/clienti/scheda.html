@@ -25,7 +25,11 @@
       <dt>Fatturato</dt><dd>{{ azienda.fatturato | euro }}</dd>
       {% if azienda.segnalatore %}<dt>Segnalato da</dt><dd><a href="/segnalatori/{{ azienda.segnalatore.id }}">{{ azienda.segnalatore.nome }}</a></dd>{% endif %}
       {% if azienda.stato_attivita %}<dt>Registro Imprese</dt><dd>{{ azienda.stato_attivita }}{% if azienda.registro_imprese_il %} <small>(letto il {{ azienda.registro_imprese_il | data_ora }})</small>{% endif %}</dd>{% endif %}
-      <dt>Dimensione</dt><dd>{{ (azienda.dimensione_manuale or "—") | capitalize }}</dd>
+      <dt>Dimensione</dt><dd>{{ (dimensione or "—") | capitalize }}{% if dimensione_provenienza == "calcolata" %} <small>(stima da dipendenti e fatturato: le ULA e le imprese collegate possono cambiarla)</small>{% endif %}</dd>
+      {% if azienda.data_costituzione %}<dt>Costituita il</dt><dd>{{ azienda.data_costituzione | data }}</dd>{% endif %}
+      {% if azienda.totale_attivo is not none %}<dt>Totale di bilancio</dt><dd>{{ azienda.totale_attivo | euro }}</dd>{% endif %}
+      {% if azienda.tag %}<dt>Tag</dt><dd>{% for t in azienda.tag %}<a href="/clienti?tag={{ t.nome | urlencode }}" class="etichetta">{{ t.nome }}</a> {% endfor %}</dd>{% endif %}
+      <dt>Aggiornamenti</dt><dd>{{ {"nessuno": "Nessun aggiornamento periodico", "settimanale": "Ogni settimana", "mensile": "Ogni mese"}[azienda.frequenza_aggiornamenti] }}</dd>
       <dt>Email</dt><dd>{% if azienda.email %}<a href="mailto:{{ azienda.email }}">{{ azienda.email }}</a>{% else %}—{% endif %}</dd>
       <dt>PEC</dt><dd>{{ azienda.pec or "—" }}</dd>
       <dt>Telefono</dt><dd>{{ azienda.telefono or "—" }}</dd>
@@ -43,6 +47,18 @@
         <strong>{{ r.nome_completo }}</strong>{% if r.principale %} <span class="etichetta">principale</span>{% endif %}
         {% if r.ruolo %}<br><small>{{ r.ruolo }}</small>{% endif %}
         <br><small>{% if r.email %}<a href="mailto:{{ r.email }}">{{ r.email }}</a>{% endif %}{% if r.telefono %} · {{ r.telefono }}{% endif %}</small>
+        <br><small>Aggiornamenti: {% if r.disiscritto_il %}disiscritto il {{ r.disiscritto_il | data_ora }}{% elif r.consenso_email or r.consenso_whatsapp %}consenso {{ ["email" if r.consenso_email, "WhatsApp" if r.consenso_whatsapp] | select | join(" e ") }}{% if r.consenso_il %} dal {{ r.consenso_il | data_ora }}{% endif %}{% else %}nessun consenso{% endif %}</small>
+        <details class="consensi">
+          <summary><small>Consensi agli aggiornamenti</small></summary>
+          <form method="post" action="/clienti/{{ azienda.id }}/referenti/{{ r.id }}/consensi">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <label class="casella"><input type="checkbox" name="consenso_email" value="1" {% if r.consenso_email %}checked{% endif %}> Email</label>
+            <label class="casella"><input type="checkbox" name="consenso_whatsapp" value="1" {% if r.consenso_whatsapp %}checked{% endif %}> WhatsApp</label>
+            <select name="canale_preferito" aria-label="Canale preferito"><option value="">Canale preferito: nessuno</option><option value="email" {% if r.canale_preferito == "email" %}selected{% endif %}>Email</option><option value="whatsapp" {% if r.canale_preferito == "whatsapp" %}selected{% endif %}>WhatsApp</option></select>
+            <small>Registra il consenso solo se il referente l'ha dato (anche a voce o per email).</small>
+            <button class="piccolo">Salva</button>
+          </form>
+        </details>
       </div>
       <div class="gruppo-pulsanti">
         {% if not r.principale %}
@@ -66,6 +82,10 @@
     </details>
   </article>
 </div>
+
+{% set messaggio_crm = request.query_params.get("msg") %}
+{% if messaggio_crm %}<div class="messaggio errore" role="alert">{{ messaggio_crm }}</div>{% endif %}
+{% include "clienti/_crm.html" %}
 
 <section id="opportunita">
   <h2>Opportunità</h2>

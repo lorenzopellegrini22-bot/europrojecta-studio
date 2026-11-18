@@ -63,6 +63,8 @@ class Opportunita(ConTimestamp, Base):
     )
     bando_id: Mapped[int | None] = mapped_column(ForeignKey("bando.id", ondelete="CASCADE"))
     appalto_id: Mapped[int | None] = mapped_column(ForeignKey("appalto.id", ondelete="CASCADE"))
+    # Progetto dell'azienda più adatto al bando (similarità più alta)
+    progetto_id: Mapped[int | None] = mapped_column(ForeignKey("progetto.id", ondelete="SET NULL"))
     # Punteggio mostrato: quello dell'AI se c'è, altrimenti quello delle regole
     punteggio: Mapped[int] = mapped_column(Integer)
     punteggio_regole: Mapped[int | None] = mapped_column(Integer)

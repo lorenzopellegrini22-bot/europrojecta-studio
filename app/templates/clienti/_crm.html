@@ -1,0 +1,109 @@
+{# Sezioni del CRM completo nella scheda cliente #}
+<section id="progetti">
+  <h2>Progetti d'investimento</h2>
+  <p><small>Sono ciò che si confronta con i bandi: descrivi cosa vuole fare il cliente e quali spese prevede.</small></p>
+  {% if progetti %}
+  <div class="overflow-auto">
+  <table class="striped">
+    <thead><tr><th>Progetto</th><th>Spese</th><th>Importo</th><th>Periodo</th><th>Stato</th></tr></thead>
+    <tbody>
+    {% for p in progetti %}
+    <tr>
+      <td><a href="/clienti/{{ azienda.id }}/progetti/{{ p.id }}">{{ p.titolo }}</a>{% if p.descrizione %}<br><small>{{ p.descrizione | truncate(140) }}</small>{% endif %}</td>
+      <td><small>{{ (p.categorie or []) | join(", ") or "—" }}</small></td>
+      <td>{{ p.importo_stimato | euro }}</td>
+      <td><small>{{ p.inizio_previsto | data if p.inizio_previsto else "" }}{% if p.fine_prevista %} → {{ p.fine_prevista | data }}{% endif %}</small></td>
+      <td>{{ etichette_progetto[p.stato] }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}<p>Nessun progetto.</p>{% endif %}
+  <details>
+    <summary>Aggiungi un progetto</summary>
+    <form method="post" action="/clienti/{{ azienda.id }}/progetti">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {% include "clienti/_campi_progetto.html" %}
+      <button type="submit">Aggiungi il progetto</button>
+    </form>
+  </details>
+</section>
+
+<div class="grid">
+<section id="attivita">
+  <h2>Attività</h2>
+  <form method="post" action="/clienti/{{ azienda.id }}/attivita">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="grid">
+      <select name="tipo" aria-label="Tipo">{% for k, e in etichette_attivita.items() %}<option value="{{ k }}">{{ e }}</option>{% endfor %}</select>
+      <input type="date" name="data" value="{{ oggi.isoformat() }}" aria-label="Data">
+    </div>
+    <textarea name="testo" rows="2" placeholder="Cosa è successo (chiamata, incontro, email…)" aria-label="Testo" required></textarea>
+    <button class="piccolo">Registra</button>
+  </form>
+  {% for x in attivita %}
+  <p class="attivita"><small class="etichetta">{{ etichette_attivita[x.tipo] }}</small> <small>{{ x.data | data }}</small><br>{{ x.testo }}
+    <form method="post" action="/clienti/{{ azienda.id }}/attivita/{{ x.id }}/elimina" class="in-linea"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Elimina</button></form>
+  </p>
+  {% else %}<p><small>Nessuna attività registrata.</small></p>{% endfor %}
+</section>
+
+<section id="scadenze">
+  <h2>Scadenze e promemoria</h2>
+  <form method="post" action="/clienti/{{ azienda.id }}/scadenze">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="grid">
+      <input name="titolo" placeholder="Es. richiamare per i preventivi" aria-label="Titolo" required>
+      <input type="date" name="data" aria-label="Data" required>
+    </div>
+    <button class="piccolo">Aggiungi</button>
+  </form>
+  <ul>
+  {% for s in scadenze %}
+    <li class="{{ 'completata' if s.completata else ('scaduta' if s.data < oggi else '') }}">
+      {{ s.data | data }} · {{ s.titolo }}
+      <form method="post" action="/clienti/{{ azienda.id }}/scadenze/{{ s.id }}" class="in-linea">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        {% if s.completata %}<button name="azione" value="riapri" class="secondary outline piccolo">Riapri</button>{% else %}<button name="azione" value="completa" class="secondary outline piccolo">Fatto</button>{% endif %}
+        <button name="azione" value="elimina" class="secondary outline piccolo">Elimina</button>
+      </form>
+    </li>
+  {% else %}<li><small>Nessuna scadenza.</small></li>{% endfor %}
+  </ul>
+  <p><small>Le scadenze compaiono anche nello scadenzario e nell'email del mattino.</small></p>
+</section>
+</div>
+
+<section id="de-minimis">
+  <h2>De minimis</h2>
+  <p>Plafond residuo (regolamento generale, ultimi 3 anni): <strong>{{ plafond.residuo | euro }}</strong> su {{ plafond.massimale | euro }}
+    {% if plafond.manuale %}<small class="etichetta">indicato a mano</small>{% else %}<small>(usati {{ plafond.utilizzato | euro }})</small>{% endif %}</p>
+  <p><small>È una stima: il de minimis si calcola per «impresa unica», che può comprendere le imprese collegate. Verifica sempre sul Registro Nazionale Aiuti.</small></p>
+  {% if aiuti %}
+  <div class="overflow-auto">
+  <table class="striped">
+    <thead><tr><th>Concesso il</th><th>Importo</th><th>Regolamento</th><th>Ente</th><th></th></tr></thead>
+    <tbody>
+    {% for x in aiuti %}
+    <tr><td>{{ x.data_concessione | data }}</td><td>{{ x.importo | euro }}</td><td><small>{{ etichette_regolamento[x.regolamento] }}</small></td><td><small>{{ x.ente or "" }}{% if x.descrizione %} · {{ x.descrizione }}{% endif %}</small></td>
+      <td><form method="post" action="/clienti/{{ azienda.id }}/de-minimis/{{ x.id }}/elimina"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Elimina</button></form></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
+  <details>
+    <summary>Registra un aiuto ricevuto</summary>
+    <form method="post" action="/clienti/{{ azienda.id }}/de-minimis">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="grid">
+        <label>Data di concessione<input type="date" name="data_concessione" required></label>
+        <label>Importo (€)<input name="importo" inputmode="decimal" required></label>
+        <label>Regolamento<select name="regolamento">{% for k, e in etichette_regolamento.items() %}<option value="{{ k }}">{{ e }}</option>{% endfor %}</select></label>
+      </div>
+      <div class="grid"><input name="ente" placeholder="Ente che ha concesso l'aiuto" aria-label="Ente"><input name="descrizione" placeholder="Descrizione" aria-label="Descrizione"></div>
+      <button type="submit">Registra</button>
+    </form>
+  </details>
+</section>

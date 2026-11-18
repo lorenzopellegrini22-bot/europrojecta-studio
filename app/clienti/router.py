@@ -5,7 +5,7 @@ Titolare e collaboratori gestiscono i clienti; solo il titolare può eliminarli 
 hanno pratiche)."""
 
 import re
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -20,6 +20,7 @@ from app.integrazioni import servizio as integrazioni
 from app.integrazioni.registro_imprese import ErroreRegistro, cerca
 from app.models import Azienda, AziendaAteco, Pratica, Referente, Sede, Segnalatore, Utente
 from app.models.crm import DIMENSIONI, STATI_CLIENTE
+from app.models.crm_esteso import FREQUENZE_AGGIORNAMENTO, Tag
 from app.opportunita.abbinamento import CLASSIFICHE_SOA
 from app.pratiche.servizio import ETICHETTE_STATO_PRATICA, partita_iva_valida
 from app.sicurezza.cifratura import ErroreCifratura
@@ -51,7 +52,16 @@ CAMPI_AZIENDA = (
     "note",
 )
 CAMPI_SEDE = ("indirizzo", "cap", "comune_testo", "provincia", "regione")
-CAMPI_NUMERICI = ("dipendenti", "fatturato", "anno_dati", "segnalatore_id")
+CAMPI_NUMERICI = (
+    "dipendenti",
+    "fatturato",
+    "anno_dati",
+    "segnalatore_id",
+    "totale_attivo",
+    "plafond_de_minimis_manuale",
+)
+# Altri campi dell'azienda (non numerici) salvati così come sono
+CAMPI_PROFILO = ("data_costituzione", "frequenza_aggiornamenti")
 CAMPI_EXTRA = ("stato_attivita", "ateco_codice", "ateco_descrizione", "da_registro")
 _ATECO = re.compile(r"^\d{2}(\.\d{1,2}){0,2}$")
 
@@ -120,6 +130,13 @@ def _valida(db: Session, valori: dict[str, Any], azienda_id: int | None) -> dict
         errori["regioni_interesse"] = "Regione non valida."
     if any(c not in DIVISIONI_CPV for c in valori.get("cpv_interesse") or []):
         errori["cpv_interesse"] = "Categoria non valida."
+    if valori.get("data_costituzione") == "non valida" or (
+        isinstance(valori.get("data_costituzione"), date)
+        and valori["data_costituzione"] > date.today()
+    ):
+        errori["data_costituzione"] = "Data non valida."
+    if valori.get("frequenza_aggiornamenti") not in FREQUENZE_AGGIORNAMENTO:
+        errori["frequenza_aggiornamenti"] = "Frequenza non valida."
     sid = valori.get("segnalatore_id")
     if isinstance(sid, int) and db.get(Segnalatore, sid) is None:
         errori["segnalatore_id"] = "Segnalatore non trovato."
@@ -138,6 +155,17 @@ def _valori(form: dict[str, Any]) -> dict[str, Any]:
     v["anno_dati"] = _numero(testo(form, "anno_dati"))
     v["fatturato"] = _numero(testo(form, "fatturato"), decimale=True)
     v["segnalatore_id"] = _numero(testo(form, "segnalatore_id"))
+    v["totale_attivo"] = _numero(testo(form, "totale_attivo"), decimale=True)
+    v["plafond_de_minimis_manuale"] = _numero(
+        testo(form, "plafond_de_minimis_manuale"), decimale=True
+    )
+    data_cost = testo(form, "data_costituzione")
+    try:
+        v["data_costituzione"] = date.fromisoformat(data_cost) if data_cost else None
+    except ValueError:
+        v["data_costituzione"] = "non valida"
+    v["frequenza_aggiornamenti"] = testo(form, "frequenza_aggiornamenti") or "nessuno"
+    v["tag_testo"] = testo(form, "tag_testo") or ""
     v["avvisi_attivi"] = form.get("avvisi_attivi") == "1"
     v["soa_testo"] = testo(form, "soa_testo") or ""
     regioni = form.get("regioni_interesse") or []
@@ -171,7 +199,8 @@ def leggi_soa(testo_soa: str) -> tuple[list[dict[str, str]] | None, str | None]:
 
 def _valori_da_azienda(a: Azienda) -> dict[str, Any]:
     sede = a.sede_legale
-    v: dict[str, Any] = {c: getattr(a, c) for c in CAMPI_AZIENDA + CAMPI_NUMERICI}
+    v: dict[str, Any] = {c: getattr(a, c) for c in CAMPI_AZIENDA + CAMPI_NUMERICI + CAMPI_PROFILO}
+    v["tag_testo"] = ", ".join(t.nome for t in a.tag)
     v.update({c: getattr(sede, c) if sede else None for c in CAMPI_SEDE})
     v["stato_attivita"] = a.stato_attivita
     v["avvisi_attivi"] = a.avvisi_attivi
@@ -184,6 +213,23 @@ def _valori_da_azienda(a: Azienda) -> dict[str, Any]:
         v["ateco_codice"] = a.ateco_primario.codice
         v["ateco_descrizione"] = a.ateco_primario.descrizione
     return v
+
+
+def _applica_tag(db: Session, azienda: Azienda, testo_tag: str) -> None:
+    """Tag separati da virgola; quelli nuovi si creano."""
+    nomi = []
+    for n in testo_tag.split(","):
+        n = " ".join(n.split())[:60]
+        if n and n.lower() not in {x.lower() for x in nomi}:
+            nomi.append(n)
+    tag = []
+    for n in nomi:
+        t = db.scalar(select(Tag).where(func.lower(Tag.nome) == n.lower()))
+        if t is None:
+            t = Tag(nome=n)
+            db.add(t)
+        tag.append(t)
+    azienda.tag = tag
 
 
 def _form(
@@ -205,6 +251,8 @@ def _form(
             "regioni": REGIONI,
             "dimensioni": DIMENSIONI,
             "stati": STATI_CLIENTE,
+            "frequenze": FREQUENZE_AGGIORNAMENTO,
+            "tag_esistenti": list(db.scalars(select(Tag.nome).order_by(Tag.nome))),
             "registro_disponibile": integrazioni.utilizzabile(db, "registro_imprese"),
             "classifiche": list(CLASSIFICHE_SOA),
             "divisioni_cpv": DIVISIONI_CPV,
@@ -218,7 +266,7 @@ def _form(
 
 def _applica(azienda: Azienda, v: dict[str, Any]) -> dict[str, Any]:
     differenze: dict[str, Any] = {}
-    for c in CAMPI_AZIENDA + CAMPI_NUMERICI:
+    for c in CAMPI_AZIENDA + CAMPI_NUMERICI + CAMPI_PROFILO:
         if getattr(azienda, c) != v[c]:
             differenze[c] = str(v[c]) if v[c] is not None else None
             setattr(azienda, c, v[c])
@@ -286,7 +334,22 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
         query = query.where(testo)
     if stato in STATI_CLIENTE:
         query = query.where(Azienda.stato_cliente == stato)
-    aziende = list(db.scalars(query))
+    p = request.query_params
+    regione = p.get("regione") or ""
+    if regione in REGIONI:
+        query = query.where(Azienda.sedi.any(Sede.regione == regione))
+    ateco = (p.get("ateco") or "").strip()
+    if ateco:
+        query = query.where(Azienda.ateco.any(AziendaAteco.codice.startswith(ateco)))
+    tag = p.get("tag") or ""
+    if tag:
+        query = query.where(Azienda.tag.any(Tag.nome == tag))
+    aziende = list(db.scalars(query.options(selectinload(Azienda.tag))))
+    dimensione = p.get("dimensione") or ""
+    if dimensione in DIMENSIONI:
+        from app.utils.impresa import dimensione_effettiva
+
+        aziende = [a for a in aziende if dimensione_effettiva(a)[0] == dimensione]
     conteggi = dict(
         db.execute(select(Pratica.azienda_id, func.count()).group_by(Pratica.azienda_id)).all()
     )
@@ -296,8 +359,18 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
         {
             "aziende": aziende,
             "conteggi": conteggi,
-            "filtri": {"q": q, "stato": stato},
+            "filtri": {
+                "q": q,
+                "stato": stato,
+                "regione": regione,
+                "ateco": ateco,
+                "tag": tag,
+                "dimensione": dimensione,
+            },
             "stati": STATI_CLIENTE,
+            "regioni": REGIONI,
+            "dimensioni": DIMENSIONI,
+            "tag_esistenti": list(db.scalars(select(Tag.nome).order_by(Tag.nome))),
         },
     )
 
@@ -366,6 +439,7 @@ def crea(request: Request, db: Db, utente: Autenticato, form: Form) -> Response:
     azienda = Azienda(ragione_sociale=v["ragione_sociale"])
     _applica(azienda, v)
     db.add(azienda)
+    _applica_tag(db, azienda, v["tag_testo"])
     db.flush()
     referente = testo(form, "referente_nome")
     if referente:
@@ -410,10 +484,13 @@ def scheda(request: Request, azienda_id: int, db: Db, _: Autenticato) -> Respons
             .limit(8)
         )
     )
+    from app.clienti.crm import dati_scheda
+
     return render(
         request,
         "clienti/scheda.html",
         {
+            **dati_scheda(db, azienda),
             "opportunita": opportunita,
             "azienda": azienda,
             "pratiche": pratiche,
@@ -437,6 +514,10 @@ def salva(request: Request, azienda_id: int, db: Db, utente: Autenticato, form: 
     if errori:
         return _form(request, db, a, v, errori)
     differenze = _applica(a, v)
+    prima = [t.nome for t in a.tag]
+    _applica_tag(db, a, v["tag_testo"])
+    if [t.nome for t in a.tag] != prima:
+        differenze["tag"] = [t.nome for t in a.tag]
     if differenze:
         audit.registra(db, utente, "azienda", a.id, "modifica", differenze)
     db.commit()
