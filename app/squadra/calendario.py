@@ -41,6 +41,9 @@ def utente_dal_token(db: Session, token: str) -> Utente | None:
 
 
 def _testo(s: str) -> str:
+    # niente ritorni a capo «nudi» né caratteri di controllo: non devono creare nuove righe
+    s = s.replace("\r\n", "\n").replace("\r", "\n")
+    s = "".join(c for c in s if c == "\n" or c >= " ")
     return s.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
 
 
@@ -93,7 +96,15 @@ def genera(db: Session, utente: Utente, oggi: date | None = None) -> str:
         "REFRESH-INTERVAL;VALUE=DURATION:PT1H",
     ]
     dal, al = oggi - timedelta(days=GIORNI_PRIMA), oggi + timedelta(days=GIORNI_DOPO)
-    for v in scadenze(db, dal, al, None if utente.is_titolare else utente.id):
+    from app.auth.permessi import puo_vedere
+
+    # solo ciò che l'utente può ancora vedere: se gli si tolgono le sezioni, il calendario si svuota
+    voci = (
+        scadenze(db, dal, al, None if utente.is_titolare else utente.id)
+        if puo_vedere(utente, "/pratiche")
+        else []
+    )
+    for v in voci:
         if v.pratica is not None:
             cliente = v.pratica.azienda.ragione_sociale if v.pratica.azienda else ""
             titolo = f"{v.titolo} – {cliente}" if cliente else v.titolo
@@ -112,7 +123,9 @@ def genera(db: Session, utente: Utente, oggi: date | None = None) -> str:
             url = f"{base}/clienti/{sc.azienda_id}" if sc.azienda_id else f"{base}/scadenzario"
             uid = f"promemoria-{sc.id}"
         righe += _evento(uid, v.data, titolo, descrizione, url, adesso)
-    for s in db.scalars(select(Seguito).where(Seguito.utente_id == utente.id)):
+    from app.squadra.seguiti import visibili
+
+    for s in db.scalars(select(Seguito).where(Seguito.utente_id == utente.id, visibili(utente))):
         if s.bando_id:
             b = db.get(Bando, s.bando_id)
             if b and b.data_chiusura and dal <= b.data_chiusura <= al:

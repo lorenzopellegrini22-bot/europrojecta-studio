@@ -5,7 +5,7 @@
 import random
 import re
 import uuid
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 import pytest
 from sqlalchemy import select
@@ -210,3 +210,74 @@ def test_segui_gara_documenti(db, crea_utente):
     seguiti.controlla(db)
     testi = [n.testo for n, _t, _l in seguiti.novita(db, u)]
     assert testi == ["Nuovi documenti: Chiarimenti n. 1"]
+
+
+def test_menzioni_solo_a_chi_vede_la_pratica(client, crea_utente, accedi, db):
+    titolare = _utente(crea_utente, db, "Luca Marrone")
+    esterno = _utente(crea_utente, db, "Marta Grigi", "collaboratore", ["bandi"])
+    a = _azienda(db)
+    p = crea_pratica(db, titolare, a, date.today(), bando_testo="Bando riservato")
+    db.commit()
+    accedi(titolare)
+    pagina = client.get(f"/pratiche/{p.id}").text
+    assert "@marta" not in pagina  # non è tra i colleghi da citare
+    token = csrf(client, f"/pratiche/{p.id}")
+    client.post(
+        f"/pratiche/{p.id}/note", data={"csrf_token": token, "testo": "@marta dati riservati"}
+    )
+    assert db.scalar(select(Menzione).where(Menzione.utente_id == esterno.id)) is None
+
+
+def test_note_eliminate_con_la_pratica(client, crea_utente, accedi, db):
+    from app.models import Commento
+
+    titolare = _utente(crea_utente, db, "Nora Ocra")
+    collega = _utente(crea_utente, db, "Oscar Lilla", "collaboratore")
+    a = _azienda(db)
+    p = crea_pratica(db, titolare, a, date.today(), bando_testo="Bando da eliminare")
+    db.commit()
+    pid = p.id
+    accedi(titolare)
+    token = csrf(client, f"/pratiche/{pid}")
+    client.post(f"/pratiche/{pid}/note", data={"csrf_token": token, "testo": "@oscar guarda"})
+    assert client.post(f"/pratiche/{pid}/elimina", data={"csrf_token": token}).status_code == 303
+    db.expire_all()
+    note_rimaste = select(Commento).where(Commento.oggetto == "pratica", Commento.oggetto_id == pid)
+    assert db.scalar(note_rimaste) is None
+    assert db.scalar(select(Menzione).where(Menzione.utente_id == collega.id)) is None
+
+
+def test_novita_della_scheda_senza_limite(db, crea_utente):
+    u = _utente(crea_utente, db, "Pia Senape")
+    b = _bando(db)
+    s = seguiti.segui(db, u, bando=b)
+    altro = seguiti.segui(db, u, bando=_bando(db, "Altro bando"))
+    db.flush()
+    db.add(NovitaSeguito(seguito_id=s.id, testo="Scadenza cambiata"))
+    db.add_all(NovitaSeguito(seguito_id=altro.id, testo=f"Novità {i}") for i in range(35))
+    db.commit()
+    assert [n.testo for n, _t, _l in seguiti.novita(db, u, bando_id=b.id)] == ["Scadenza cambiata"]
+
+
+def test_calendario_senza_ritorni_a_capo_nudi():
+    from app.squadra.calendario import _testo
+
+    assert _testo("Bando\r\nDESCRIPTION:falso\rX") == "Bando\\nDESCRIPTION:falso\\nX"
+    assert "\x07" not in _testo("a\x07b")
+
+
+def test_torna_solo_dentro_l_app(client, crea_utente, accedi, db):
+    u = _utente(crea_utente, db, "Rita Corallo")
+    a = _azienda(db)
+    b = _bando(db)
+    from app.models import Opportunita
+
+    o = Opportunita(azienda_id=a.id, bando_id=b.id, punteggio=60, motivi={}, stato="nuova",
+                    trovata_il=datetime.now())  # fmt: skip
+    db.add(o)
+    db.commit()
+    accedi(u)
+    token = csrf(client, "/opportunita")
+    r = client.post(f"/opportunita/{o.id}/stato",
+                    data={"csrf_token": token, "stato": "interessante", "torna": "//esempio.test/x"})  # fmt: skip
+    assert r.headers["location"] == "/opportunita"

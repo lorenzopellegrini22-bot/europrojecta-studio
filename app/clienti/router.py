@@ -589,6 +589,10 @@ def elimina(request: Request, azienda_id: int, db: Db, utente: Titolare) -> Resp
         )
     audit.registra(db, utente, "azienda", a.id, "elimina", {"ragione_sociale": a.ragione_sociale})
     db.delete(a)
+    db.flush()
+    from app.squadra.note import pulisci_orfane
+
+    pulisci_orfane(db)  # note delle sue opportunità
     db.commit()
     return RedirectResponse("/clienti", status_code=303)
 

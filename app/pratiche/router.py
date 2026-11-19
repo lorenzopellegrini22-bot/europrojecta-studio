@@ -558,6 +558,10 @@ def elimina(pratica_id: int, db: Db, utente: Titolare) -> Response:
     p = _pratica(db, pratica_id)
     audit.registra(db, utente, "pratica", p.id, "elimina", {"codice": p.codice})
     db.delete(p)
+    db.flush()
+    from app.squadra.note import pulisci_orfane
+
+    pulisci_orfane(db)  # le note della pratica spariscono con lei
     db.commit()
     return RedirectResponse("/pratiche", status_code=303)
 

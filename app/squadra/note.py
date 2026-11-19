@@ -8,15 +8,18 @@ import logging
 import re
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import delete, exists, or_, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models import Commento, Menzione, Utente
+from app.auth.permessi import puo_vedere
+from app.models import Commento, Menzione, Opportunita, Pratica, Utente
 from app.utils.ricerca import normalizza
 
 log = logging.getLogger(__name__)
 
 MAX_TESTO = 4000
+# Sezione che serve per vedere l'oggetto della nota: si cita e si avvisa solo chi la vede
+PERCORSI = {"pratica": "/pratiche", "opportunita": "/opportunita"}
 _CITAZIONE = re.compile(r"(?<![\w.])@([\w][\w.\-]*)")
 
 
@@ -33,17 +36,27 @@ def citazione(utente: Utente) -> str:
     return "@" + normalizza(utente.nome.split()[0] if utente.nome.strip() else utente.email)
 
 
-def citati(db: Session, testo: str, autore: Utente | None) -> list[Utente]:
+def visibili(utente: Utente) -> list[str]:
+    """Tipi di nota che l'utente può leggere (secondo le sue sezioni)."""
+    return [o for o, percorso in PERCORSI.items() if puo_vedere(utente, percorso)]
+
+
+def citabili(db: Session, oggetto: str, escluso: Utente | None = None) -> list[Utente]:
+    """Colleghi attivi che vedono la sezione della nota."""
+    return [
+        u
+        for u in db.scalars(select(Utente).where(Utente.attivo).order_by(Utente.nome))
+        if (escluso is None or u.id != escluso.id) and puo_vedere(u, PERCORSI[oggetto])
+    ]
+
+
+def citati(
+    db: Session, testo: str, autore: Utente | None, oggetto: str = "pratica"
+) -> list[Utente]:
     parole = {normalizza(m.rstrip(".-")) for m in _CITAZIONE.findall(testo)}
     if not parole:
         return []
-    trovati = []
-    for u in db.scalars(select(Utente).where(Utente.attivo).order_by(Utente.id)):
-        if autore is not None and u.id == autore.id:
-            continue
-        if nomi_per_citare(u) & parole:
-            trovati.append(u)
-    return trovati
+    return [u for u in citabili(db, oggetto, autore) if nomi_per_citare(u) & parole]
 
 
 def aggiungi(
@@ -52,7 +65,7 @@ def aggiungi(
     testo = testo.strip()[:MAX_TESTO]
     c = Commento(oggetto=oggetto, oggetto_id=oggetto_id, testo=testo, utente_id=autore.id)
     db.add(c)
-    persone = citati(db, testo, autore)
+    persone = citati(db, testo, autore, oggetto)
     for u in persone:
         c.menzioni.append(Menzione(utente_id=u.id))
     db.flush()
@@ -126,7 +139,12 @@ def menzioni_da_leggere(db: Session, utente: Utente) -> list[Menzione]:
     return list(
         db.scalars(
             select(Menzione)
-            .where(Menzione.utente_id == utente.id, Menzione.letta_il.is_(None))
+            .join(Commento)
+            .where(
+                Menzione.utente_id == utente.id,
+                Menzione.letta_il.is_(None),
+                Commento.oggetto.in_(visibili(utente)),
+            )
             .options(selectinload(Menzione.commento).selectinload(Commento.utente))
             .order_by(Menzione.id.desc())
             .limit(30)
@@ -138,3 +156,18 @@ def link(oggetto: str, oggetto_id: int, db: Session | None = None) -> str:
     if oggetto == "pratica":
         return f"/pratiche/{oggetto_id}#note"
     return f"/opportunita/{oggetto_id}#note"
+
+
+def pulisci_orfane(db: Session) -> int:
+    """Note di pratiche o opportunità eliminate: spariscono con le loro menzioni, così «Oggi»
+    non mostra link a pagine che non esistono più."""
+    orfane = or_(
+        (Commento.oggetto == "pratica") & ~exists().where(Pratica.id == Commento.oggetto_id),
+        (Commento.oggetto == "opportunita")
+        & ~exists().where(Opportunita.id == Commento.oggetto_id),
+    )
+    ids = list(db.scalars(select(Commento.id).where(orfane)))
+    if ids:
+        db.execute(delete(Menzione).where(Menzione.commento_id.in_(ids)))
+        db.execute(delete(Commento).where(Commento.id.in_(ids)))
+    return len(ids)

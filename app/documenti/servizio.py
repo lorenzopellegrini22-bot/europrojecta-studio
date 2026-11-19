@@ -205,7 +205,8 @@ def testo_pdf(
             letto = ocr_ai(dati, db, quota) or letto
         if len(letto) > len(testo):
             testo = re.sub(r"\n{3,}", "\n\n", re.sub(r"[ \t]+", " ", letto)).strip()
-    return testo, len(lettore.pages)
+    # Alcuni PDF hanno caratteri nulli nel testo: PostgreSQL non li accetta
+    return testo.replace("\x00", ""), len(lettore.pages)
 
 
 def _salva(dati: bytes) -> str:
@@ -297,7 +298,22 @@ def _scarica_e_leggi(
 
 
 def esegui(db: Session, client: httpx.Client | None = None, limite: int = PER_NOTTE) -> str:
-    """Il job notturno: registra i PDF dei bandi attivi e ne scarica al massimo `limite`."""
+    """Il job notturno: registra i PDF dei bandi attivi (dai dati della fonte e, per chi non
+    ne ha, dalla pagina ufficiale) e ne scarica al massimo `limite`."""
+    from app.documenti import pagina
+
+    proprio = client is None
+    client = client or http.client()
+    try:
+        dalle_pagine = pagina.esegui(db, client, Robots(client))
+        esito = _scarica(db, client, limite)
+    finally:
+        if proprio:
+            client.close()
+    return f"{esito} PDF trovati nelle pagine ufficiali: {dalle_pagine}."
+
+
+def _scarica(db: Session, client: httpx.Client, limite: int) -> str:
     bandi = list(
         db.scalars(
             select(Bando).where(
@@ -323,25 +339,32 @@ def esegui(db: Session, client: httpx.Client | None = None, limite: int = PER_NO
         and d.tentativi < MAX_TENTATIVI
         and (d.scaricato_il is None or d.scaricato_il < soglia)
     ][:limite]
-    proprio = client is None
-    client = client or http.client()
     letti = falliti = 0
-    try:
-        robots = Robots(client)
-        gia_letti: dict[str, DocumentoBando | str] = {}
-        from app.documenti.ocr import QuotaOCR
+    robots = Robots(client)
+    gia_letti: dict[str, DocumentoBando | str] = {}
+    from app.documenti.ocr import QuotaOCR
 
-        # Trascrizioni con l'AI per notte: ognuna può durare un minuto (limite di Vercel)
-        quota = QuotaOCR(OCR_AI_PER_NOTTE)
-        for d in da_fare:
-            if elabora(db, client, robots, d, gia_letti, quota):
-                letti += 1
-            else:
-                falliti += 1
+    # Trascrizioni con l'AI per notte: ognuna può durare un minuto (limite di Vercel)
+    quota = QuotaOCR(OCR_AI_PER_NOTTE)
+    for d in da_fare:
+        doc_id = d.id
+        try:
+            ok = elabora(db, client, robots, d, gia_letti, quota)
             db.commit()
-    finally:
-        if proprio:
-            client.close()
+        except Exception:  # un PDF strano non deve fermare gli altri (né bloccare le notti dopo)
+            log.exception("PDF %s non elaborato", doc_id)
+            db.rollback()
+            gia_letti.clear()
+            rotto = db.get(DocumentoBando, doc_id)
+            if rotto is not None:
+                rotto.tentativi = (rotto.tentativi or 0) + 1
+                rotto.errore = "PDF non elaborato per un errore imprevisto: si riprova."
+                db.commit()
+            ok = False
+        if ok:
+            letti += 1
+        else:
+            falliti += 1
     return f"PDF dei bandi: {letti} letti, {falliti} non riusciti, {len(da_fare)} in coda stanotte."
 
 

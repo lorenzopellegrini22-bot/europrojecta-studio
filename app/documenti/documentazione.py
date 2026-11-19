@@ -15,11 +15,14 @@ _ESTENSIONE = re.compile(r"(\s*\(\d+\))?\.(pdf|p7m|zip|rar|7z|docx?|xlsx?|odt|od
 
 _RUMORE = re.compile(r"\s*\([^()]*\b(?:pdf|kb|mb|si apre|nuova finestra)\b[^()]*\)?", re.I)
 
+# «Bando 26CF -227 KB», «Allegato A – 1,2 MB» in fondo al titolo
+_DIMENSIONE = re.compile(r"\s*[-–—]\s*\d+(?:[.,]\d+)?\s*(?:kb|mb)\s*$", re.I)
+
 
 def pulisci(titolo: str, massimo: int = 70) -> str:
     """Nome leggibile dal titolo o dal nome del file: senza estensioni né trattini bassi."""
     # «(PDF — 1,1 MB - 07.05.2026)», «(si apre in una nuova finestra)» dei siti regionali
-    t = _RUMORE.sub("", titolo).strip(" -–—")
+    t = _DIMENSIONE.sub("", _RUMORE.sub("", titolo)).strip(" -–—")
     while _ESTENSIONE.search(t):
         t = _ESTENSIONE.sub("", t)
     t = " ".join(t.replace("_", " ").split()) or "Documento"

@@ -88,7 +88,8 @@ def _da_leggere(utente: Any) -> int:
     from sqlalchemy import func, select
     from sqlalchemy.orm import object_session
 
-    from app.models import Menzione, NovitaSeguito, Seguito
+    from app.models import Commento, Menzione, NovitaSeguito, Seguito
+    from app.squadra import note, seguiti
 
     db = object_session(utente) if utente is not None else None
     if db is None:
@@ -97,13 +98,22 @@ def _da_leggere(utente: Any) -> int:
         menzioni = db.scalar(
             select(func.count())
             .select_from(Menzione)
-            .where(Menzione.utente_id == utente.id, Menzione.letta_il.is_(None))
+            .join(Commento)
+            .where(
+                Menzione.utente_id == utente.id,
+                Menzione.letta_il.is_(None),
+                Commento.oggetto.in_(note.visibili(utente)),
+            )
         )
         novita = db.scalar(
             select(func.count())
             .select_from(NovitaSeguito)
             .join(Seguito)
-            .where(Seguito.utente_id == utente.id, NovitaSeguito.letta_il.is_(None))
+            .where(
+                Seguito.utente_id == utente.id,
+                NovitaSeguito.letta_il.is_(None),
+                seguiti.visibili(utente),
+            )
         )
     except Exception:  # il contatore non deve mai rompere una pagina
         return 0

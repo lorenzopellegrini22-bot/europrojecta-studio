@@ -6,6 +6,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app import audit
@@ -235,25 +236,20 @@ def scheda_opportunita(request: Request, oid: int, db: Db, utente: Autenticato) 
             "documenti": documenti,
             "note": note.elenco(db, "opportunita", o.id),
             "etichette": ETICHETTE_STATO,
-            "citazioni": _citazioni(db, utente),
+            "citazioni": _citazioni(db, utente, "opportunita"),
         },
     )
 
 
-def _citazioni(db: Session, utente: Utente) -> list[str]:
-    return [
-        note.citazione(u)
-        for u in db.scalars(
-            select(Utente).where(Utente.attivo, Utente.id != utente.id).order_by(Utente.nome)
-        )
-    ]
+def _citazioni(db: Session, utente: Utente, oggetto: str) -> list[str]:
+    return [note.citazione(u) for u in note.citabili(db, oggetto, utente)]
 
 
 def contesto_note(db: Session, utente: Utente, oggetto: str, oid: int) -> dict:
     """Per la scheda pratica: note, chi si può citare; le menzioni dell'utente diventano lette."""
     note.segna_lette(db, utente, oggetto, oid)
     db.commit()
-    return {"note": note.elenco(db, oggetto, oid), "citazioni": _citazioni(db, utente)}
+    return {"note": note.elenco(db, oggetto, oid), "citazioni": _citazioni(db, utente, oggetto)}
 
 
 # --- Segui bandi e gare ------------------------------------------------------------------------
@@ -273,9 +269,13 @@ async def segui(request: Request, tipo: str, oid: int, db: Db, utente: Autentica
         raise HTTPException(404)
     if testo(form, "azione") == "smetti":
         seguiti.smetti(db, utente, bando.id if bando else None, gara.id if gara else None)
+        db.commit()
     else:
         seguiti.segui(db, utente, bando, gara)
-    db.commit()
+        try:
+            db.commit()
+        except IntegrityError:  # doppio clic: lo segue già
+            db.rollback()
     return RedirectResponse(pagina, 303)
 
 
@@ -284,9 +284,7 @@ def contesto_seguito(
 ) -> dict:
     """Per le schede di bando e gara: se l'utente segue e le sue novità (poi lette)."""
     elenco = [
-        n
-        for n, _t, link in seguiti.novita(db, utente)
-        if link == (f"/bandi/{bando_id}" if bando_id else f"/appalti/{appalto_id}")
+        n for n, _t, _l in seguiti.novita(db, utente, bando_id=bando_id, appalto_id=appalto_id)
     ]
     seguiti.segna_lette(db, utente, bando_id, appalto_id)
     db.commit()

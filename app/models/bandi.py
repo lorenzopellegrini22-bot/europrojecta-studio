@@ -121,6 +121,8 @@ class Bando(ConTimestamp, Base):
     )
     versioni_assenti: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     scomparso_dal_feed_il: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Ultima lettura della pagina ufficiale per trovare i PDF (bando, allegati, FAQ)
+    pagina_letta_il: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     bando_canonico_id: Mapped[int | None] = mapped_column(
         ForeignKey("bando.id", ondelete="SET NULL")
     )

@@ -713,6 +713,10 @@ def _salva(
 
 def abbina(db: Session, oggi: date | None = None) -> str:
     """Aggiorna le opportunità di tutti i clienti con avvisi attivi."""
+    from app.models import Commento
+    from app.squadra.note import pulisci_orfane
+
+    con_note = set(db.scalars(select(Commento.oggetto_id).where(Commento.oggetto == "opportunita")))
     oggi = oggi or date.today()
     ora = datetime.now(UTC)
     clienti = list(
@@ -773,10 +777,12 @@ def abbina(db: Session, oggi: date | None = None) -> str:
             migliori += gruppo[:MAX_PER_TIPO]
         nuove, tenute = _salva(db, a, migliori, esistenti, ora)
         totale_nuove += nuove
-        # Le opportunità non più valide spariscono, salvo quelle già lavorate
+        # Le opportunità non più valide spariscono, salvo quelle già lavorate o con note
         for chiave, o in esistenti.items():
-            if chiave not in tenute and o.stato in ("nuova", "vista"):
+            if chiave not in tenute and o.stato in ("nuova", "vista") and o.id not in con_note:
                 db.delete(o)
+    db.flush()
+    pulisci_orfane(db)
     db.commit()
     clienti_txt = "1 cliente valutato" if len(clienti) == 1 else f"{len(clienti)} clienti valutati"
     nuove_txt = "1 nuova" if totale_nuove == 1 else f"{totale_nuove} nuove"

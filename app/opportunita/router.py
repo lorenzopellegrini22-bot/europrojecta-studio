@@ -42,6 +42,13 @@ FILTRI_STATO = {
 }
 
 
+def _interno(torna: str) -> str:
+    """Solo indirizzi di questa app: «//sito.it» porterebbe a un altro sito."""
+    if torna.startswith("/") and not torna.startswith(("//", "/\\")):
+        return torna
+    return "/opportunita"
+
+
 def _opportunita(db: Session, oid: int) -> Opportunita:
     o = db.get(
         Opportunita,
@@ -156,7 +163,7 @@ def cambia_stato(oid: int, db: Db, utente: Autenticato, form: Form) -> Response:
         audit.registra(db, utente, "opportunita", o.id, "modifica", {"stato": stato})
         db.commit()
     torna = testo(form, "torna") or "/opportunita"
-    return RedirectResponse(torna if torna.startswith("/") else "/opportunita", status_code=303)
+    return RedirectResponse(_interno(torna), status_code=303)
 
 
 @router.post("/opportunita/{oid}/feedback", dependencies=CSRF)
@@ -176,7 +183,7 @@ def dai_feedback(oid: int, db: Db, utente: Autenticato, form: Form) -> Response:
         audit.registra(db, utente, "opportunita", o.id, "modifica", {"feedback": feedback})
         db.commit()
     torna = testo(form, "torna") or "/opportunita"
-    return RedirectResponse(torna if torna.startswith("/") else "/opportunita", status_code=303)
+    return RedirectResponse(_interno(torna), status_code=303)
 
 
 def testo_per_cliente(o: Opportunita, mittente: Utente) -> tuple[str, str]:

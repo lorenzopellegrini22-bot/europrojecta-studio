@@ -9,6 +9,7 @@
 
 import ipaddress
 import os
+import re
 import socket
 import tempfile
 import threading
@@ -87,6 +88,24 @@ def client() -> httpx.Client:
 MAX_PAGINA_HTML = 5 * 1024 * 1024
 
 
+_META_CHARSET = re.compile(rb"""<meta[^>]+charset\s*=\s*["']?([\w-]+)""", re.I)
+
+
+def decodifica(dati: bytes, charset: str | None = None) -> str:
+    """Testo della pagina: codifica dell'intestazione HTTP, poi quella del <meta>, poi UTF-8,
+    altrimenti Windows-1252 (i siti che non la dichiarano: niente «�» al posto di «–», «à»)."""
+    if not charset and (m := _META_CHARSET.search(dati[:4096])):
+        charset = m.group(1).decode("ascii", "ignore")
+    for codifica in (charset, "utf-8"):
+        if not codifica:
+            continue
+        try:
+            return dati.decode(codifica)
+        except (UnicodeDecodeError, LookupError):
+            continue
+    return dati.decode("cp1252", "replace")
+
+
 def pagina_html(http: httpx.Client, url: str) -> tuple[str, str] | None:
     """Pagina HTML (testo, url finale) letta in streaming con un limite di dimensione; None
     se la risposta non è HTML (un file: non si scarica)."""
@@ -100,7 +119,7 @@ def pagina_html(http: httpx.Client, url: str) -> tuple[str, str] | None:
             dati += blocco
             if len(dati) > MAX_PAGINA_HTML:
                 raise ErroreDownload(f"Pagina troppo grande: {url[:120]}")
-        return dati.decode(r.encoding or "utf-8", "replace"), str(r.url)
+        return decodifica(dati, r.charset_encoding), str(r.url)
 
 
 def intestazioni(http: httpx.Client, url: str) -> Intestazioni:

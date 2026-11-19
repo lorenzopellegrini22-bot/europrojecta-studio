@@ -142,17 +142,44 @@ def controlla(db: Session) -> str:
     return f"Bandi e gare seguiti: {nuove} novità."
 
 
+def visibili(utente: Utente) -> Any:
+    """Condizione sui seguiti che l'utente può ancora vedere (sezioni bandi e appalti)."""
+    from sqlalchemy import false, or_
+
+    from app.auth.permessi import puo_vedere
+
+    parti = []
+    if puo_vedere(utente, "/bandi"):
+        parti.append(Seguito.bando_id.is_not(None))
+    if puo_vedere(utente, "/appalti"):
+        parti.append(Seguito.appalto_id.is_not(None))
+    return or_(*parti) if parti else false()
+
+
 def novita(
-    db: Session, utente: Utente, solo_da_leggere: bool = True, limite: int = 30
+    db: Session,
+    utente: Utente,
+    solo_da_leggere: bool = True,
+    limite: int | None = 30,
+    bando_id: int | None = None,
+    appalto_id: int | None = None,
 ) -> list[tuple[NovitaSeguito, str, str]]:
-    """[(novità, titolo, link)] dell'utente, le più recenti prima."""
+    """[(novità, titolo, link)] dell'utente, le più recenti prima; con bando_id o appalto_id
+    solo quelle di quel bando o gara, senza limite."""
     q = (
         select(NovitaSeguito, Seguito)
         .join(Seguito)
-        .where(Seguito.utente_id == utente.id)
+        .where(Seguito.utente_id == utente.id, visibili(utente))
         .order_by(NovitaSeguito.id.desc())
-        .limit(limite)
     )
+    if bando_id or appalto_id:
+        q = (
+            q.where(Seguito.bando_id == bando_id)
+            if bando_id
+            else q.where(Seguito.appalto_id == appalto_id)
+        )
+    elif limite:
+        q = q.limit(limite)
     if solo_da_leggere:
         q = q.where(NovitaSeguito.letta_il.is_(None))
     risultato = []

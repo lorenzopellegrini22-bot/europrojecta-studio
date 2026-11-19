@@ -42,7 +42,9 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
   sulla pagina «Oggi».
 - **Note**: in fondo a ogni pratica e nel dettaglio di ogni opportunità (link «Note» nella
   lista). Scrivi @ e il nome del collega (es. @giulia) per avvisarlo: lo vede in «Oggi» e gli
-  arriva un'email. Le note restano nello studio, il cliente non le vede.
+  arriva un'email. Si possono citare solo i colleghi che vedono quella sezione (pratiche o
+  opportunità). Le note restano nello studio, il cliente non le vede; se si elimina la pratica
+  spariscono con lei, e un'opportunità con note non viene più tolta in automatico.
 - **Segui**: il pulsante ☆ Segui nella scheda di un bando o di una gara. Ogni mattina l'app
   controlla scadenza, stato, documenti nuovi (FAQ, chiarimenti, rettifiche) e testo della fonte:
   i cambiamenti compaiono in «Oggi», nella scheda e nell'email del mattino.
@@ -62,6 +64,10 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
 - Ogni notte l'app raccoglie i bandi nazionali e regionali e le gare (TED, Consip); l'AI
   legge i bandi nuovi o cambiati e ne ricava i requisiti, segnando «da verificare» quello
   che il testo non dice.
+- **Documentazione** (in ogni bando, gara e opportunità): i PDF del bando, presi dai dati della
+  fonte o, se mancano, dalla pagina ufficiale dell'ente (qualche decina di pagine a notte, finché
+  tutti i bandi aperti sono passati). Se un sito carica i file in un modo che l'app non legge,
+  resta il link «Pagina ufficiale del bando».
 - **Revisione bandi (AI):** confermi o correggi i campi incerti; le correzioni prevalgono.
 - **PDF da caricare:** i PDF che i siti non lasciano scaricare in automatico: apri i link (il
   browser li scarica) e caricali **tutti insieme**; ognuno va da solo al bando giusto.

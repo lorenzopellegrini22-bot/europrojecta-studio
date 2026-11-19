@@ -417,6 +417,24 @@ Nuova impostazione `VERIFICA_DUE_PASSAGGI` (predefinita `true`). Con `false` il 
   confrontata ogni mattina nel job delle opportunità, prima dell'email; anche chi è in sola
   lettura può seguire.
 
+## 2026-11-19 — Verifica generale: permessi delle note, PDF dalle pagine ufficiali
+
+- **Note e permessi**: si citano e si avvisano solo i colleghi che vedono la sezione (pratiche o
+  opportunità); «Oggi», contatore, email del mattino e calendario mostrano solo ciò che le sezioni
+  attuali dell'utente permettono. Le note di pratiche, clienti e opportunità eliminate spariscono
+  con le menzioni; un'opportunità con note non viene più tolta in automatico.
+- **PDF dalla pagina ufficiale**: circa il 95% dei bandi attivi non aveva PDF perché Incentivi.gov.it
+  dà solo il link alla pagina dell'ente. Il passo notturno dei PDF ora legge fino a 30 di queste
+  pagine per notte (robots.txt e pause tra richieste allo stesso sito rispettati; si legge la
+  pagina, i file li scarica il passo dei PDF come sempre), senza intestazione, menu e piè di
+  pagina, e registra al massimo 6 PDF utili per bando (bando, avviso, decreti, allegati, FAQ;
+  esclusi note legali, cookie, privacy, accessibilità). Ogni pagina si rilegge dopo 14 giorni
+  finché non si trovano PDF. Pagine che caricano i file con JavaScript: resta il link alla pagina.
+- **Codifica delle pagine**: intestazione HTTP, poi `<meta charset>`, poi UTF-8, altrimenti
+  Windows-1252 (prima comparivano «�» al posto di «–» e lettere accentate, anche nelle gare).
+- **PDF con caratteri nulli**: il testo viene ripulito; un errore imprevisto su un PDF non ferma
+  più gli altri della notte (prima lo stesso PDF avrebbe bloccato il passo ogni notte).
+
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.
 - Jinja2 + HTMX salvati nel repository, nessuna risorsa da CDN (Pico.css sostituito da uno stile proprio, vedi sopra).
