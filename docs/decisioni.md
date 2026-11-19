@@ -447,6 +447,10 @@ Nuova impostazione `VERIFICA_DUE_PASSAGGI` (predefinita `true`). Con `false` il 
   territorio. Il motivo dice se vale per la sede legale o per quella operativa. Gare: regioni
   delle sedi più le regioni di interesse. La prefattibilità e il profilo per l'AI (solo regione
   e provincia) citano le sedi operative.
+- Verifica sui dati reali: con una sede a Prato il cliente di Viterbo riceve 20 bandi toscani,
+  ma il tetto di 30 opportunità per tipo ne toglieva 13 del Lazio. Ora il tetto cresce di 15 per
+  ogni regione in più delle sedi (al massimo 60). Il campo accetta anche «Prato PO»,
+  «Prato, PO» e il CAP davanti; con la provincia sbagliata l'errore indica quella giusta.
 
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.

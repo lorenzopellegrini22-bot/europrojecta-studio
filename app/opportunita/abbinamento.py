@@ -106,6 +106,13 @@ def province_sedi(a: Azienda) -> set[str]:
     return {s.provincia.upper() for s in sedi_cliente(a) if s.provincia}
 
 
+def limite_per_tipo(a: Azienda) -> int:
+    """Quante opportunità tenere per tipo: con sedi in più regioni il limite cresce, così i
+    bandi della regione di una sede operativa non tolgono il posto a quelli della sede legale."""
+    extra = max(len(regioni_sedi(a)) - 1, 0)
+    return min(MAX_PER_TIPO + 15 * extra, MAX_PER_TIPO * 2)
+
+
 def _della(sede: Any) -> str:
     return "della sede" if sede.tipo == "legale" else "della sede operativa"
 
@@ -807,7 +814,7 @@ def abbina(db: Session, oggi: date | None = None) -> str:
         for gruppo in (trovate_b, trovate_a):
             gruppo = [g for g in gruppo if g[2].punteggio >= PUNTEGGIO_MINIMO]
             gruppo.sort(key=lambda g: -g[2].punteggio)
-            migliori += gruppo[:MAX_PER_TIPO]
+            migliori += gruppo[: limite_per_tipo(a)]
         nuove, tenute = _salva(db, a, migliori, esistenti, ora)
         totale_nuove += nuove
         # Le opportunità non più valide spariscono, salvo quelle già lavorate o con note

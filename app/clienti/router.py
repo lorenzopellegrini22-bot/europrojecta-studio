@@ -228,13 +228,25 @@ def leggi_sedi_operative(db: Session, testo_sedi: str) -> tuple[list[dict[str, A
         riga = " ".join(riga.split())
         if not riga:
             continue
+        riga = re.sub(r"^\d{5}\s+", "", riga)  # CAP davanti al comune
         m = _RIGA_SEDE.match(riga)
         nome, sigla = m.group(1).strip(" ,-"), (m.group(2) or "").upper() or None
+        # «Prato PO», «Prato, PO», «Prato - PO»: sigla senza parentesi
+        senza = re.fullmatch(r"(.+?)[\s,\-]+([A-Za-z]{2})", nome)
+        if (
+            not sigla
+            and senza
+            and (t is None or (t.comune(nome) is None and t.comune(*senza.groups()) is not None))
+        ):
+            nome, sigla = senza.group(1), senza.group(2).upper()
         if t is not None:
             voce = t.comune(nome, sigla)
             if voce is None:
                 ambiguo = not sigla and len(t.per_nome.get(norm_nome(nome), [])) > 1
                 aiuto = " Aggiungi la provincia, es. «Calliano (TN)»." if ambiguo else ""
+                giusto = t.comune(nome) if sigla else None
+                if giusto is not None:
+                    aiuto = f" {giusto.nome} è in provincia di {giusto.sigla}."
                 return [], f"Comune non riconosciuto: «{riga}».{aiuto}"
             sede = {"comune_testo": voce.nome, "provincia": voce.sigla, "regione": voce.regione,
                     "codice_istat": voce.codice}  # fmt: skip
@@ -265,6 +277,8 @@ def _applica_sedi_operative(azienda: Azienda, nuove: list[dict[str, Any]]) -> bo
     cambiate = False
     for d in nuove:
         s = per_chiave.get(chiave(d["comune_testo"], d["provincia"]))
+        if s is None:  # salvata senza provincia (tabella ISTAT non ancora caricata)
+            s = per_chiave.get(chiave(d["comune_testo"], None))
         if s is None:
             s = Sede(tipo="operativa")
             azienda.sedi.append(s)

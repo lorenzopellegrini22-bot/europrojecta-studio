@@ -62,7 +62,8 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
 - **Sedi operative** (nel modulo del cliente, un comune per riga, es. «Prato (PO)»): per i bandi
   di regioni, province, comuni e Camere di commercio conta ogni sede, legale o operativa. Senza
   la sede operativa un'azienda di Roma con lo stabilimento a Prato non riceve i bandi toscani.
-  Le «Regioni in cui partecipa agli appalti» valgono solo per le gare.
+  Le «Regioni in cui partecipa agli appalti» valgono solo per le gare. Con sedi in più regioni
+  il numero massimo di opportunità per cliente sale (fino al doppio).
 - Per cercare a mano in altri territori: filtro per regione in **Bandi**, per regione e
   provincia in **Appalti**.
 

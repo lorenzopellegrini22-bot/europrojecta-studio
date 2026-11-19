@@ -203,3 +203,26 @@ def test_sedi_operative_dal_modulo_cliente(client, crea_utente, accedi, db, ista
     db.expire_all()
     a = db.get(Azienda, a.id)
     assert [s.comune_testo for s in a.sedi if s.tipo == "operativa"] == ["Viterbo"]
+
+
+def test_sedi_operative_scritte_in_modi_diversi(db, istat_caricato):
+    from app.clienti.router import leggi_sedi_operative
+
+    for scritto in ("Firenze (FI)", "Firenze FI", "Firenze, FI", "50100 Firenze", "firenze"):
+        sedi, errore = leggi_sedi_operative(db, scritto)
+        assert errore is None and [s["provincia"] for s in sedi] == ["FI"], scritto
+    _, errore = leggi_sedi_operative(db, "Firenze (RM)")
+    assert errore and "Firenze è in provincia di FI" in errore
+
+
+def test_limite_cresce_con_le_regioni_delle_sedi():
+    from app.opportunita.abbinamento import MAX_PER_TIPO, limite_per_tipo
+
+    def cliente(*regioni):
+        return N(sedi=[N(tipo="legale" if i == 0 else "operativa", regione=r, provincia=None)
+                       for i, r in enumerate(regioni)])  # fmt: skip
+
+    assert limite_per_tipo(cliente("Lazio")) == MAX_PER_TIPO
+    assert limite_per_tipo(cliente("Lazio", "Lazio")) == MAX_PER_TIPO
+    assert limite_per_tipo(cliente("Lazio", "Toscana")) > MAX_PER_TIPO
+    assert limite_per_tipo(cliente(*"ABCDEFG")) == MAX_PER_TIPO * 2
