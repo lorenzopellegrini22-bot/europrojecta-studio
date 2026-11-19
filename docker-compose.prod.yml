@@ -34,7 +34,6 @@ services:
     restart: unless-stopped
     environment:
       DOMINIO: ${DOMINIO:?imposta DOMINIO nel file .env (es. studio.europrojecta.it)}
-      EMAIL_CERTIFICATI: ${EMAIL_CERTIFICATI:-}
     ports:
       - "80:80"
       - "443:443"

@@ -1,0 +1,9 @@
+[Unit]
+Description=Europrojecta Studio: aggiornamento dal ramo main di GitHub
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/europrojecta/deploy/aggiorna.sh
+TimeoutStartSec=30min

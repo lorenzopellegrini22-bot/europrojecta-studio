@@ -1,7 +1,5 @@
 # Caddy: certificato https automatico (Let's Encrypt) per il dominio in DOMINIO.
-{
-	email {$EMAIL_CERTIFICATI}
-}
+# Nessuna email ACME: Let's Encrypt non la richiede e non manda più avvisi di scadenza.
 
 {$DOMINIO} {
 	encode zstd gzip

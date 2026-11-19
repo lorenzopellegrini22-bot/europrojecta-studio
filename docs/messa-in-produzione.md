@@ -12,7 +12,8 @@ cp .env.example .env
 Nel file `.env` imposta almeno:
 - `POSTGRES_PASSWORD`: password lunga e casuale.
 - `SECRET_KEY`: `python3 -c "import secrets; print(secrets.token_urlsafe(48))"`.
-- `DOMINIO`: il dominio dell'app; `EMAIL_CERTIFICATI`: email per Let's Encrypt.
+- `DOMINIO`: il dominio dell'app (Caddy chiede da solo il certificato a Let's Encrypt).
+  Senza un dominio si può partire con `<ip-con-trattini>.sslip.io` (es. `91-98-157-248.sslip.io`).
 - `BACKUP_PASSPHRASE`: passphrase dei backup (restic). **Conservala anche fuori dal server**
   (gestore di password): senza, i backup non si aprono.
 
@@ -46,6 +47,20 @@ infetto non viene salvato; se ClamAV non risponde (es. nei primi minuti dopo l'a
 mentre scarica le firme) il caricamento è rifiutato con l'invito a riprovare.
 
 ## 5. Aggiornamenti
+**Automatici** (consigliato): il server controlla GitHub ogni 2 minuti e, quando su `main`
+c'è un commit nuovo con la CI verde, scarica il codice e riavvia i servizi
+(`deploy/aggiorna.sh`). Con la CI rossa non aggiorna. Il server non ha credenziali GitHub:
+il repository è pubblico. Si attiva una volta sola:
+```bash
+apt-get install -y jq
+cp deploy/europrojecta-aggiorna.service deploy/europrojecta-aggiorna.timer /etc/systemd/system/
+systemctl daemon-reload && systemctl enable --now europrojecta-aggiorna.timer
+journalctl -u europrojecta-aggiorna -f   # cosa ha fatto
+```
+La cartella deve essere un clone git in `/opt/europrojecta`; `.env` e `backup/` non
+sono nel repository e restano intatti.
+
+**A mano**:
 ```bash
 git pull
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
