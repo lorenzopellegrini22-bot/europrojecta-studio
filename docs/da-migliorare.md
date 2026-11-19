@@ -74,3 +74,5 @@ Aggiornato il 18/11/2026, dopo una nuova verifica su dati reali:
    importare né cambiare impostazioni e modelli.
 9. Minori: verifica della connessione WhatsApp dalla pagina Integrazioni; catalogo MIT da
    ricontrollare quando torna online.
+10. **Documenti delle gare START Toscana**: verificare l'API pubblica della piattaforma nella
+    fascia consentita dal robots.txt (23-04) e, se il formato lo permette, elencare i documenti.

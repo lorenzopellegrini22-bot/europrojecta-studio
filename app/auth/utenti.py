@@ -15,7 +15,7 @@ from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import audit
@@ -23,6 +23,7 @@ from app.auth.dipendenze import richiede_titolare, verifica_csrf
 from app.auth.password import hash_password
 from app.auth.permessi import PREDEFINITE_COLLABORATORE, RUOLI, SEZIONI, sezioni_di
 from app.auth.sessioni import elimina_sessioni_utente
+from app.comunicazioni import email_disponibile
 from app.db import get_db
 from app.models import Utente
 from app.web import leggi_form, render, testo
@@ -48,15 +49,18 @@ def _sezioni_dal_form(form: dict[str, Any]) -> list[str]:
     return [s for s in SEZIONI if s in scelte]
 
 
-def _titolari_attivi(db: Session) -> int:
-    return (
-        db.scalar(
-            select(func.count())
-            .select_from(Utente)
-            .where(Utente.ruolo == "titolare", Utente.attivo)
-        )
-        or 0
-    )
+def _resta_un_titolare(db: Session, u: Utente) -> bool:
+    """Togliendo a u il ruolo di titolare (o disattivandolo) resta almeno un titolare attivo?
+    Le righe dei titolari si bloccano fino al commit: due titolari che si declassano a vicenda
+    nello stesso momento non possono lasciare lo studio senza titolare."""
+    if u.ruolo != "titolare" or not u.attivo:
+        return True
+    altri = db.scalars(
+        select(Utente.id)
+        .where(Utente.ruolo == "titolare", Utente.attivo, Utente.id != u.id)
+        .with_for_update()
+    ).all()
+    return len(altri) > 0
 
 
 def _contesto(**extra: Any) -> dict[str, Any]:
@@ -76,6 +80,7 @@ def elenco(request: Request, db: Db, _: Titolare) -> Response:
         "impostazioni/utenti.html",
         _contesto(
             utenti=utenti,
+            email_disponibile=email_disponibile(db),
             sezioni_utente={u.id: sezioni_di(u) for u in utenti},
             msg=request.query_params.get("msg"),
             esito=request.query_params.get("esito"),
@@ -109,6 +114,7 @@ def crea(request: Request, db: Db, titolare: Titolare, form: Form) -> Response:
         password_hash=hash_password(password),
         sezioni=None if ruolo == "titolare" else _sezioni_dal_form(form),
         attivo=True,
+        deve_cambiare_password=True,
     )
     db.add(u)
     db.flush()
@@ -116,12 +122,43 @@ def crea(request: Request, db: Db, titolare: Titolare, form: Form) -> Response:
         db, titolare, "utente", u.id, "crea", {"email": email, "ruolo": ruolo, "sezioni": u.sezioni}
     )
     db.commit()
+    if testo(form, "modo") == "invito":
+        ok, messaggio = _invia_invito(db, u, titolare)
+        if ok:
+            return RedirectResponse(
+                f"/impostazioni/utenti?esito=ok&msg={quote(f'Invito inviato a {email}.')}",
+                status_code=303,
+            )
+        # Email non disponibile: si ripiega sulla password temporanea, mostrata qui
+        return render(
+            request,
+            "impostazioni/utente_creato.html",
+            {"u": u, "password": password, "nuovo": True, "avviso": messaggio},
+        )
     # La password si mostra qui, una volta sola (niente redirect: non finisce in un URL)
     return render(
         request,
         "impostazioni/utente_creato.html",
         {"u": u, "password": password, "nuovo": True},
     )
+
+
+def _invia_invito(db: Session, u: Utente, titolare: Utente) -> tuple[bool, str]:
+    from app.auth.invito import crea_invito, testo_email
+    from app.comunicazioni import invia_registrando
+
+    link = crea_invito(u)
+    db.commit()
+    oggetto, corpo = testo_email(u, link, titolare)
+    ok, messaggio = invia_registrando(
+        db, tipo="avviso", destinatario=u.email, oggetto=oggetto, testo=corpo, utente=titolare
+    )
+    if not ok:
+        u.invito_hash = u.invito_scade_il = None
+        db.commit()
+    audit.registra(db, titolare, "utente", u.id, "invia", {"invito": "ok" if ok else messaggio})
+    db.commit()
+    return ok, messaggio
 
 
 @router.post("/{utente_id}", dependencies=CSRF)
@@ -141,7 +178,7 @@ def modifica(request: Request, utente_id: int, db: Db, titolare: Titolare, form:
         ruolo = testo(form, "ruolo") or u.ruolo
         if ruolo not in RUOLI:
             return torna("Ruolo non valido.", "errore")
-        if u.ruolo == "titolare" and ruolo != "titolare" and _titolari_attivi(db) <= 1:
+        if ruolo != "titolare" and not _resta_un_titolare(db, u):
             return torna("Serve almeno un titolare attivo.", "errore")
         prima = {"ruolo": u.ruolo, "sezioni": u.sezioni, "nome": u.nome}
         u.nome = (testo(form, "nome") or u.nome)[:200]
@@ -160,7 +197,7 @@ def modifica(request: Request, utente_id: int, db: Db, titolare: Titolare, form:
     if azione in ("disattiva", "riattiva"):
         if stesso:
             return torna("Non puoi disattivare il tuo account.", "errore")
-        if azione == "disattiva" and u.ruolo == "titolare" and _titolari_attivi(db) <= 1:
+        if azione == "disattiva" and not _resta_un_titolare(db, u):
             return torna("Serve almeno un titolare attivo.", "errore")
         u.attivo = azione == "riattiva"
         if not u.attivo:
@@ -177,9 +214,13 @@ def modifica(request: Request, utente_id: int, db: Db, titolare: Titolare, form:
         audit.registra(db, titolare, "utente", u.id, "modifica", {"2fa": "azzerata"})
         db.commit()
         return torna(f"2FA di {u.nome} azzerata: la riconfigurerà al prossimo accesso.")
+    if azione == "invito":
+        ok, messaggio = _invia_invito(db, u, titolare)
+        return torna(f"Invito inviato a {u.email}." if ok else messaggio, "ok" if ok else "errore")
     if azione == "nuova_password":
         password = password_temporanea()
         u.password_hash = hash_password(password)
+        u.deve_cambiare_password = True
         u.tentativi_falliti = 0
         u.bloccato_fino_al = None
         elimina_sessioni_utente(db, u.id)

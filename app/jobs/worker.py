@@ -35,8 +35,19 @@ TOLLERANZA_RITARDO_SECONDI = 6 * 3600
 
 
 def battito() -> None:
+    """Ogni 15 minuti: segno di vita del worker e controllo che i job girino."""
     with get_engine().connect() as conn:
         conn.execute(text("SELECT 1"))
+    from app.jobs import salute
+
+    with get_sessionmaker()() as db:
+        salute.registra_battito(db)
+        try:
+            inviate = salute.avvisa(db)
+            if inviate:
+                log.warning("Avvisi sui job inviati ai titolari: %s", inviate)
+        except Exception:  # l'avviso non deve fermare il worker
+            log.exception("Controllo dei job non riuscito")
     log.info("battito: database raggiungibile")
 
 

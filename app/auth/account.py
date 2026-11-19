@@ -86,6 +86,7 @@ def cambia_password(
             SessioneModel.utente_id == utente.id, SessioneModel.id != sessione.id
         )
     )
+    utente.deve_cambiare_password = False
     audit.registra(db, utente, "utente", utente.id, "modifica", {"password": "modificata"})
     db.commit()
     return RedirectResponse("/account?ok=password", status_code=303)

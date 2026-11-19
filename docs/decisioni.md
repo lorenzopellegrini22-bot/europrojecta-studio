@@ -364,6 +364,42 @@ Le migrazioni girano da sole a ogni pubblicazione (`buildCommand` in `vercel.jso
 Nuova impostazione `VERIFICA_DUE_PASSAGGI` (predefinita `true`). Con `false` il login con la password apre subito la sessione completa. Spenta solo sull'istanza Vercel di NuvioLab, su richiesta del titolare; le altre installazioni restano con la 2FA obbligatoria.
 **Rischio accettato:** l'app è raggiungibile da Internet e contiene dati dei clienti; senza 2FA la protezione è solo la password (con blocco dopo 5 tentativi).
 
+## 2026-11-19 — Primo accesso, monitoraggio dei job, revisione del codice
+
+- **Primo accesso**: chi entra con una password temporanea deve cambiarla prima di usare l'app
+  (tutte le pagine rimandano a «Il mio account»). In alternativa il titolare manda un invito
+  via email: link monouso valido 72 ore, nel database solo l'impronta HMAC del token; se
+  l'email non parte si torna alla password temporanea. Nessuna password viaggia per email.
+- **Job notturni**: il worker registra un battito ogni 15 minuti. Problemi segnalati: worker
+  silenzioso da oltre 45 minuti, job non partito oltre il previsto (26 ore per i giornalieri,
+  33 giorni per le tabelle ISTAT), job «in corso» da oltre 3 ore, ultima esecuzione fallita.
+  Si vedono nella home del titolare e nell'email del mattino; email immediata ai titolari al
+  massimo una volta al giorno per problema.
+- **Revisione indipendente del codice** (11 punti, tutti corretti):
+  - permessi: «/allegati» appartiene alle pratiche, aggiornamenti e report dei clienti alla
+    sezione aggiornamenti; gli indirizzi non mappati sono negati ai non titolari;
+  - SSRF: ogni richiesta del server (anche dopo un reindirizzamento) va solo a indirizzi
+    pubblici in http/https sulle porte 80/443; gli URL arrivano anche da TED e dalle pagine
+    delle piattaforme;
+  - rilettura settimanale delle gare: solo la pagina della gara, mai i file elencati, letta in
+    streaming con limite di 5 MB e solo se è HTML; un link malformato non ferma la notte;
+    tenuti solo link http/https;
+  - territorio: l'esclusione per altre regioni viene prima del controllo sugli enti locali,
+    che vale solo per Camere di commercio, Province, Comuni e Città metropolitane (non per
+    «Regione Friuli Venezia Giulia» o «Regione Molise»);
+  - PDF caricati insieme: niente abbinamento automatico per nomi usati da link diversi
+    (es. «bando.pdf») né per più file con lo stesso nome nello stesso invio; ogni file si
+    legge una volta sola;
+  - OCR: risoluzione ridotta per le pagine molto grandi (tavole), per non esaurire la memoria;
+  - aggiornamenti ai clienti: all'AI va solo la parte sui bandi; pratiche e scadenze (nomi
+    scritti dallo studio) restano sul server;
+  - «almeno un titolare attivo»: controllo con blocco delle righe, così due titolari che si
+    declassano a vicenda nello stesso momento non lasciano lo studio senza titolare.
+- **START Toscana** (piattaforma Pleiade): esiste un'API pubblica delle gare, ma il robots.txt
+  consente le visite solo dalle 23 alle 4 e vieta i percorsi degli allegati. Non si è usata
+  senza poterne verificare il formato nella fascia consentita: resta il link alla pagina e il
+  PDF di TED. Da verificare di notte prima di implementarla.
+
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.
 - Jinja2 + HTMX salvati nel repository, nessuna risorsa da CDN (Pico.css sostituito da uno stile proprio, vedi sopra).

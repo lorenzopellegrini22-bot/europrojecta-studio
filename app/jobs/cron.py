@@ -32,6 +32,20 @@ JOB: dict[str, tuple[str, Callable[[], str]]] = {
 router = APIRouter(prefix="/cron")
 
 
+def _avvisa_problemi() -> None:
+    """Senza worker non c'è il battito: l'email immediata sui job falliti parte da qui."""
+    import logging
+
+    from app.db import get_sessionmaker
+    from app.jobs import salute
+
+    try:
+        with get_sessionmaker()() as db:
+            salute.avvisa(db)
+    except Exception:  # l'avviso non deve far fallire il job
+        logging.getLogger(__name__).exception("Avviso sui job non inviato")
+
+
 @router.get("/{nome}")
 def esegui(nome: str, authorization: Annotated[str | None, Header()] = None) -> JSONResponse:
     segreto = get_settings().cron_secret
@@ -42,4 +56,5 @@ def esegui(nome: str, authorization: Annotated[str | None, Header()] = None) -> 
         raise HTTPException(status_code=401)
     job, funzione = JOB[nome]
     esito = esegui_job(job, funzione)
+    _avvisa_problemi()
     return JSONResponse({"job": job, "esito": esito}, headers={"Cache-Control": "no-store"})

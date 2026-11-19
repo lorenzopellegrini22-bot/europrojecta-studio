@@ -23,7 +23,7 @@
   <ul>
     {% for chiave, descrizione in ruoli.items() %}<li><strong>{{ descrizione.split(" (")[0] }}</strong>: {{ descrizione.split(" (")[1].rstrip(")") }}.</li>{% endfor %}
     <li>Chi non ha una sezione non la vede nel menu e, se apre l'indirizzo, riceve «accesso non consentito».</li>
-    <li>Alla creazione l'app genera una <strong>password temporanea</strong>, mostrata una sola volta: comunicala alla persona a voce. Al primo accesso configurerà il codice sul telefono (2FA obbligatoria) e potrà cambiare la password da «Il mio account».</li>
+    <li>Alla creazione scegli come dare l'accesso: un <strong>invito via email</strong> (link valido 72 ore con cui la persona sceglie la sua password) oppure una <strong>password temporanea</strong> mostrata una sola volta, da comunicare a voce e che l'app farà cambiare al primo accesso. In entrambi i casi la persona configura poi il codice sul telefono (2FA obbligatoria).</li>
     <li>Ogni modifica finisce nel registro delle attività.</li>
   </ul>
 </details>
@@ -40,6 +40,11 @@
       </label>
     </div>
     {{ scelta_sezioni(predefinite) }}
+    <fieldset>
+      <legend>Come riceve l'accesso</legend>
+      <label class="casella"><input type="radio" name="modo" value="invito" {% if email_disponibile %}checked{% else %}disabled{% endif %}> Invito via email: un link valido 72 ore per scegliere la sua password{% if not email_disponibile %} <small>(serve l'email collegata in Impostazioni → Integrazioni)</small>{% endif %}</label>
+      <label class="casella"><input type="radio" name="modo" value="password" {% if not email_disponibile %}checked{% endif %}> Password temporanea da comunicare a voce (al primo accesso dovrà cambiarla)</label>
+    </fieldset>
     <button type="submit">Crea l'utente</button>
   </form>
 </article>
@@ -52,7 +57,7 @@
       <strong>{{ u.nome }}</strong> <small>{{ u.email }}</small>
       {% if u.id == utente.id %}<small class="etichetta">sei tu</small>{% endif %}
       {% if not u.attivo %}<small class="etichetta">disattivato</small>{% endif %}
-      <br><small>{{ ruoli[u.ruolo].split(" (")[0] }} · 2FA {{ "attiva" if u.totp_attivo else "da configurare" }} · ultimo accesso {{ u.ultimo_accesso | data_ora if u.ultimo_accesso else "mai" }}</small>
+      <br><small>{{ ruoli[u.ruolo].split(" (")[0] }}{% if u.invito_scade_il %} · invito in attesa (scade il {{ u.invito_scade_il | data_ora }}){% elif u.deve_cambiare_password %} · deve cambiare la password temporanea{% endif %} · 2FA {{ "attiva" if u.totp_attivo else "da configurare" }} · ultimo accesso {{ u.ultimo_accesso | data_ora if u.ultimo_accesso else "mai" }}</small>
     </div>
   </header>
   <details>
@@ -73,6 +78,7 @@
   {% if u.id != utente.id %}
   <form method="post" action="/impostazioni/utenti/{{ u.id }}" class="gruppo-pulsanti">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {% if email_disponibile %}<button name="azione" value="invito" class="secondary outline piccolo">{{ "Reinvia l'invito" if u.invito_scade_il else "Invia un invito per nuova password" }}</button>{% endif %}
     <button name="azione" value="nuova_password" class="secondary outline piccolo">Nuova password temporanea</button>
     <button name="azione" value="reimposta_2fa" class="secondary outline piccolo">Azzera la 2FA</button>
     {% if u.attivo %}<button name="azione" value="disattiva" class="secondary outline piccolo">Disattiva</button>

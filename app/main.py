@@ -22,12 +22,14 @@ from app.aggiornamenti.router import router as aggiornamenti_router
 from app.appalti.router import router as appalti_router
 from app.auth.account import router as account_router
 from app.auth.dipendenze import (
+    CambioPasswordRichiesto,
     CsrfNonValido,
     NonAutenticato,
     Proibito,
     controllo_accesso,
     utente_corrente,
 )
+from app.auth.invito import router as invito_router
 from app.auth.router import router as auth_router
 from app.auth.utenti import router as utenti_router
 from app.bandi.router import router as bandi_router
@@ -43,6 +45,7 @@ from app.extraction.servizio import stato_budget
 from app.importer.router import router as import_router
 from app.integrazioni import servizio as servizio_integrazioni
 from app.integrazioni.router import router as integrazioni_router
+from app.jobs import salute as salute_job
 from app.jobs.cron import router as cron_router
 from app.models import AggiornamentoCliente, Bando, Fonte, FonteRun, Opportunita, Pratica, Utente
 from app.models.pratiche import STATI_PRATICA_CONCLUSI
@@ -98,6 +101,11 @@ async def sicurezza(request: Request, call_next):  # type: ignore[no-untyped-def
     return risposta
 
 
+@app.exception_handler(CambioPasswordRichiesto)
+def _cambio_password(request: Request, _: CambioPasswordRichiesto) -> Response:
+    return RedirectResponse("/account?obbligo=1", status_code=303)
+
+
 @app.exception_handler(NonAutenticato)
 def _non_autenticato(request: Request, _: NonAutenticato) -> Response:
     if request.headers.get("hx-request"):
@@ -130,6 +138,7 @@ app.include_router(integrazioni_router)
 app.include_router(bandi_router)
 app.include_router(crm_router)
 app.include_router(utenti_router)
+app.include_router(invito_router)
 app.include_router(report_router)
 app.include_router(aggiornamenti_router)
 app.include_router(import_router)
@@ -227,6 +236,7 @@ def home(
                 .where(AggiornamentoCliente.stato == "bozza")
             ),
             "budget_ai": stato_budget(db),
+            "problemi_job": salute_job.problemi(db) if utente.is_titolare else [],
             "oggi": oggi,
         },
     )

@@ -207,10 +207,12 @@ def _valuta(a: Azienda, b: Bando, ctx: Contesto) -> Esito:
     if req.territorio == "nazionale":
         e.soddisfatti.append("Bando nazionale")
         e.punteggio += 5
-    elif req.regioni and _ente_di_altre_province(a, b, e, ctx):
-        pass  # bando di una Camera di commercio, Provincia o Comune di altre province
     elif req.regioni:
-        if sede is None:
+        if sede is not None and sede not in req.regioni:
+            raise Escluso(f"Bando per altre regioni ({', '.join(req.regioni[:3])})")
+        if _ente_di_altre_province(a, b, e, ctx):
+            pass  # bando di una Camera di commercio, Provincia o Comune di altre province
+        elif sede is None:
             e.da_verificare.append(f"Territorio ({', '.join(req.regioni[:3])}): manca la sede")
             e.punteggio -= 5
         elif sede in req.regioni:
@@ -220,8 +222,6 @@ def _valuta(a: Azienda, b: Bando, ctx: Contesto) -> Esito:
             else:
                 e.da_verificare.append(f"Solo alcuni comuni o province della regione {sede}")
                 e.punteggio -= 10
-        else:
-            raise Escluso(f"Bando per altre regioni ({', '.join(req.regioni[:3])})")
     else:
         locale = ente_locale(b)
         if locale:
@@ -235,6 +235,7 @@ def _valuta(a: Azienda, b: Bando, ctx: Contesto) -> Esito:
     return _altri_filtri(a, req, b, e, ctx)
 
 
+PROVINCIALI = ("camera di commercio", "cciaa", "provincia di", "comune di", "citta metropolitana")
 ENTI_LOCALI = ("comune di ", "provincia di ", "citta metropolitana", "unione dei comuni",
                "camera di commercio", "cciaa ", "gal ", "regione ")  # fmt: skip
 
@@ -298,6 +299,10 @@ def _ente_di_altre_province(a: Azienda, b: Bando, e: Esito, ctx: Contesto) -> bo
     from app.utils.ricerca import normalizza
 
     testo = normalizza(locale)
+    # Solo enti provinciali o comunali: «Regione Friuli Venezia Giulia» non è la provincia di
+    # Venezia, «Regione Molise» non è il comune di Molise; GAL e unioni non hanno un nome sicuro
+    if not testo.startswith(PROVINCIALI):
+        return False
     for prefisso in (
         "camera di commercio",
         "cciaa",

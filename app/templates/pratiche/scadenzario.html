@@ -3,7 +3,7 @@
 {% block contenuto %}
 <hgroup>
   <h1>Scadenzario</h1>
-  <p>{{ totale }} scadenze dal {{ dal | data }} al {{ al | data }}: operazioni da fare, presentazioni delle domande e promemoria dei clienti.</p>
+  <p>{{ "1 scadenza" if totale == 1 else totale ~ " scadenze" }} dal {{ dal | data }} al {{ al | data }}: operazioni da fare, presentazioni delle domande e promemoria dei clienti.</p>
 </hgroup>
 
 <form method="get" action="/scadenzario" class="filtri">
@@ -29,7 +29,7 @@
     <strong>{{ giorno | data }}</strong>
     <small>{% if diff < 0 %}scaduto da {{ -diff }} giorn{{ "o" if diff == -1 else "i" }}{% elif diff == 0 %}oggi{% else %}mancano {{ diff }} giorn{{ "o" if diff == 1 else "i" }}{% endif %}</small>
   </header>
-  <table>
+  <table class="tabella-scadenze">
     <tbody>
     {% for v in voci %}
       {% if v.tipo == "promemoria" %}

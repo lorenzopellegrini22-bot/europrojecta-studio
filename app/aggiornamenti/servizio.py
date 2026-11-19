@@ -43,9 +43,10 @@ SEGNAPOSTO = ("{nome_referente}", "{ragione_sociale}", "{nome_consulente}")
 PROMPT_AI = (
     "Riscrivi in italiano semplice e cordiale il messaggio di aggiornamento che un consulente "
     "di finanza agevolata manda a un'azienda cliente. Mantieni ESATTAMENTE i segnaposto tra "
-    "parentesi graffe ({nome_referente}, {ragione_sociale}, {nome_consulente}) e tutti i fatti "
-    "(titoli dei bandi, scadenze, stati delle pratiche). Non aggiungere informazioni, promesse "
-    "o nomi. Massimo 1200 caratteri. Rispondi solo con il testo del messaggio."
+    "parentesi graffe ({nome_referente}, {ragione_sociale}) e tutti i fatti (titoli dei bandi, "
+    "scadenze). È solo la prima parte del messaggio: non aggiungere saluti finali né firma. "
+    "Non aggiungere informazioni, promesse o nomi. Massimo 1000 caratteri. Rispondi solo con "
+    "il testo."
 )
 
 
@@ -164,6 +165,12 @@ def _contenuto(db: Session, a: Azienda, dal: date, soglia: int) -> dict[str, Any
 
 def testo_bozza(dati: dict[str, Any]) -> str:
     """Testo con segnaposto, scritto dal server (nessuna AI)."""
+    return "\n\n".join(parti_bozza(dati))
+
+
+def parti_bozza(dati: dict[str, Any]) -> tuple[str, str]:
+    """(parte sui bandi, parte riservata). Solo la prima può andare all'AI: pratiche e
+    scadenze del cliente (nomi di fasi e scadenze scritti dallo studio) restano sul server."""
     righe = ["Buongiorno {nome_referente},", ""]
     n = dati["nuovi_bandi"]
     righe.append(
@@ -186,17 +193,20 @@ def testo_bozza(dati: dict[str, Any]) -> str:
             "",
             "Al momento non ci sono nuovi bandi adatti: vi avviseremo appena ne esce uno.",
         ]
+    riservate: list[str] = []
     if dati["pratiche"]:
-        righe += ["", "A che punto sono le vostre pratiche:"]
+        riservate += ["A che punto sono le vostre pratiche:"]
         for p in dati["pratiche"]:
             fase = p.fase_attiva
             stato = f"fase «{fase.nome}»" if fase else p.stato.replace("_", " ")
-            righe.append(f"• {p.nome_bando}: {stato}")
+            riservate.append(f"• {p.nome_bando}: {stato}")
     if dati["scadenze"]:
-        righe += ["", "Prossime scadenze:"]
-        righe += [f"• {s.data:%d/%m/%Y}: {s.titolo}" for s in dati["scadenze"]]
-    righe += ["", "Per qualsiasi domanda sono a disposizione.", "{nome_consulente}"]
-    return "\n".join(righe)
+        riservate += [""] if riservate else []
+        riservate += ["Prossime scadenze:"]
+        riservate += [f"• {s.data:%d/%m/%Y}: {s.titolo}" for s in dati["scadenze"]]
+    riservate += [""] if riservate else []
+    riservate += ["Per qualsiasi domanda sono a disposizione.", "{nome_consulente}"]
+    return "\n".join(righe), "\n".join(riservate)
 
 
 def _riscrivi_con_ai(db: Session, testo: str) -> str | None:
@@ -249,8 +259,11 @@ def crea_bozza(
         return None
     giorni = GIORNI_FREQUENZA.get(a.frequenza_aggiornamenti, 30)
     dati = _contenuto(db, a, oggi - timedelta(days=giorni), impostazioni(db).soglia_notifica)
-    testo = testo_bozza(dati)
-    riscritto = _riscrivi_con_ai(db, testo) if usa_ai else None
+    testa, coda = parti_bozza(dati)
+    testo = f"{testa}\n\n{coda}"
+    # all'AI va solo la parte sui bandi (dati pubblici e segnaposto), mai pratiche e scadenze
+    nuova_testa = _riscrivi_con_ai(db, testa) if usa_ai else None
+    riscritto = f"{nuova_testa}\n\n{coda}" if nuova_testa else None
     bozza = AggiornamentoCliente(
         azienda_id=a.id,
         referente_id=referente.id,

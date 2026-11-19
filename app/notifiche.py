@@ -98,6 +98,13 @@ def componi(
             for p in ferme
         ]
 
+    # 3b. Job notturni che non girano
+    from app.jobs.salute import problemi
+
+    guasti = [p for p in problemi(db) if p.job != "opportunita"]
+    if guasti:
+        righe += ["", "ATTENZIONE AI JOB NOTTURNI"] + [f"  • {p.testo}" for p in guasti]
+
     # 4. Stato delle fonti
     fonti = list(db.scalars(select(Fonte).where(Fonte.attiva).order_by(Fonte.nome)))
     in_errore = [f for f in fonti if f.fallimenti_consecutivi]

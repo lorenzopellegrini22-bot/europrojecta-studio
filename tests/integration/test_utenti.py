@@ -61,8 +61,19 @@ def test_titolare_crea_utenti_con_sezioni(client, crea_utente, accedi, db, fabbr
     )
     assert "Esiste+gi" in r.headers["location"] or "Esiste%20gi" in r.headers["location"]
 
-    # Il collaboratore entra e vede solo le sue sezioni
+    # Il collaboratore entra: prima deve cambiare la password temporanea
     _entra(client, fabbrica, email, password)
+    r = client.get("/clienti", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/account?obbligo=1"
+    assert "password temporanea" in client.get("/account").text
+    t_acc = csrf(client, "/account")
+    nuova = "una-password-tutta-mia-2026"
+    r = client.post(
+        "/account/password",
+        data={"csrf_token": t_acc, "attuale": password, "nuova": nuova, "conferma": nuova},
+    )
+    assert r.status_code == 303
+    # ora vede solo le sue sezioni
     home = client.get("/").text
     assert 'href="/clienti"' in home and 'href="/bandi"' in home
     assert 'href="/pratiche"' not in home and 'href="/impostazioni/utenti"' not in home
@@ -102,8 +113,14 @@ def test_sola_lettura_e_disattivazione(client, crea_utente, accedi, db, fabbrica
     db.refresh(u)
     assert u.attivo
 
-    # In sola lettura vede ma non modifica
+    # In sola lettura vede ma non modifica (dopo aver cambiato la password temporanea)
     _entra(client, fabbrica, email, password)
+    t_acc = csrf(client, "/account")
+    nuova = "una-password-tutta-mia-2026"
+    client.post(
+        "/account/password",
+        data={"csrf_token": t_acc, "attuale": password, "nuova": nuova, "conferma": nuova},
+    )
     assert client.get("/clienti/nuovo").status_code == 200
     t2 = csrf(client, "/clienti/nuovo")
     assert (
@@ -111,3 +128,54 @@ def test_sola_lettura_e_disattivazione(client, crea_utente, accedi, db, fabbrica
         == 403
     )
     assert client.get("/opportunita").status_code == 403  # sezione non assegnata
+
+
+def test_invito_via_email(client, crea_utente, accedi, db, fabbrica, monkeypatch):
+    from tests.integration.test_funzioni_studio import _configura_smtp
+
+    accedi(crea_utente())
+    _configura_smtp(client)
+    inviate = []
+    monkeypatch.setattr(
+        "app.comunicazioni.invia",
+        lambda valori, a, oggetto, testo, rispondi_a=None: inviate.append((a, oggetto, testo)),
+    )
+    token = csrf(client, "/impostazioni/utenti")
+    email = f"invitato-{uuid.uuid4().hex[:6]}@studio.it"
+    r = client.post(
+        "/impostazioni/utenti",
+        data={
+            "csrf_token": token,
+            "nome": "Sara Neri",
+            "email": email,
+            "ruolo": "collaboratore",
+            "modo": "invito",
+            "sezioni": ["clienti"],
+        },
+    )
+    assert (
+        r.status_code == 303
+        and "Invito+inviato" in r.headers["location"]
+        or "Invito%20inviato" in r.headers["location"]
+    )
+    a, oggetto, testo = next(x for x in inviate if x[0] == email)
+    assert "password" not in oggetto.lower() or "Il tuo accesso" in oggetto
+    link = re.search(r"https?://\S+/invito/(\S+)", testo)
+    assert link, testo
+    tok = link.group(1)
+    u = db.scalar(select(Utente).where(Utente.email == email))
+    assert u.invito_hash and tok not in (u.invito_hash or "")  # nel database solo l'impronta
+
+    client.cookies.clear()
+    assert "Benvenuto" in client.get(f"/invito/{tok}").text
+    r = client.post(f"/invito/{tok}", data={"nuova": "corta", "conferma": "corta"})
+    assert r.status_code == 400
+    nuova = "password-scelta-da-sara"
+    r = client.post(f"/invito/{tok}", data={"nuova": nuova, "conferma": nuova})
+    assert r.headers["location"] == "/login?invito=1"
+    assert client.get(f"/invito/{tok}").status_code == 404  # monouso
+    db.refresh(u)
+    assert not u.deve_cambiare_password and u.invito_hash is None
+    # entra con la sua password e configura la 2FA, senza obbligo di cambio
+    _entra(client, fabbrica, email, nuova)
+    assert client.get("/clienti").status_code == 200

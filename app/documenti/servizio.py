@@ -124,14 +124,18 @@ class Robots:
     cache: dict[str, RobotFileParser | None] = field(default_factory=dict)
 
     def permesso(self, url: str) -> bool:
-        parti = urlsplit(url)
+        try:
+            http.indirizzo_pubblico(url)
+            parti = urlsplit(url)
+        except (http.ErroreDownload, ValueError):
+            return False
         dominio = f"{parti.scheme}://{parti.netloc}"
         if dominio not in self.cache:
             regole: RobotFileParser | None = RobotFileParser()
             try:
                 r = http.pagina(self.client, f"{dominio}/robots.txt")
                 regole.parse(r.text.splitlines())  # type: ignore[union-attr]
-            except (http.ErroreDownload, httpx.HTTPError):
+            except (http.ErroreDownload, httpx.HTTPError, httpx.InvalidURL):
                 regole = None  # robots.txt assente o non leggibile: nessun divieto dichiarato
             self.cache[dominio] = regole
         regole = self.cache[dominio]
@@ -264,7 +268,11 @@ def _scarica_e_leggi(
     except ErroreDocumento as e:
         doc.errore = str(e)
         return False
-    except httpx.HTTPError as e:
+    except http.ErroreDownload as e:  # indirizzo non consentito (anche dopo un redirect)
+        doc.errore = str(e)[:300]
+        doc.tentativi = MAX_TENTATIVI
+        return False
+    except (httpx.HTTPError, httpx.InvalidURL) as e:
         doc.errore = f"Download non riuscito: {type(e).__name__}"
         return False
     doc.sha256 = hashlib.sha256(dati).hexdigest()
@@ -448,6 +456,7 @@ def carica_a_mano(
     dati: bytes,
     nome_file: str,
     documento: DocumentoBando | None = None,
+    letto: tuple[str, int] | None = None,
 ) -> DocumentoBando:
     """PDF scaricato dal consulente con il browser (es. siti che vietano lo scarico
     automatico) e caricato nell'app: si salva e si legge come quelli scaricati di notte."""
@@ -459,7 +468,8 @@ def carica_a_mano(
         antivirus.controlla_bytes(dati)
     except (antivirus.FileInfetto, antivirus.AntivirusNonDisponibile) as e:
         raise ErroreDocumento(str(e)) from e
-    testo, pagine = testo_pdf(dati, db)
+    # letto: testo già estratto (caricamento multiplo: lo stesso file per più bandi)
+    testo, pagine = letto if letto is not None else testo_pdf(dati, db)
     if documento is None:
         documento = DocumentoBando(
             bando_id=bando_id,
@@ -519,4 +529,6 @@ def documenti_per_nome(db: Session) -> dict[str, list[DocumentoBando]]:
     per_nome: dict[str, list[DocumentoBando]] = {}
     for _b, d in da_caricare(db):
         per_nome.setdefault(nome_dal_link(d.url), []).append(d)
-    return per_nome
+    # Nomi generici («bando.pdf», «allegato1.pdf») usati da link diversi: non si sa a quale
+    # bando appartenga il file, quindi niente abbinamento automatico (si carica dalla riga)
+    return {nome: docs for nome, docs in per_nome.items() if len({d.url for d in docs}) == 1}

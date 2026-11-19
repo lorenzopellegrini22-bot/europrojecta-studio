@@ -1351,3 +1351,12 @@ form.feedback select, form.feedback input { width: auto; margin: 0; min-height: 
 /* Impostazioni → Utenti */
 .password-temporanea { font-family: ui-monospace, monospace; font-size: 1.4rem; letter-spacing: .08em; padding: .5rem .75rem; background: var(--sfondo-tenue, #f4f4f0); display: inline-block; border-radius: 6px; }
 article.utente.disattivato { opacity: .6; }
+
+/* Scadenzario sul telefono: ogni scadenza diventa una scheda con le righe una sotto l'altra */
+@media (max-width: 600px) {
+  .tabella-scadenze, .tabella-scadenze tbody, .tabella-scadenze tr, .tabella-scadenze td { display: block; width: 100%; }
+  .tabella-scadenze tr { padding: 0.6rem 0; border-bottom: 1px solid var(--linea); }
+  .tabella-scadenze tr:last-child { border-bottom: 0; }
+  .tabella-scadenze td { padding: 0.1rem 0; border: 0; }
+  .tabella-scadenze td:empty { display: none; }
+}

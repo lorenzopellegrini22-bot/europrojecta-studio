@@ -78,16 +78,30 @@ def carica_insieme(
     link ha lo stesso nome di file."""
     per_nome = s.documenti_per_nome(db)
     caricati, non_abbinati, errori = 0, [], []
-    for f in file[:50]:
+    chiavi = [
+        s.nome_scaricato((f.filename or "").replace("\\", "/").rsplit("/", 1)[-1])
+        for f in file[:50]
+    ]
+    for f, chiave in zip(file[:50], chiavi, strict=True):
         nome = (f.filename or "").replace("\\", "/").rsplit("/", 1)[-1]
-        documenti = per_nome.get(s.nome_scaricato(nome), [])
+        if chiavi.count(chiave) > 1:  # «bando.pdf» e «bando (1).pdf»: quale dei due?
+            errori.append(f"{nome}: più file con lo stesso nome, caricalo dalla riga del bando")
+            continue
+        documenti = per_nome.get(chiave, [])
         if not documenti:
             non_abbinati.append(nome)
             continue
         dati = f.file.read(s.MAX_MB * 1024 * 1024 + 1)
+        letto = None
         for d in documenti:
             try:
-                s.carica_a_mano(db, d.bando_id, dati, nome, d)
+                if (
+                    letto is None
+                    and len(dati) <= s.MAX_MB * 1024 * 1024
+                    and dati[:1024].lstrip().startswith(b"%PDF")
+                ):
+                    letto = s.testo_pdf(dati, db)
+                s.carica_a_mano(db, d.bando_id, dati, nome, d, letto)
                 audit.registra(db, utente, "bando", d.bando_id, "modifica", {"pdf_caricato": nome})
                 db.commit()
                 caricati += 1

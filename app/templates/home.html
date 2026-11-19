@@ -20,6 +20,13 @@
 </div>
 {% endfor %}
 
+{% if problemi_job %}
+<div class="messaggio errore" role="alert">
+  <strong>I job notturni hanno {{ "un problema" if problemi_job | length == 1 else "dei problemi" }}:</strong>
+  <ul>{% for p in problemi_job %}<li>{{ p.testo }}</li>{% endfor %}</ul>
+  <small>Controlla che il servizio «worker» sia avviato (docs/messa-in-produzione.md).</small>
+</div>
+{% endif %}
 {% set vede = namespace(bandi=puo_vedere(utente, "/bandi"), pratiche=puo_vedere(utente, "/pratiche"), opportunita=puo_vedere(utente, "/opportunita"), aggiornamenti=puo_vedere(utente, "/aggiornamenti"), clienti=puo_vedere(utente, "/clienti")) %}
 {% if pdf_da_caricare and vede.bandi %}
 <div class="messaggio attenzione">{{ pdf_da_caricare }} PDF di bandi aperti non si possono scaricare in automatico: <a href="/documenti/da-caricare">caricali a mano</a> perché l'AI possa leggerli.</div>

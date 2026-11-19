@@ -7,7 +7,9 @@
   non corrispondono a Content-Length.
 """
 
+import ipaddress
 import os
+import socket
 import tempfile
 import threading
 import time
@@ -47,8 +49,58 @@ def _attendi_turno(url: str) -> None:
         _ultima_richiesta[dominio] = time.monotonic()
 
 
+def indirizzo_pubblico(url: str) -> None:
+    """Protezione SSRF: gli URL arrivano anche da dati esterni (TED, pagine delle
+    piattaforme), quindi il server contatta solo indirizzi pubblici in http/https sulle porte
+    standard. Vale per ogni richiesta, compresi i passaggi dei reindirizzamenti."""
+    try:
+        u = httpx.URL(url)
+    except (httpx.InvalidURL, ValueError) as e:
+        raise ErroreDownload(f"Indirizzo non valido: {url[:120]}") from e
+    if u.scheme not in ("http", "https") or not u.host:
+        raise ErroreDownload(f"Indirizzo non consentito: {url[:120]}")
+    if u.port not in (None, 80, 443):
+        raise ErroreDownload(f"Porta non consentita: {url[:120]}")
+    try:
+        risolti = {i[4][0] for i in socket.getaddrinfo(u.host, None)}
+    except (socket.gaierror, UnicodeError):
+        return  # il nome non esiste: la richiesta fallirà da sola
+    for ip in risolti:
+        indirizzo = ipaddress.ip_address(ip.split("%")[0])
+        if not indirizzo.is_global or indirizzo.is_multicast:
+            raise ErroreDownload(f"Indirizzo interno non consentito: {u.host}")
+
+
+def _controlla_richiesta(request: httpx.Request) -> None:
+    indirizzo_pubblico(str(request.url))
+
+
 def client() -> httpx.Client:
-    return httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT, follow_redirects=True)
+    return httpx.Client(
+        headers={"User-Agent": USER_AGENT},
+        timeout=TIMEOUT,
+        follow_redirects=True,
+        event_hooks={"request": [_controlla_richiesta]},
+    )
+
+
+MAX_PAGINA_HTML = 5 * 1024 * 1024
+
+
+def pagina_html(http: httpx.Client, url: str) -> tuple[str, str] | None:
+    """Pagina HTML (testo, url finale) letta in streaming con un limite di dimensione; None
+    se la risposta non è HTML (un file: non si scarica)."""
+    _attendi_turno(url)
+    with http.stream("GET", url) as r:
+        r.raise_for_status()
+        if "html" not in r.headers.get("content-type", ""):
+            return None
+        dati = b""
+        for blocco in r.iter_bytes(chunk_size=64 * 1024):
+            dati += blocco
+            if len(dati) > MAX_PAGINA_HTML:
+                raise ErroreDownload(f"Pagina troppo grande: {url[:120]}")
+        return dati.decode(r.encoding or "utf-8", "replace"), str(r.url)
 
 
 def intestazioni(http: httpx.Client, url: str) -> Intestazioni:

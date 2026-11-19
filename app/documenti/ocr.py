@@ -18,6 +18,7 @@ log = logging.getLogger(__name__)
 
 MAX_PAGINE_OCR = 20
 DPI = 250
+MAX_PIXEL = 25_000_000  # circa un A4 a 600 dpi
 TIMEOUT_PAGINA = 90
 SEGNO = "[Testo letto con OCR da un PDF scansionato: possibili errori di lettura]"
 
@@ -41,8 +42,13 @@ def ocr_pdf(dati: bytes, lingua: str = "ita", max_pagine: int = MAX_PAGINE_OCR) 
     testi = []
     try:
         with pymupdf.open(stream=dati, filetype="pdf") as doc:
-            for pagina in list(doc)[:max_pagine]:
-                immagine = pagina.get_pixmap(dpi=DPI).tobytes("png")
+            for n in range(min(doc.page_count, max_pagine)):
+                pagina = doc[n]
+                # Una pagina enorme (es. una tavola A0) a 300 dpi occuperebbe gigabyte di
+                # memoria: si riduce la risoluzione sotto MAX_PIXEL
+                area = max(pagina.rect.width * pagina.rect.height, 1.0)
+                zoom = min(DPI / 72, (MAX_PIXEL / area) ** 0.5)
+                immagine = pagina.get_pixmap(matrix=pymupdf.Matrix(zoom, zoom)).tobytes("png")
                 r = subprocess.run(  # noqa: S603 — comando fisso, immagine passata su stdin
                     ["tesseract", "stdin", "stdout", "-l", lingua],
                     input=immagine,

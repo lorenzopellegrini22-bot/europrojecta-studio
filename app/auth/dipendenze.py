@@ -25,6 +25,10 @@ class Proibito(Exception):
     """Utente autenticato ma senza i permessi necessari."""
 
 
+class CambioPasswordRichiesto(Exception):
+    """Primo accesso con password temporanea: prima va cambiata (si va su /account)."""
+
+
 class CsrfNonValido(Exception):
     """Token CSRF mancante o errato."""
 
@@ -67,6 +71,10 @@ def controllo_accesso(
     from app.auth.permessi import puo_modificare, puo_vedere
 
     percorso = request.url.path
+    if sessione.utente.deve_cambiare_password and not percorso.startswith(
+        ("/account", "/logout", "/sessione")
+    ):
+        raise CambioPasswordRichiesto
     if not puo_vedere(sessione.utente, percorso) or not puo_modificare(
         sessione.utente, percorso, request.method
     ):

@@ -91,14 +91,24 @@ def estrai(pagina: str, base: str) -> list[dict[str, str]]:
         testo = a.get_text(" ")
         if not (_FILE.search(href) or _LINK_FILE.search(href) or _FILE.search(testo)):
             continue
-        url = urljoin(base, href)
+        try:
+            url = urljoin(base, href)
+        except ValueError:
+            continue
+        if urlsplit(url).scheme not in ("http", "https"):
+            continue
         titolo = _titolo(testo, url)
         trovati.setdefault(url, {"titolo": titolo, "url": url, "tipo": tipo_documento(titolo)})
     # Link costruiti in JavaScript (piattaforme «DettaglioProcedura.asp»)
     for prima, valore, dopo in _WINDOW_OPEN.findall(html.unescape(pagina)):
         if "displayattach" not in prima.lower():
             continue
-        url = urljoin(base, prima + quote(valore, safe="@*_+-./") + dopo)
+        try:
+            url = urljoin(base, prima + quote(valore, safe="@*_+-./") + dopo)
+        except ValueError:
+            continue
+        if urlsplit(url).scheme not in ("http", "https"):
+            continue
         titolo = valore.split("*", 1)[0] or "Allegato"
         trovati.setdefault(url, {"titolo": titolo, "url": url, "tipo": tipo_documento(titolo)})
     return list(trovati.values())[:MAX_DOCUMENTI]
@@ -146,11 +156,14 @@ def leggi_gara(a: Appalto, client: httpx.Client, robots) -> str:  # noqa: ANN001
     """Legge la pagina della gara e aggiorna a.documenti. Restituisce l'esito in breve."""
     from app.sources import http
 
-    pagine = [
-        u
-        for u in {d.get("url") for d in a.documenti or []} | {a.link_partecipazione}
-        if pagina_specifica(u)
+    # Si rileggono solo le pagine della gara (link di TED e pagina già trovata), mai i file
+    # elencati: quelli li apre chi clicca. Ordine stabile: prima il link di partecipazione.
+    candidati = [a.link_partecipazione] + [
+        d.get("url")
+        for d in a.documenti or []
+        if d.get("tipo") == "Pagina della gara" or d.get("titolo") == "Documenti di gara"
     ]
+    pagine = [u for u in dict.fromkeys(candidati) if pagina_specifica(u) and not _FILE.search(u)]
     if not pagine:
         a.documenti_letti_il = datetime.now(UTC)
         return "nessuna pagina della gara (link alla sola piattaforma)"
@@ -161,13 +174,13 @@ def leggi_gara(a: Appalto, client: httpx.Client, robots) -> str:  # noqa: ANN001
             esito = "il sito vieta la lettura automatica (robots.txt)"
             continue
         try:
-            r = http.pagina(client, url)
-        except (http.ErroreDownload, httpx.HTTPError) as e:
+            letta = http.pagina_html(client, url)
+        except (http.ErroreDownload, httpx.HTTPError, httpx.InvalidURL, ValueError) as e:
             esito = f"pagina non raggiungibile ({type(e).__name__})"
             continue
-        if "html" not in r.headers.get("content-type", "html"):
+        if letta is None:  # non è una pagina ma un file: non si scarica
             continue
-        trovati = estrai(r.text, str(r.url))
+        trovati = estrai(*letta)
         nuovi += [d for d in trovati if d["url"] not in {x["url"] for x in nuovi}]
     pagina_gara = [
         {"titolo": "Pagina della gara sulla piattaforma", "url": u, "tipo": "Pagina della gara"}
@@ -203,8 +216,13 @@ def aggiorna(db: Session, limite: int = 150, client: httpx.Client | None = None)
     con_documenti = 0
     try:
         for a in gare:
-            if leggi_gara(a, client, robots).endswith("documenti"):
-                con_documenti += 1
+            try:
+                if leggi_gara(a, client, robots).endswith("documenti"):
+                    con_documenti += 1
+            except Exception:  # un link strano non deve fermare la notte
+                log.exception("Documentazione della gara %s non letta", a.id)
+                db.rollback()
+                a.documenti_letti_il = datetime.now(UTC)
             db.commit()
     finally:
         if proprio:

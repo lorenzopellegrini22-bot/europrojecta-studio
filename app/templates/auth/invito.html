@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block titolo %}Scegli la password · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<article class="pagina-stretta">
+  {% if not valido %}
+  <h1>Invito non valido</h1>
+  <p>Il link è scaduto, è già stato usato o è incompleto. Chiedi al titolare dello studio di inviarti un nuovo invito.</p>
+  {% else %}
+  <h1>Benvenuto, {{ u.nome }}</h1>
+  <p>Scegli la password per entrare in Europrojecta Studio ({{ u.email }}).</p>
+  {% if errore %}<div class="messaggio errore" role="alert">{{ errore }}</div>{% endif %}
+  <form method="post">
+    <label>Nuova password <small>(almeno 12 caratteri)</small>
+      <input type="password" name="nuova" autocomplete="new-password" minlength="12" required>
+    </label>
+    <label>Ripeti la password
+      <input type="password" name="conferma" autocomplete="new-password" minlength="12" required>
+    </label>
+    <button type="submit">Salva la password</button>
+  </form>
+  <p><small>Dopo entrerai dal login e configurerai il codice sul telefono.</small></p>
+  {% endif %}
+</article>
+{% endblock %}

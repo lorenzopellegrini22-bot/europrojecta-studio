@@ -11,6 +11,7 @@
 <div class="grid">
   <article>
     <header><strong>Cambia password</strong></header>
+    {% if utente.deve_cambiare_password %}<div class="messaggio attenzione" role="alert">Stai usando una password temporanea: scegli una password tua per continuare a usare l'app. Come «password attuale» scrivi quella temporanea.</div>{% endif %}
     {% if errore_password %}<div class="messaggio errore" role="alert">{{ errore_password }}</div>{% endif %}
     <form method="post" action="/account/password">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

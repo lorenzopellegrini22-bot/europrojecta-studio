@@ -13,6 +13,8 @@ Il controllo avviene su ogni richiesta (dipendenza globale in app/main.py) in ba
 all'indirizzo: aggiungere una pagina sotto un prefisso esistente la protegge già.
 """
 
+import re
+
 from app.models import Utente
 
 RUOLI = {
@@ -25,16 +27,33 @@ RUOLI = {
 SEZIONI: dict[str, tuple[str, tuple[str, ...]]] = {
     "clienti": ("Clienti, referenti, progetti e attività", ("/clienti",)),
     "opportunita": ("Opportunità e feedback", ("/opportunita",)),
-    "pratiche": ("Pratiche, scadenzario e modelli", ("/pratiche", "/scadenzario", "/modelli")),
+    "pratiche": (
+        "Pratiche, scadenzario, modelli e allegati",
+        ("/pratiche", "/scadenzario", "/modelli", "/allegati"),
+    ),
     "bandi": ("Bandi, fonti, revisione AI e PDF", ("/bandi", "/fonti", "/revisione", "/documenti")),
     "appalti": ("Appalti pubblici", ("/appalti",)),
-    "aggiornamenti": ("Aggiornamenti ai clienti e report PDF", ("/aggiornamenti", "/report")),
+    "aggiornamenti": (
+        "Aggiornamenti ai clienti e report PDF",
+        ("/aggiornamenti", "/aggiornamenti-approva", "/report"),
+    ),
     "prefattibilita": ("Prefattibilità", ("/prefattibilita",)),
     "segnalatori": ("Segnalatori", ("/segnalatori",)),
     "statistiche": ("Statistiche", ("/statistiche",)),
     "importazione": ("Importazione dei clienti da CSV", ("/import",)),
     "esportazione": ("Esportazione dei dati", ("/export", "/pratiche/export.csv")),
 }
+# Azioni sotto /clienti/{id}/ che appartengono a un'altra sezione (vincono sui prefissi)
+SEZIONI_PER_MODELLO: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"^/clienti/\d+/aggiornamenti(/|$)"), "aggiornamenti"),
+    (re.compile(r"^/clienti/\d+/report(/|$)"), "aggiornamenti"),
+)
+# Indirizzi che non appartengono a nessuna sezione ma servono a tutti; ogni altro indirizzo
+# non mappato è del solo titolare (negato per difetto: una pagina nuova non resta aperta)
+SEMPRE_AMMESSI = (
+    "/account", "/logout", "/2fa", "/sessione", "/health", "/login", "/disiscrizione",
+    "/invito", "/primo-accesso", "/cron", "/static",
+)  # fmt: skip
 PREDEFINITE_COLLABORATORE = tuple(k for k in SEZIONI if k not in ("importazione", "esportazione"))
 SOLO_TITOLARE = ("/impostazioni",)
 # Indirizzi che anche chi è in sola lettura può chiamare in POST (il proprio account)
@@ -52,6 +71,9 @@ def _corrisponde(percorso: str, prefisso: str) -> bool:
 def sezione_di(percorso: str) -> str | None:
     """Sezione di un indirizzo (il prefisso più lungo vince: /pratiche/export.csv è
     «esportazione», non «pratiche»)."""
+    for modello, chiave in SEZIONI_PER_MODELLO:
+        if modello.match(percorso):
+            return chiave
     migliore: tuple[int, str] | None = None
     for chiave, (_e, prefissi) in SEZIONI.items():
         for p in prefissi:
@@ -72,8 +94,12 @@ def sezioni_di(utente: Utente) -> set[str]:
 def puo_vedere(utente: Utente, percorso: str) -> bool:
     if any(_corrisponde(percorso, p) for p in SOLO_TITOLARE):
         return utente.ruolo == "titolare"
+    if utente.ruolo == "titolare":
+        return True
     sezione = sezione_di(percorso)
-    return sezione is None or sezione in sezioni_di(utente)
+    if sezione is None:
+        return percorso == "/" or any(_corrisponde(percorso, p) for p in SEMPRE_AMMESSI)
+    return sezione in sezioni_di(utente)
 
 
 def puo_modificare(utente: Utente, percorso: str, metodo: str) -> bool:

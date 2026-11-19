@@ -15,8 +15,16 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
 
 ### Utenti dello studio
 - **Impostazioni → Utenti e permessi**: crei le utenze, scegli il ruolo (collaboratore o sola
-  lettura) e le sezioni che ognuno può usare. La password temporanea compare una volta sola:
-  comunicala a voce. Puoi disattivare un utente, azzerargli la 2FA o dargli una nuova password.
+  lettura) e le sezioni che ognuno può usare. L'accesso si dà con un **invito via email** (un
+  link valido 72 ore con cui la persona sceglie la sua password; serve l'email collegata) o con
+  una **password temporanea**, che compare una volta sola e va comunicata a voce: al primo
+  accesso l'app obbliga a sceglierne una propria. Puoi disattivare un utente, azzerargli la 2FA,
+  reinviare l'invito o dargli una nuova password temporanea.
+
+### Job notturni
+- Se il worker si ferma, un job non parte, resta bloccato o fallisce, la **home** del titolare
+  mostra un riquadro rosso, l'email del mattino lo segnala e i titolari ricevono subito
+  un'email (una volta al giorno per lo stesso problema).
 
 ## 3. Clienti
 - **Importa clienti** (menu Studio): carica l'export del programma precedente in CSV, controlla
