@@ -85,7 +85,7 @@
       {% if errori.get("soa_testo") %}<small class="errore-campo">{{ errori.soa_testo }}</small>{% else %}<small>Classifiche: {{ classifiche | join(", ") }}.</small>{% endif %}
     </label>
     <details {% if v.get("regioni_interesse") %}open{% endif %}>
-      <summary>Regioni in cui partecipa agli appalti (oltre a quella della sede)</summary>
+      <summary>Regioni in cui partecipa agli appalti (oltre a quelle delle sedi; per i bandi contano solo le sedi)</summary>
       <div class="griglia-caselle">
         {% for r in regioni %}<label class="casella"><input type="checkbox" name="regioni_interesse" value="{{ r }}" {% if r in (v.get("regioni_interesse") or []) %}checked{% endif %}> {{ r }}</label>{% endfor %}
       </div>
@@ -124,6 +124,14 @@
         </select>
       </label>
     </div>
+  </article>
+
+  <article id="sedi-operative">
+    <header><strong>Sedi operative</strong> <small>(stabilimenti, unità locali: contano per i bandi di regioni, province e comuni)</small></header>
+    <label>Comuni delle sedi operative <small>(uno per riga; se il nome è ambiguo aggiungi la provincia, es. «Prato (PO)»)</small>
+      <textarea name="sedi_operative_testo" rows="3" placeholder="Prato (PO)&#10;Bologna" {% if errori.get("sedi_operative_testo") %}aria-invalid="true"{% endif %}>{{ v.get("sedi_operative_testo") or "" }}</textarea>
+      {% if errori.get("sedi_operative_testo") %}<small class="errore-campo">{{ errori.sedi_operative_testo }}</small>{% endif %}
+    </label>
   </article>
 
   {% if not azienda %}

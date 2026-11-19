@@ -20,6 +20,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from decimal import Decimal
+from types import SimpleNamespace
 from typing import Any
 
 from sqlalchemy import or_, select
@@ -84,11 +85,34 @@ class Esito:
         return {"soddisfatti": self.soddisfatti, "da_verificare": self.da_verificare}
 
 
+def sedi_cliente(a: Azienda) -> list[Any]:
+    """Tutte le sedi del cliente: prima la legale, poi le operative. Un bando regionale o
+    provinciale vale di solito per chi ha una sede (anche solo operativa) in quel territorio."""
+    sedi = getattr(a, "sedi", None)
+    if sedi is None:  # profili semplici (collaudo, prove): solo la sede legale
+        s = getattr(a, "sede_legale", None)
+        if s is None:
+            return []
+        campi = ("comune_testo", "provincia", "regione", "codice_istat")
+        return [SimpleNamespace(tipo="legale", **{c: getattr(s, c, None) for c in campi})]
+    return sorted(sedi, key=lambda s: s.tipo != "legale")
+
+
+def regioni_sedi(a: Azienda) -> set[str]:
+    return {s.regione for s in sedi_cliente(a) if s.regione}
+
+
+def province_sedi(a: Azienda) -> set[str]:
+    return {s.provincia.upper() for s in sedi_cliente(a) if s.provincia}
+
+
+def _della(sede: Any) -> str:
+    return "della sede" if sede.tipo == "legale" else "della sede operativa"
+
+
 def regioni_cliente(a: Azienda) -> set[str]:
-    regioni = set(a.regioni_interesse or [])
-    if a.sede_legale and a.sede_legale.regione:
-        regioni.add(a.sede_legale.regione)
-    return regioni
+    """Regioni per gli appalti: quelle delle sedi più le regioni di interesse."""
+    return set(a.regioni_interesse or []) | regioni_sedi(a)
 
 
 def _ateco_ok(codice: str, ammessi: list[str]) -> bool:
@@ -185,43 +209,52 @@ def _valuta(a: Azienda, b: Bando, ctx: Contesto) -> Esito:
         else:
             e.da_verificare.append(f"Bando per il settore {nome}")
             e.punteggio -= 10
-    sede = a.sede_legale.regione if a.sede_legale else None
-    comune = a.sede_legale.comune_testo if a.sede_legale else None
-    if req.territorio == "comunale" and req.comuni and comune:
-        if not _comune_ammesso(a.sede_legale, req.comuni, ctx):
+    # Territorio: conta ogni sede, legale o operativa. Si esclude solo se tutte le sedi sono
+    # note e nessuna è nel territorio del bando.
+    sedi = sedi_cliente(a)
+    con_comune = [s for s in sedi if s.comune_testo]
+    if req.territorio == "comunale" and req.comuni and con_comune:
+        ok = next((s for s in con_comune if _comune_ammesso(s, req.comuni, ctx)), None)
+        if ok is not None:
+            e.soddisfatti.append(f"Bando per il comune {_della(ok)} ({ok.comune_testo})")
+            e.punteggio += 20
+            return _altri_filtri(a, req, b, e, ctx)
+        if len(con_comune) == len(sedi):
             raise Escluso(f"Bando per altri comuni ({', '.join(req.comuni[:3])})")
-        e.soddisfatti.append(f"Bando per il comune della sede ({comune})")
-        e.punteggio += 20
-        return _altri_filtri(a, req, b, e, ctx)
     # Bando provinciale: con la tabella ISTAT le province si confrontano per sigla
     province = getattr(req, "province", None)
-    sigla_sede = getattr(a.sede_legale, "provincia", None) if a.sede_legale else None
-    if req.territorio == "provinciale" and province and sigla_sede and ctx.territorio:
+    con_sigla = [s for s in sedi if s.provincia]
+    if req.territorio == "provinciale" and province and con_sigla and ctx.territorio:
         sigle = {ctx.territorio.sigla(p) for p in province}
         if None not in sigle:
-            if sigla_sede.upper() not in sigle:
+            ok = next((s for s in con_sigla if s.provincia.upper() in sigle), None)
+            if ok is not None:
+                e.soddisfatti.append(
+                    f"Bando per la provincia {_della(ok)} ({ok.provincia.upper()})"
+                )
+                e.punteggio += 15
+                return _altri_filtri(a, req, b, e, ctx)
+            if len(con_sigla) == len(sedi):
                 raise Escluso(f"Bando per altre province ({', '.join(province[:3])})")
-            e.soddisfatti.append(f"Bando per la provincia della sede ({sigla_sede.upper()})")
-            e.punteggio += 15
-            return _altri_filtri(a, req, b, e, ctx)
     if req.territorio == "nazionale":
         e.soddisfatti.append("Bando nazionale")
         e.punteggio += 5
     elif req.regioni:
-        if sede is not None and sede not in req.regioni:
+        dentro = next((s for s in sedi if s.regione and s.regione in req.regioni), None)
+        tutte_note = bool(sedi) and all(s.regione for s in sedi)
+        if dentro is None and tutte_note:
             raise Escluso(f"Bando per altre regioni ({', '.join(req.regioni[:3])})")
         if _ente_di_altre_province(a, b, e, ctx):
             pass  # bando di una Camera di commercio, Provincia o Comune di altre province
-        elif sede is None:
+        elif dentro is None:
             e.da_verificare.append(f"Territorio ({', '.join(req.regioni[:3])}): manca la sede")
             e.punteggio -= 5
-        elif sede in req.regioni:
-            if req.territorio == "regionale":
-                e.soddisfatti.append(f"Bando per la regione della sede ({sede})")
-                e.punteggio += 15
-            else:
-                e.da_verificare.append(f"Solo alcuni comuni o province della regione {sede}")
-                e.punteggio -= 10
+        elif req.territorio == "regionale":
+            e.soddisfatti.append(f"Bando per la regione {_della(dentro)} ({dentro.regione})")
+            e.punteggio += 15
+        else:
+            e.da_verificare.append(f"Solo alcuni comuni o province della regione {dentro.regione}")
+            e.punteggio -= 10
     else:
         locale = ente_locale(b)
         if locale:
@@ -289,12 +322,12 @@ def _ente_di_altre_province(a: Azienda, b: Bando, e: Esito, ctx: Contesto) -> bo
     fonte (es. CCIAA Frosinone-Latina con territorio «Lazio», trovato verificando il sito
     ufficiale): valgono di solito solo per le loro province. Con la tabella ISTAT si
     ricavano le province dal nome dell'ente; se la sede è altrove il punteggio scende sotto
-    la soglia (non si esclude: va verificato sul bando). True se la sede è in un'altra
-    provincia."""
+    la soglia (non si esclude: va verificato sul bando). Conta ogni sede, anche operativa.
+    True se nessuna sede è in quelle province."""
     t = ctx.territorio
-    sigla_sede = getattr(a.sede_legale, "provincia", None) if a.sede_legale else None
+    sigle_sedi = province_sedi(a)
     locale = ente_locale(b)
-    if t is None or not sigla_sede or not locale:
+    if t is None or not sigle_sedi or not locale:
         return False
     from app.utils.ricerca import normalizza
 
@@ -335,8 +368,8 @@ def _ente_di_altre_province(a: Azienda, b: Bando, e: Esito, ctx: Contesto) -> bo
             sigle.add(sigla)
     if not sigle:
         return False
-    if sigla_sede.upper() in sigle:
-        e.soddisfatti.append(f"Ente della provincia della sede ({locale})")
+    if sigle_sedi & sigle:
+        e.soddisfatti.append(f"Ente della provincia di una sede ({locale})")
         e.punteggio += 10
         return False
     e.da_verificare.append(

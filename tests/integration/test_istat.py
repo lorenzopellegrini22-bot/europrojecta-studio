@@ -131,3 +131,75 @@ def test_matching_con_codici_istat(db, istat_caricato):
     # versione del bando sconosciuta: una corrispondenza solo dopo la conversione → da verificare
     es, _ = valuta_bando_con_motivo(a, bando(ateco_ammessi=["62.10"]), ctx)
     assert es is not None and any("raccordo ATECO" in m for m in es.da_verificare)
+
+
+def test_sedi_operative_contano_nel_territorio(db, istat_caricato):
+    """Sede legale a Roma, stabilimento a Firenze: valgono i bandi di Lazio e Toscana, della
+    provincia e del comune di Firenze e della Camera di commercio di Firenze."""
+    ctx = Contesto(territorio=territorio.in_memoria(db), raccordo=ateco.in_memoria(db), oggi=None)
+    legale = N(
+        tipo="legale", regione="Lazio", comune_testo="Roma", provincia="RM", codice_istat="058091"
+    )
+    a = N(sedi=[N(tipo="operativa", regione="Toscana", comune_testo="Firenze", provincia="FI",
+                  codice_istat="048017"), legale],
+          sede_legale=legale, dimensione_manuale="piccola", ateco_primario=None)  # fmt: skip
+
+    def bando(titolo="Contributi alle imprese", ente=None, **req):
+        base = {"tipologie_soggetto": None, "territorio": "regionale", "regioni": ["Toscana"],
+                "comuni": None, "province": None, "dimensioni": None, "ateco_ammessi": None,
+                "ateco_versione": None}  # fmt: skip
+        base.update(req)
+        return N(titolo=titolo, stato="aperto", ente=ente, requisiti=N(**base))
+
+    es, motivo = valuta_bando_con_motivo(a, bando(), ctx)
+    assert es is not None, motivo
+    assert "Bando per la regione della sede operativa (Toscana)" in es.soddisfatti
+    es, _ = valuta_bando_con_motivo(a, bando(regioni=["Lazio"]), ctx)
+    assert "Bando per la regione della sede (Lazio)" in es.soddisfatti
+    _, motivo = valuta_bando_con_motivo(a, bando(regioni=["Veneto"]), ctx)
+    assert motivo and "altre regioni" in motivo
+    es, motivo = valuta_bando_con_motivo(a, bando(territorio="comunale", comuni=["Firenze"]), ctx)
+    assert es is not None and any("sede operativa (Firenze)" in m for m in es.soddisfatti)
+    _, motivo = valuta_bando_con_motivo(a, bando(territorio="comunale", comuni=["Milano"]), ctx)
+    assert motivo and "altri comuni" in motivo
+    es, _ = valuta_bando_con_motivo(a, bando(territorio="provinciale", province=["Firenze"]), ctx)
+    assert any("provincia della sede operativa (FI)" in m for m in es.soddisfatti)
+    es, _ = valuta_bando_con_motivo(a, bando(titolo="CCIAA Firenze - Voucher digitali"), ctx)
+    assert any("Ente della provincia di una sede" in m for m in es.soddisfatti)
+    # senza la sede operativa lo stesso bando toscano è escluso
+    solo_legale = N(sedi=[legale], sede_legale=legale, dimensione_manuale="piccola",
+                    ateco_primario=None)  # fmt: skip
+    _, motivo = valuta_bando_con_motivo(solo_legale, bando(), ctx)
+    assert motivo and "altre regioni" in motivo
+
+
+def test_sedi_operative_dal_modulo_cliente(client, crea_utente, accedi, db, istat_caricato):
+    from app.models import Azienda
+    from tests.integration.test_pratiche import _cliente
+
+    accedi(crea_utente())
+    a = _cliente(client, db, sedi_operative_testo="Firenze\nViterbo (VT)\nfirenze")
+    db.refresh(a)
+    operative = sorted(
+        (s.comune_testo, s.provincia, s.regione) for s in a.sedi if s.tipo == "operativa"
+    )
+    assert operative == [("Firenze", "FI", "Toscana"), ("Viterbo", "VT", "Lazio")]
+    scheda = client.get(f"/clienti/{a.id}").text
+    assert "Sedi operative" in scheda and "Firenze (FI), Toscana" in scheda
+    modulo = client.get(f"/clienti/{a.id}/modifica").text
+    assert "Firenze (FI)" in modulo and "Viterbo (VT)" in modulo
+    # comune sconosciuto: errore nel campo, nulla cambia
+    from tests.integration.conftest import csrf
+
+    token = csrf(client, f"/clienti/{a.id}/modifica")
+    dati = {"csrf_token": token, "ragione_sociale": a.ragione_sociale, "partita_iva": a.partita_iva,
+            "regione": "Toscana", "sedi_operative_testo": "Paperopoli"}  # fmt: skip
+    r = client.post(f"/clienti/{a.id}/modifica", data=dati)
+    assert r.status_code == 400 and "Comune non riconosciuto" in r.text
+    # tolta una riga: la sede sparisce
+    dati["sedi_operative_testo"] = "Viterbo"
+    r = client.post(f"/clienti/{a.id}/modifica", data=dati)
+    assert r.status_code == 303, r.text
+    db.expire_all()
+    a = db.get(Azienda, a.id)
+    assert [s.comune_testo for s in a.sedi if s.tipo == "operativa"] == ["Viterbo"]

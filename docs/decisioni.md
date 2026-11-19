@@ -435,6 +435,19 @@ Nuova impostazione `VERIFICA_DUE_PASSAGGI` (predefinita `true`). Con `false` il 
 - **PDF con caratteri nulli**: il testo viene ripulito; un errore imprevisto su un PDF non ferma
   più gli altri della notte (prima lo stesso PDF avrebbe bloccato il passo ogni notte).
 
+## 2026-11-19 — Sedi operative nell'abbinamento
+
+- Prima contava solo la sede legale: le «Regioni di interesse» valevano solo per le gare e il
+  modulo cliente non permetteva di inserire sedi operative (il modello le prevedeva già).
+- Ora il modulo ha il campo «Sedi operative» (un comune per riga, provincia tra parentesi se il
+  nome è ambiguo), riconosciuto con la tabella ISTAT (provincia e regione ricavate); comuni
+  sconosciuti danno errore. Le sedi già presenti tengono indirizzo e CAP.
+- Abbinamento dei bandi: regioni, province, comuni ed enti locali (CCIAA, Province, Comuni) si
+  confrontano con **tutte** le sedi; si esclude solo se tutte le sedi sono note e nessuna è nel
+  territorio. Il motivo dice se vale per la sede legale o per quella operativa. Gare: regioni
+  delle sedi più le regioni di interesse. La prefattibilità e il profilo per l'AI (solo regione
+  e provincia) citano le sedi operative.
+
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.
 - Jinja2 + HTMX salvati nel repository, nessuna risorsa da CDN (Pico.css sostituito da uno stile proprio, vedi sopra).

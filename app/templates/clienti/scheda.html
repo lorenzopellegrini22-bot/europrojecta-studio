@@ -35,6 +35,8 @@
       <dt>Telefono</dt><dd>{{ azienda.telefono or "—" }}</dd>
       <dt>Codice SDI</dt><dd>{{ azienda.codice_sdi or "—" }}</dd>
       <dt>Sede legale</dt><dd>{% if sede %}{{ sede.indirizzo or "" }} {{ sede.cap or "" }} {{ sede.comune_testo or "" }}{% if sede.provincia %} ({{ sede.provincia }}){% endif %}{% if sede.regione %}, {{ sede.regione }}{% endif %}{% if sede.codice_istat %} <small>(ISTAT {{ sede.codice_istat }})</small>{% elif sede.comune_testo %} <small>(comune non riconosciuto: controlla il nome)</small>{% endif %}{% else %}—{% endif %}</dd>
+      {% set operative = azienda.sedi | selectattr("tipo", "equalto", "operativa") | list %}
+      {% if operative %}<dt>Sedi operative</dt><dd>{% for s in operative %}{{ s.comune_testo or "" }}{% if s.provincia %} ({{ s.provincia }}){% endif %}{% if s.regione %}, {{ s.regione }}{% endif %}{% if not loop.last %}; {% endif %}{% endfor %}</dd>{% endif %}
     </dl>
     {% if azienda.note %}<p class="note-testo">{{ azienda.note }}</p>{% endif %}
   </article>

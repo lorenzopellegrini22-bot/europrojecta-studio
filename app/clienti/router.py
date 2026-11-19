@@ -33,6 +33,7 @@ from app.models.crm import DIMENSIONI, STATI_CLIENTE
 from app.models.crm_esteso import FREQUENZE_AGGIORNAMENTO, Tag
 from app.opportunita.abbinamento import CLASSIFICHE_SOA
 from app.pratiche.servizio import ETICHETTE_STATO_PRATICA, partita_iva_valida
+from app.riferimenti.istat import norm_nome
 from app.sicurezza.cifratura import ErroreCifratura
 from app.utils.cpv import DIVISIONI_CPV
 from app.utils.numeri import importo_italiano
@@ -136,6 +137,10 @@ def _valida(db: Session, valori: dict[str, Any], azienda_id: int | None) -> dict
     if errore_soa:
         errori["soa_testo"] = errore_soa
     valori["soa_possedute"] = soa
+    sedi_op, errore_sedi = leggi_sedi_operative(db, valori.get("sedi_operative_testo") or "")
+    if errore_sedi:
+        errori["sedi_operative_testo"] = errore_sedi
+    valori["sedi_operative"] = sedi_op
     if any(r not in REGIONI for r in valori.get("regioni_interesse") or []):
         errori["regioni_interesse"] = "Regione non valida."
     if any(c not in DIVISIONI_CPV for c in valori.get("cpv_interesse") or []):
@@ -178,6 +183,7 @@ def _valori(form: dict[str, Any]) -> dict[str, Any]:
     v["tag_testo"] = testo(form, "tag_testo") or ""
     v["avvisi_attivi"] = form.get("avvisi_attivi") == "1"
     v["soa_testo"] = testo(form, "soa_testo") or ""
+    v["sedi_operative_testo"] = testo(form, "sedi_operative_testo") or ""
     regioni = form.get("regioni_interesse") or []
     v["regioni_interesse"] = [regioni] if isinstance(regioni, str) else regioni
     cpv = form.get("cpv_interesse") or []
@@ -207,6 +213,73 @@ def leggi_soa(testo_soa: str) -> tuple[list[dict[str, str]] | None, str | None]:
     return voci or None, None
 
 
+MAX_SEDI_OPERATIVE = 30
+_RIGA_SEDE = re.compile(r"^(.+?)\s*(?:\(\s*([A-Za-z]{2})\s*\))?$")
+
+
+def leggi_sedi_operative(db: Session, testo_sedi: str) -> tuple[list[dict[str, Any]], str | None]:
+    """«Prato (PO)» / «Bologna», una per riga → comuni riconosciuti con la tabella ISTAT
+    (provincia e regione comprese). Senza tabella si tengono comune e sigla scritti."""
+    from app.riferimenti.territorio import in_memoria
+
+    t = in_memoria(db)
+    sedi: list[dict[str, Any]] = []
+    for riga in re.split(r"[\n;]+", testo_sedi):
+        riga = " ".join(riga.split())
+        if not riga:
+            continue
+        m = _RIGA_SEDE.match(riga)
+        nome, sigla = m.group(1).strip(" ,-"), (m.group(2) or "").upper() or None
+        if t is not None:
+            voce = t.comune(nome, sigla)
+            if voce is None:
+                ambiguo = not sigla and len(t.per_nome.get(norm_nome(nome), [])) > 1
+                aiuto = " Aggiungi la provincia, es. «Calliano (TN)»." if ambiguo else ""
+                return [], f"Comune non riconosciuto: «{riga}».{aiuto}"
+            sede = {"comune_testo": voce.nome, "provincia": voce.sigla, "regione": voce.regione,
+                    "codice_istat": voce.codice}  # fmt: skip
+        else:
+            sede = {"comune_testo": nome, "provincia": sigla, "regione": None, "codice_istat": None}
+        chiave = (norm_nome(sede["comune_testo"]), sede["provincia"])
+        if chiave not in {(norm_nome(s["comune_testo"]), s["provincia"]) for s in sedi}:
+            sedi.append(sede)
+    if len(sedi) > MAX_SEDI_OPERATIVE:
+        return [], f"Al massimo {MAX_SEDI_OPERATIVE} sedi operative."
+    return sedi, None
+
+
+def _testo_sedi_operative(a: Azienda) -> str:
+    return "\n".join(
+        f"{s.comune_testo} ({s.provincia})" if s.provincia else s.comune_testo
+        for s in a.sedi
+        if s.tipo == "operativa" and s.comune_testo
+    )
+
+
+def _applica_sedi_operative(azienda: Azienda, nuove: list[dict[str, Any]]) -> bool:
+    """Allinea le sedi operative all'elenco: quelle che restano tengono indirizzo e CAP."""
+    attuali = [s for s in azienda.sedi if s.tipo == "operativa"]
+    chiave = lambda c, p: (norm_nome(c or ""), (p or "").upper() or None)  # noqa: E731
+    per_chiave = {chiave(s.comune_testo, s.provincia): s for s in attuali}
+    tenute = set()
+    cambiate = False
+    for d in nuove:
+        s = per_chiave.get(chiave(d["comune_testo"], d["provincia"]))
+        if s is None:
+            s = Sede(tipo="operativa")
+            azienda.sedi.append(s)
+            cambiate = True
+        for c, valore in d.items():
+            if valore is not None and getattr(s, c) != valore:
+                setattr(s, c, valore)
+        tenute.add(id(s))
+    for s in attuali:
+        if id(s) not in tenute:
+            azienda.sedi.remove(s)
+            cambiate = True
+    return cambiate
+
+
 def _valori_da_azienda(a: Azienda) -> dict[str, Any]:
     sede = a.sede_legale
     v: dict[str, Any] = {c: getattr(a, c) for c in CAMPI_AZIENDA + CAMPI_NUMERICI + CAMPI_PROFILO}
@@ -219,6 +292,7 @@ def _valori_da_azienda(a: Azienda) -> dict[str, Any]:
     )
     v["regioni_interesse"] = a.regioni_interesse or []
     v["cpv_interesse"] = a.cpv_interesse or []
+    v["sedi_operative_testo"] = _testo_sedi_operative(a)
     if a.ateco_primario:
         v["ateco_codice"] = a.ateco_primario.codice
         v["ateco_descrizione"] = a.ateco_primario.descrizione
@@ -297,6 +371,8 @@ def _applica(azienda: Azienda, v: dict[str, Any]) -> dict[str, Any]:
             if getattr(sede, c) != v[c]:
                 differenze[f"sede_{c}"] = v[c]
                 setattr(sede, c, v[c])
+    if "sedi_operative" in v and _applica_sedi_operative(azienda, v["sedi_operative"]):
+        differenze["sedi_operative"] = v.get("sedi_operative_testo") or None
     profilo = {
         "avvisi_attivi": bool(v.get("avvisi_attivi")),
         "soa_possedute": v.get("soa_possedute") or None,

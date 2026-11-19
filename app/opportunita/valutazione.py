@@ -94,8 +94,14 @@ def profilo_anonimo(a: Azienda, progetti: list[Any] | None = None) -> str:
                 f"{s['codice']} {s.get('classifica') or ''}".strip() for s in a.soa_possedute
             )
         )
+    operative = sorted(
+        {f"{s.regione} ({s.provincia})" if s.provincia else s.regione
+         for s in getattr(a, "sedi", None) or [] if s.tipo == "operativa" and s.regione}
+    )  # fmt: skip
+    if operative:
+        righe.append(f"- sedi operative in: {', '.join(operative)}")
     if a.regioni_interesse:
-        righe.append(f"- lavora anche in: {', '.join(a.regioni_interesse)}")
+        righe.append(f"- partecipa agli appalti anche in: {', '.join(a.regioni_interesse)}")
     if a.cpv_interesse:
         righe.append(
             "- servizi e forniture di interesse: "

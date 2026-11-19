@@ -86,9 +86,37 @@ def voci_automatiche(azienda: Azienda, bando: Bando | None, oggi: date) -> list[
         voci.append(_voce("Requisiti del bando", "da_verificare", "Requisiti non ancora estratti."))
         return voci
     # Territorio
+    from app.opportunita.abbinamento import sedi_cliente
+
     sede = azienda.sede_legale
     regione = sede.regione if sede else None
-    if req.territorio == "nazionale":
+    operativa = next(
+        (
+            s
+            for s in sedi_cliente(azienda)
+            if s.tipo == "operativa" and s.regione in (req.regioni or [])
+        ),
+        None,
+    )
+    if (
+        req.territorio in ("regionale", "provinciale", "comunale")
+        and req.regioni
+        and regione not in req.regioni
+        and operativa is not None
+    ):
+        extra = (
+            " Ammessi solo alcuni comuni o province: controllare che la sede vi rientri."
+            if req.territorio != "regionale"
+            else " Controllare che il bando ammetta le sedi operative (di solito sì)."
+        )
+        voci.append(
+            _voce(
+                "Territorio",
+                "da_verificare",
+                f"Sede operativa a {operativa.comune_testo} ({operativa.regione}).{extra}",
+            )
+        )
+    elif req.territorio == "nazionale":
         voci.append(_voce("Territorio", "ok", "Bando nazionale."))
     elif req.territorio in ("regionale", "provinciale", "comunale") and req.regioni:
         if not regione:
