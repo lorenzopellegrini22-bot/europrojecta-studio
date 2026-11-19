@@ -79,6 +79,30 @@ def componi(
     else:
         righe.append("  Nessuna.")
 
+    # 2b. Menzioni e novità dei bandi e delle gare seguiti (solo di questo utente)
+    from app.squadra.note import menzioni_da_leggere
+    from app.squadra.seguiti import novita
+
+    menzioni = menzioni_da_leggere(db, utente)
+    if menzioni:
+        righe += ["", f"TI HANNO CITATO IN {len(menzioni)} NOTE"]
+        for m in menzioni[:10]:
+            c = m.commento
+            autore = c.utente.nome if c.utente else "Un collega"
+            pagina = (
+                f"/pratiche/{c.oggetto_id}"
+                if c.oggetto == "pratica"
+                else f"/opportunita/{c.oggetto_id}"
+            )
+            righe.append(f"  • {autore}: {' '.join(c.testo.split())[:160]}")
+            righe.append(f"    {base_url}{pagina}#note")
+    cambi = novita(db, utente)
+    if cambi:
+        righe += ["", "NOVITÀ SUI BANDI E LE GARE CHE SEGUI"]
+        for n, titolo, pagina in cambi[:15]:
+            righe.append(f"  • {titolo[:100]}: {n.testo}")
+            righe.append(f"    {base_url}{pagina}")
+
     # 3. Pratiche ferme
     limite = datetime.now(UTC) - timedelta(days=GIORNI_PRATICA_FERMA)
     ferme = list(

@@ -1,0 +1,17 @@
+{# Pulsante «Segui» per bandi (tipo "bando") e gare (tipo "gara") e novità da quando si segue #}
+{% macro pulsante_segui(tipo, oid, segue, puo_scrivere=true) -%}
+{% if puo_scrivere %}
+<form method="post" action="/seguiti/{{ tipo }}/{{ oid }}" class="in-linea" title="Ricevi un avviso quando cambiano scadenza, stato o documenti (es. FAQ e chiarimenti)">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if segue %}<input type="hidden" name="azione" value="smetti"><button class="piccolo secondary" aria-pressed="true">★ Segui · smetti</button>
+  {% else %}<button class="piccolo secondary outline" aria-pressed="false">☆ Segui</button>{% endif %}
+</form>
+{% endif %}
+{%- endmacro %}
+{% macro novita_seguito(elenco) -%}
+{% if elenco %}
+<div class="messaggio attenzione" role="status"><strong>Novità da quando lo segui:</strong>
+  <ul>{% for n in elenco %}<li>{{ n.testo }} <small>({{ n.creata_il | data_ora }})</small></li>{% endfor %}</ul>
+</div>
+{% endif %}
+{%- endmacro %}

@@ -400,6 +400,23 @@ Nuova impostazione `VERIFICA_DUE_PASSAGGI` (predefinita `true`). Con `false` il 
   senza poterne verificare il formato nella fascia consentita: resta il link alla pagina e il
   PDF di TED. Da verificare di notte prima di implementarla.
 
+## 2026-11-19 — Uso quotidiano: Oggi, ricerca, calendario, app, note, Segui
+
+- **Oggi** è la pagina personale; la Home resta il quadro dello studio.
+- **Calendario .ics**: link personale con token (nel database solo l'impronta HMAC, come per
+  inviti e sessioni), rigenerabile e disattivabile; il file contiene nomi dei clienti e delle
+  pratiche, perché serve a chi lavora. Non c'è un'API di Google o Microsoft: è il calendario
+  dell'utente che scarica il file (vedi `docs/dati-in-uscita.md`).
+- **Ricerca unica**: una query per gruppo (clienti, pratiche, bandi, gare), ognuno mostrato solo
+  a chi ha la sezione; P.IVA, codice fiscale, codice pratica e CIG cercati anche esatti.
+- **App sul telefono**: manifest web (installazione dalla schermata Home), senza service worker
+  né funzionamento offline: i dati restano sul server.
+- **Note**: menzioni con @nome di battesimo o @parte dell'email; ognuno elimina le proprie, il
+  titolare tutte. Chi è in sola lettura legge le note ma non scrive.
+- **Segui**: istantanea di scadenza, apertura, stato, documenti (link) e impronta del testo,
+  confrontata ogni mattina nel job delle opportunità, prima dell'email; anche chi è in sola
+  lettura può seguire.
+
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.
 - Jinja2 + HTMX salvati nel repository, nessuna risorsa da CDN (Pico.css sostituito da uno stile proprio, vedi sopra).

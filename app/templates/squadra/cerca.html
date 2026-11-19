@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titolo %}Cerca · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<hgroup>
+  <h1>Cerca</h1>
+  <p>Clienti, pratiche, bandi e gare: per nome, P.IVA, codice fiscale, codice pratica, protocollo o CIG.</p>
+</hgroup>
+<form method="get" action="/cerca" role="search" class="ricerca-pagina">
+  <input type="search" name="q" value="{{ q }}" placeholder="Es. Rossi, 01234567890, 2026-0001, CIG…" aria-label="Cerca" autofocus>
+  <input type="hidden" name="vai" value="0">
+  <button type="submit">Cerca</button>
+</form>
+{% if q and q | length < 2 %}<p class="vuoto">Scrivi almeno 2 caratteri.</p>
+{% elif q and not totale %}<p class="vuoto">Nessun risultato per «{{ q }}».</p>{% endif %}
+{% for g in gruppi if g.voci %}
+<article>
+  <header class="intestazione"><strong>{{ g.titolo }} ({{ g.voci | length }}{% if g.voci | length >= 8 %}+{% endif %})</strong> <a href="{{ g.tutti }}" class="piccolo">Apri l'elenco con questa ricerca</a></header>
+  <ul class="righe">
+    {% for v in g.voci %}
+    <li><span class="riga-testo"><a href="{{ v.url }}">{{ v.titolo | truncate(120) }}</a>{% if v.dettaglio %}<small>{{ v.dettaglio | truncate(140) }}</small>{% endif %}</span></li>
+    {% endfor %}
+  </ul>
+</article>
+{% endfor %}
+{% endblock %}

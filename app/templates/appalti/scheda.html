@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_parziali/documentazione.html" import documentazione %}
+{% from "_parziali/segui.html" import pulsante_segui, novita_seguito with context %}
 {% block titolo %}{{ a.titolo | truncate(60) }} · Appalti · {{ NOME_APP }}{% endblock %}
 {% block contenuto %}
 <nav aria-label="breadcrumb"><ul><li><a href="/appalti">Appalti</a></li><li>{{ a.cig and ("CIG " ~ a.cig) or a.id_esterno }}</li></ul></nav>
@@ -10,11 +11,13 @@
       {% if a.scadenza %}· <span class="{% if (a.scadenza - oggi).days <= 7 %}scaduta{% endif %}">scade il {{ a.scadenza | data }} ({% if a.scadenza == oggi %}oggi{% else %}tra {{ (a.scadenza - oggi).days }} giorni{% endif %})</span>{% endif %}</p>
   </hgroup>
   <div class="gruppo-pulsanti">
+    {{ pulsante_segui("gara", a.id, segue, puo_scrivere) }}
     <a href="/pratiche/nuova?bando_testo={{ (((("CIG " ~ a.cig ~ " – ") if a.cig else "") ~ a.titolo) | truncate(300)) | urlencode }}{% if a.scadenza %}&scadenza={{ a.scadenza.isoformat() }}{% endif %}" role="button" class="piccolo">Apri una pratica</a>
     <button type="button" class="secondary outline piccolo" data-copia="testo-scheda">Copia la scheda</button>
     {% if a.link %}<a href="{{ a.link }}" target="_blank" rel="noopener noreferrer" role="button" class="secondary outline piccolo">Avviso ufficiale</a>{% endif %}
   </div>
 </div>
+{{ novita_seguito(novita_qui) }}
 
 <article id="riassunto">
   <header><strong>Riassunto</strong>{% if a.riassunto_il %} <small>(scritto dall'AI il {{ a.riassunto_il | data_ora }} — verificare sempre sul bando)</small>{% endif %}</header>

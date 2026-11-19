@@ -24,6 +24,7 @@ Elenco di tutti i dati che lasciano il server, verso chi e perché. Va aggiornat
 | Storage esterno dei backup (`RESTIC_REPOSITORY`) | Ogni notte (01:30) | Dump del database e allegati, **cifrati con restic** prima di uscire | Dati in chiaro, la passphrase | **Attiva** (in produzione) |
 | ISTAT (`www.istat.it`) | Ogni mese (giorno 1, 03:40) e con `carica-istat` | Due GET dei file pubblici (elenco dei comuni, tavola di raccordo ATECO), con user agent identificabile | Qualsiasi dato | **Attiva** |
 | Piattaforme di gara delle stazioni appaltanti (link indicati da TED) | Ogni notte con la raccolta appalti (al massimo 150 gare) o con «Cerca i documenti adesso» | Una GET della pagina pubblica della gara e del robots.txt, con user agent identificabile | Qualsiasi dato | **Attiva** |
+| Calendario personale (.ics), se l'utente crea il link | Quando il calendario dell'utente (Google, Outlook, telefono) rilegge il link, di solito ogni poche ore | Scadenze dell'utente (per il titolare tutte): titolo, ragione sociale, codice pratica, fase, data; chiusure dei bandi e gare seguiti | Altri dati dei clienti, scadenze di altri utenti (se non titolare) | **Attiva** solo se l'utente crea il link; si disattiva da «Oggi» |
 
 ## Regole
 - Nessun invio a un destinatario non elencato qui.

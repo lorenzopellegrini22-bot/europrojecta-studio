@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block titolo %}Oggi · {{ NOME_APP }}{% endblock %}
+{% macro voce_scadenza(v) -%}
+<li>
+  <span class="data{% if v.data < oggi %} scaduta{% endif %}">{{ v.data | data }}</span>
+  <span>
+    {% if v.operazione %}<a href="/pratiche/{{ v.pratica.id }}?fase={{ v.fase.numero }}#op-{{ v.operazione.id }}">{{ v.titolo }}</a>{% else %}<a href="/pratiche/{{ v.pratica.id }}">{{ v.titolo }}</a>{% endif %}
+    <small>{{ v.pratica.azienda.ragione_sociale }}, {{ v.pratica.codice }}</small>
+  </span>
+</li>
+{%- endmacro %}
+{% block contenuto %}
+<hgroup>
+  <h1>Oggi</h1>
+  <p>{{ oggi.strftime("%d/%m/%Y") }} · quello che riguarda te, {{ utente.nome.split()[0] }}.</p>
+</hgroup>
+
+{% if menzioni %}
+<article class="riquadro-avviso">
+  <header class="intestazione"><strong>Ti hanno citato ({{ menzioni | length }})</strong>
+    <form method="post" action="/oggi/letto" class="in-linea"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="cosa" value="menzioni"><button class="secondary outline piccolo">Segna tutte lette</button></form>
+  </header>
+  <ul class="note-elenco">
+    {% for m in menzioni %}{% set c = m.commento %}
+    <li>
+      <a href="{{ '/pratiche/%d#note' % c.oggetto_id if c.oggetto == 'pratica' else '/opportunita/%d#note' % c.oggetto_id }}"><strong>{{ c.utente.nome if c.utente else "Utente eliminato" }}</strong> in {{ "una pratica" if c.oggetto == "pratica" else "un'opportunità" }}</a>
+      <small>{{ c.creato_il | data_ora }}</small>
+      <p class="note-testo">{{ c.testo | truncate(240) }}</p>
+    </li>
+    {% endfor %}
+  </ul>
+</article>
+{% endif %}
+
+{% if novita %}
+<article class="riquadro-avviso">
+  <header class="intestazione"><strong>Novità sui bandi e le gare che segui ({{ novita | length }})</strong>
+    <form method="post" action="/oggi/letto" class="in-linea"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="cosa" value="seguiti"><button class="secondary outline piccolo">Segna tutte lette</button></form>
+  </header>
+  <ul class="note-elenco">
+    {% for n, titolo, link in novita %}
+    <li><a href="{{ link }}">{{ titolo | truncate(110) }}</a> <small>{{ n.creata_il | data_ora }}</small><br>{{ n.testo }}</li>
+    {% endfor %}
+  </ul>
+</article>
+{% endif %}
+
+<div class="home-griglia">
+  {% if settimana is defined %}
+  <article>
+    <header><strong>Le mie scadenze</strong> <small>questa settimana</small></header>
+    {% if in_ritardo %}
+    <p><strong class="testo-errore">In ritardo: {{ in_ritardo | length }}</strong></p>
+    <ul class="scadenze">{% for v in in_ritardo %}{{ voce_scadenza(v) }}{% endfor %}</ul>
+    {% endif %}
+    {% if settimana %}
+    <ul class="scadenze">{% for v in settimana %}{{ voce_scadenza(v) }}{% endfor %}</ul>
+    {% elif not in_ritardo %}
+    <p class="vuoto">Nessuna scadenza nei prossimi 7 giorni.</p>
+    {% endif %}
+    <a href="/scadenzario?mie=1" class="piccolo">Tutto il mio scadenzario</a>
+  </article>
+
+  <article>
+    <header><strong>Le mie pratiche</strong> <small>di cui sei responsabile</small></header>
+    {% if mie_pratiche %}
+    <ul class="righe">
+      {% for p in mie_pratiche %}
+      <li>
+        <span class="riga-testo"><a href="/pratiche/{{ p.id }}">{{ p.codice }} · {{ p.azienda.ragione_sociale }}</a>
+          <small>{{ p.nome_bando | truncate(80) }}{% if p.fase_attiva %} · fase «{{ p.fase_attiva.nome }}»{% endif %}</small></span>
+        <span class="riga-valore">{% if p.scadenza_presentazione %}<small class="{{ 'testo-errore' if p.scadenza_presentazione < oggi else '' }}">{{ p.scadenza_presentazione | data }}</small>{% endif %}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="vuoto">Nessuna pratica attiva a tuo nome.</p>{% endif %}
+  </article>
+  {% endif %}
+
+  {% if opportunita is defined %}
+  <article>
+    <header><strong>Opportunità nuove da valutare</strong> <small>le migliori per punteggio</small></header>
+    {% if opportunita %}
+    <ul class="righe">
+      {% for o in opportunita %}
+      <li>
+        <span class="riga-testo"><a href="/opportunita/{{ o.id }}">{{ o.titolo | truncate(90) }}</a>
+          <small>{{ o.azienda.ragione_sociale }} · {{ "Bando" if o.bando_id else "Gara" }}{% if o.scadenza %} · scade il {{ o.scadenza | data }}{% endif %}</small></span>
+        <span class="riga-valore"><span class="punteggio">{{ o.punteggio }}</span></span>
+      </li>
+      {% endfor %}
+    </ul>
+    <a href="/opportunita?stato=nuova" class="piccolo">Tutte le opportunità nuove</a>
+    {% else %}<p class="vuoto">Nessuna opportunità nuova da valutare.</p>{% endif %}
+  </article>
+  {% endif %}
+
+  <article id="calendario">
+    <header><strong>Scadenze nel tuo calendario</strong></header>
+    {% if calendario_link %}
+    <div class="messaggio ok">Ecco il tuo link personale. Copialo ora: per sicurezza non lo mostreremo più (puoi sempre crearne uno nuovo).</div>
+    <p class="password-temporanea" id="link-calendario">{{ calendario_link }}</p>
+    <button type="button" class="secondary piccolo" data-copia="link-calendario">Copia il link</button>
+    <details open>
+      <summary><small>Come aggiungerlo</small></summary>
+      <ul>
+        <li><strong>Google Calendar</strong> (dal computer): «Altri calendari» → «+» → «Da URL», incolla il link.</li>
+        <li><strong>Outlook</strong>: «Aggiungi calendario» → «Sottoscrivi dal Web», incolla il link.</li>
+        <li><strong>iPhone</strong>: Impostazioni → Calendario → Account → Aggiungi account → Altro → «Aggiungi calendario sottoscritto».</li>
+      </ul>
+      <small>Il calendario si aggiorna da solo (Google ogni qualche ora). Chi ha il link vede le tue scadenze: non condividerlo.</small>
+    </details>
+    {% else %}
+    <p>Le tue scadenze di pratica{% if utente.is_titolare %} (per te tutte quelle dello studio){% endif %} e le chiusure dei bandi e delle gare che segui, in Outlook, Google Calendar o sul telefono. Si aggiorna da solo.</p>
+    {% if calendario_attivo %}<p><small>Il tuo link è attivo.</small></p>{% endif %}
+    {% endif %}
+    <div class="gruppo-pulsanti">
+      <form method="post" action="/oggi/calendario"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="piccolo{% if calendario_attivo %} secondary outline{% endif %}">{{ "Crea un nuovo link (il vecchio smette di funzionare)" if calendario_attivo else "Crea il link al calendario" }}</button></form>
+      {% if calendario_attivo %}<form method="post" action="/oggi/calendario/disattiva"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Disattiva il link</button></form>{% endif %}
+    </div>
+  </article>
+</div>
+<p><small>I colleghi possono citarti nelle note scrivendo <strong>{{ citazione }}</strong>.</small></p>
+{% endblock %}

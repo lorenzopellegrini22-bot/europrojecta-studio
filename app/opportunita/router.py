@@ -57,6 +57,9 @@ def _opportunita(db: Session, oid: int) -> Opportunita:
     return o
 
 
+from app.squadra.note import conteggi as conteggi_note  # noqa: E402
+
+
 def _documentazione(db: Session, elenco: list[Opportunita]) -> dict[int, list[dict]]:
     """Documentazione di ogni opportunità (bando o gara), con una sola query per i PDF."""
     from app.documenti.documentazione import voci_bando, voci_gara
@@ -123,6 +126,7 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
         {
             "per_cliente": per_cliente,
             "documentazione": documentazione,
+            "note_per": conteggi_note(db, "opportunita", [o.id for o in elenco]),
             "totale": len(elenco),
             "filtri": {"stato": stato, "tipo": tipo, "cliente": cliente},
             "clienti": list(db.scalars(select(Azienda).order_by(Azienda.ragione_sociale))),

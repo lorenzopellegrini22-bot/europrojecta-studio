@@ -13,6 +13,8 @@ pytestmark = pytest.mark.integration
 # /disiscrizione: link nelle email ai clienti, protetto dal token firmato
 # /primo-accesso: solo con PRIMO_ACCESSO=true e nessun utente (test più sotto)
 # /invito/{token}: link personale per scegliere la password, protetto dal token monouso
+# /calendario/{nome}: file .ics del calendario personale, protetto dal token nel link
+# /manifest.webmanifest: descrizione dell'app per il telefono (nessun dato)
 # /cron/{nome}: solo con CRON_SECRET e l'intestazione Authorization giusta (test_cron.py)
 ROUTE_PUBBLICHE = {
     "/login",
@@ -21,6 +23,8 @@ ROUTE_PUBBLICHE = {
     "/primo-accesso",
     "/cron/{nome}",
     "/invito/{token}",
+    "/calendario/{nome}",
+    "/manifest.webmanifest",
 }
 
 

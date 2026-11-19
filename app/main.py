@@ -55,6 +55,7 @@ from app.pratiche.router import router as pratiche_router
 from app.pratiche.servizio import ETICHETTE_STATO_PRATICA, scadenze
 from app.pratiche.statistiche import router as statistiche_router
 from app.report.router import router as report_router
+from app.squadra.router import router as squadra_router
 from app.web import render
 
 log = logging.getLogger(__name__)
@@ -149,6 +150,7 @@ app.include_router(segnalatori_router)
 app.include_router(prefattibilita_router)
 app.include_router(statistiche_router)
 app.include_router(appalti_router)
+app.include_router(squadra_router)
 app.include_router(opportunita_router)
 app.include_router(estrazione_router)
 app.include_router(documenti_router)

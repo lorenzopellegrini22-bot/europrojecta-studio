@@ -9,6 +9,12 @@
   <link rel="preload" href="{{ url_for('static', path='fonts/schibsted-grotesk-wght-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="icon" type="image/png" href="{{ url_for('static', path='img/favicon.png') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', path='img/apple-touch-icon.png') }}">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0544d4">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Europrojecta">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}?v={{ versione_statico('css/app.css') }}">
   <script src="{{ url_for('static', path='vendor/htmx.min.js') }}" defer></script>
   <script src="{{ url_for('static', path='js/app.js') }}?v={{ versione_statico('js/app.js') }}" defer></script>
@@ -63,8 +69,12 @@
       </div>
       {%- set percorso = request.url.path %}
       <nav class="menu" id="menu-principale" aria-label="Menu principale">
+        <form method="get" action="/cerca" role="search" class="ricerca-menu">
+          <input type="search" name="q" placeholder="Cerca cliente, P.IVA, pratica, CIG…" aria-label="Cerca in tutta l'app" value="{{ request.query_params.get('q', '') if percorso == '/cerca' else '' }}">
+        </form>
         <ul>
           <li><a href="/"{% if percorso == "/" %} aria-current="page"{% endif %}>Home</a></li>
+          <li><a href="/oggi"{% if percorso == "/oggi" %} aria-current="page"{% endif %}>Oggi{% set n_da_leggere = da_leggere(utente) %}{% if n_da_leggere %} <span class="contatore" title="Menzioni e novità da leggere">{{ n_da_leggere }}</span>{% endif %}</a></li>
         </ul>
         {% for chiave, titolo, solo_titolare, tutte in sezioni_menu if not solo_titolare or utente.is_titolare %}
         {%- set voci = [] %}

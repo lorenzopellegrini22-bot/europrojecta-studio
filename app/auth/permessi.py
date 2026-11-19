@@ -52,12 +52,13 @@ SEZIONI_PER_MODELLO: tuple[tuple[re.Pattern[str], str], ...] = (
 # non mappato è del solo titolare (negato per difetto: una pagina nuova non resta aperta)
 SEMPRE_AMMESSI = (
     "/account", "/logout", "/2fa", "/sessione", "/health", "/login", "/disiscrizione",
-    "/invito", "/primo-accesso", "/cron", "/static",
+    "/invito", "/primo-accesso", "/cron", "/oggi", "/cerca", "/seguiti", "/calendario",
+    "/manifest.webmanifest", "/static",
 )  # fmt: skip
 PREDEFINITE_COLLABORATORE = tuple(k for k in SEZIONI if k not in ("importazione", "esportazione"))
 SOLO_TITOLARE = ("/impostazioni",)
 # Indirizzi che anche chi è in sola lettura può chiamare in POST (il proprio account)
-POST_SEMPRE_AMMESSI = ("/logout", "/account", "/sessione", "/2fa")
+POST_SEMPRE_AMMESSI = ("/logout", "/account", "/sessione", "/2fa", "/oggi", "/seguiti")
 
 
 def _corrisponde(percorso: str, prefisso: str) -> bool:

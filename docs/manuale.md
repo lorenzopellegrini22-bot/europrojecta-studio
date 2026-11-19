@@ -26,6 +26,27 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
   mostra un riquadro rosso, l'email del mattino lo segnala e i titolari ricevono subito
   un'email (una volta al giorno per lo stesso problema).
 
+### Uso di ogni giorno
+- **Oggi** (menu, sotto Home): le tue scadenze della settimana e quelle in ritardo, le pratiche
+  di cui sei responsabile, le migliori opportunità nuove, le note in cui ti hanno citato e le
+  novità dei bandi e delle gare che segui. Il numero accanto a «Oggi» conta le cose da leggere.
+- **Cerca** (casella in alto nel menu): nome del cliente, P.IVA, codice fiscale, codice
+  pratica, protocollo, CIG o titolo di un bando. Se c'è un solo risultato si apre subito.
+- **Calendario**: in «Oggi» → «Crea il link al calendario», poi aggiungilo a Google Calendar,
+  Outlook o al telefono come calendario «da URL»: si aggiorna da solo. Contiene le tue scadenze
+  (per il titolare tutte quelle dello studio) e le chiusure di bandi e gare che segui. Il link è
+  personale: se lo perdi o lo condividi per sbaglio, creane uno nuovo e il vecchio smette di
+  funzionare.
+- **App sul telefono**: apri l'app dal browser del telefono e scegli «Aggiungi a schermata
+  Home» (Safari: pulsante Condividi; Chrome: menu ⋮ → «Installa app»). Si apre a schermo intero
+  sulla pagina «Oggi».
+- **Note**: in fondo a ogni pratica e nel dettaglio di ogni opportunità (link «Note» nella
+  lista). Scrivi @ e il nome del collega (es. @giulia) per avvisarlo: lo vede in «Oggi» e gli
+  arriva un'email. Le note restano nello studio, il cliente non le vede.
+- **Segui**: il pulsante ☆ Segui nella scheda di un bando o di una gara. Ogni mattina l'app
+  controlla scadenza, stato, documenti nuovi (FAQ, chiarimenti, rettifiche) e testo della fonte:
+  i cambiamenti compaiono in «Oggi», nella scheda e nell'email del mattino.
+
 ## 3. Clienti
 - **Importa clienti** (menu Studio): carica l'export del programma precedente in CSV, controlla
   la mappatura e l'anteprima, fai la **prova a vuoto**, poi importa. Reimportare non crea

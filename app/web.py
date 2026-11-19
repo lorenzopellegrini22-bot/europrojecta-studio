@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from markupsafe import Markup, escape
 
 from app import NOME_APP
 from app.config import get_settings
@@ -59,6 +60,59 @@ def _puo_vedere(utente: Any, percorso: str) -> bool:
 
 
 templates.env.globals["puo_vedere"] = _puo_vedere
+
+
+def _puo_modificare(utente: Any, percorso: str, metodo: str = "POST") -> bool:
+    from app.auth.permessi import puo_modificare, puo_vedere
+
+    return (
+        utente is not None
+        and puo_vedere(utente, percorso)
+        and puo_modificare(utente, percorso, metodo)
+    )
+
+
+def _menzioni(testo: str) -> Markup:
+    """Testo di una nota con le @menzioni evidenziate (il resto è testo semplice, escapato)."""
+    import re
+
+    sicuro = str(escape(testo or ""))
+    return Markup(
+        re.sub(r"(?<![\w.])(@[\w][\w.\-]*)", r'<strong class="menzione">\1</strong>', sicuro)
+    )
+
+
+def _da_leggere(utente: Any) -> int:
+    """Menzioni e novità dei bandi seguiti non ancora lette (contatore accanto a «Oggi»).
+    Usa la sessione del database già aperta per la richiesta."""
+    from sqlalchemy import func, select
+    from sqlalchemy.orm import object_session
+
+    from app.models import Menzione, NovitaSeguito, Seguito
+
+    db = object_session(utente) if utente is not None else None
+    if db is None:
+        return 0
+    try:
+        menzioni = db.scalar(
+            select(func.count())
+            .select_from(Menzione)
+            .where(Menzione.utente_id == utente.id, Menzione.letta_il.is_(None))
+        )
+        novita = db.scalar(
+            select(func.count())
+            .select_from(NovitaSeguito)
+            .join(Seguito)
+            .where(Seguito.utente_id == utente.id, NovitaSeguito.letta_il.is_(None))
+        )
+    except Exception:  # il contatore non deve mai rompere una pagina
+        return 0
+    return (menzioni or 0) + (novita or 0)
+
+
+templates.env.globals["puo_modificare"] = _puo_modificare
+templates.env.globals["da_leggere"] = _da_leggere
+templates.env.filters["menzioni"] = _menzioni
 
 
 def render(

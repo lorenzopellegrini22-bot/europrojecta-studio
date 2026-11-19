@@ -1,0 +1,29 @@
+{# Note interne dello studio con @menzioni. azione: indirizzo del form (es. /pratiche/3/note) #}
+{% macro note_interne(elenco, azione, citazioni, puo_scrivere=true) -%}
+<section id="note" class="note">
+  <h2>Note dello studio <small>({{ elenco | length }})</small></h2>
+  {% if elenco %}
+  <ul class="note-elenco">
+    {% for c in elenco %}
+    <li id="nota-{{ c.id }}">
+      <div class="intestazione">
+        <span><strong>{{ c.utente.nome if c.utente else "Utente eliminato" }}</strong> <small>{{ c.creato_il | data_ora }}</small></span>
+        {% if puo_scrivere and (c.utente_id == utente.id or utente.is_titolare) %}
+        <form method="post" action="{{ azione }}/{{ c.id }}/elimina" class="in-linea"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Elimina</button></form>
+        {% endif %}
+      </div>
+      <p class="note-testo">{{ c.testo | menzioni }}</p>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="vuoto">Nessuna nota. Scrivi qui accordi, telefonate, cose da ricordare: restano nello studio, il cliente non le vede.</p>{% endif %}
+  {% if puo_scrivere %}
+  <form method="post" action="{{ azione }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <textarea name="testo" rows="3" maxlength="4000" required placeholder="Scrivi una nota… usa @nome per avvisare un collega" aria-label="Nuova nota"></textarea>
+    {% if citazioni %}<small>Puoi citare: {{ citazioni | join(", ") }}. Chi è citato lo vede in «Oggi» e riceve un'email.</small>{% endif %}
+    <button type="submit" class="piccolo">Aggiungi la nota</button>
+  </form>
+  {% endif %}
+</section>
+{%- endmacro %}

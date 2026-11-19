@@ -59,6 +59,7 @@
           {% for m in o.motivi.soddisfatti %}<span class="motivo-ok">✓ {{ m }}</span> {% endfor %}
           {% for m in o.motivi.da_verificare %}<span class="motivo-verifica">? {{ m }}</span> {% endfor %}
         </small>
+        <a href="/opportunita/{{ o.id }}#note" class="piccolo link-note">Note{% if note_per.get(o.id) %} ({{ note_per[o.id] }}){% endif %}</a>
         {% set docs = documentazione.get(o.id, []) %}
         <details class="doc-opportunita">
           <summary>Documentazione{% if docs %} ({{ docs | length }}){% endif %}</summary>

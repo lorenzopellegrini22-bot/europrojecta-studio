@@ -12,6 +12,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
@@ -29,6 +30,7 @@ class Utente(ConTimestamp, Base):
     __table_args__ = (
         CheckConstraint(f"ruolo IN {RUOLI}", name="ck_utente_ruolo"),
         CheckConstraint("email = lower(email)", name="ck_utente_email_minuscola"),
+        UniqueConstraint("calendario_hash", name="uq_utente_calendario_hash"),
     )
 
     email: Mapped[str] = mapped_column(String(254), unique=True)
@@ -48,6 +50,8 @@ class Utente(ConTimestamp, Base):
     # Invito via email: impronta del token del link (mai il token in chiaro) e scadenza
     invito_hash: Mapped[str | None] = mapped_column(String(64))
     invito_scade_il: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Impronta del token del link al calendario personale (.ics); None = link non creato
+    calendario_hash: Mapped[str | None] = mapped_column(String(64))
     attivo: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     tentativi_falliti: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     bloccato_fino_al: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

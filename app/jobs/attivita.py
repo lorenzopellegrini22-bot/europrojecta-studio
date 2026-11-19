@@ -235,10 +235,15 @@ def opportunita() -> str:
     from app.notifiche import componi
     from app.opportunita.abbinamento import abbina, da_notificare
     from app.opportunita.valutazione import esegui as valuta
+    from app.squadra.seguiti import controlla as controlla_seguiti
 
     with get_sessionmaker()() as db:
         esiti = [abbina(db)]
-        for nome, passo in (("Valutazione AI", valuta), ("Bozze aggiornamenti", bozze_periodiche)):
+        for nome, passo in (
+            ("Valutazione AI", valuta),
+            ("Bozze aggiornamenti", bozze_periodiche),
+            ("Bandi e gare seguiti", controlla_seguiti),
+        ):
             try:
                 esiti.append(passo(db))
             except Exception as e:  # un passo non deve bloccare l'email del mattino

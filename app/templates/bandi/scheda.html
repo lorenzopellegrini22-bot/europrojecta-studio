@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "bandi/_macro.html" import badge_stato, territorio %}
 {% from "_parziali/documentazione.html" import documentazione %}
+{% from "_parziali/segui.html" import pulsante_segui, novita_seguito with context %}
 {% block titolo %}{{ bando.titolo[:60] }} · {{ NOME_APP }}{% endblock %}
 {% macro riga(etichetta, campo, valore, prov=none) -%}
   {%- set chiave_prov = prov or campo -%}
@@ -32,10 +33,12 @@
 <p><small>Lo stesso bando compare anche in: {% for c in copie %}<a href="/bandi/{{ c.id }}">{{ c.fonte.nome }}</a>{% if not loop.last %}, {% endif %}{% endfor %} (collegato in automatico, mostrato una volta sola).</small></p>
 {% endif %}
 <div class="gruppo-pulsanti">
+  {{ pulsante_segui("bando", bando.id, segue, puo_scrivere) }}
   <a href="/prefattibilita/nuova?bando_id={{ bando.id }}" role="button" class="secondary outline piccolo">Verifica per un cliente</a>
   <a href="/revisione/{{ bando.id }}" role="button" class="secondary outline piccolo">Rivedi i requisiti</a>
 </div>
 </div>
+{{ novita_seguito(novita_qui) }}
 {% if req and req.sintesi %}
 <article><header><strong>In breve</strong>{% if req.provenienza.get("sintesi") == "llm" %} <small class="provenienza">(sintesi dell'AI: verifica sempre sul bando)</small>{% endif %}</header><p class="note-testo">{{ req.sintesi }}</p></article>
 {% endif %}

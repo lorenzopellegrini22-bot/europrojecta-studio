@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_parziali/note.html" import note_interne with context %}
 {% block titolo %}Pratica {{ p.codice }} · {{ NOME_APP }}{% endblock %}
 {% macro badge_fase(f) -%}
 <span class="numero-fase fase-{{ f.stato }}" title="{{ {'da_iniziare': 'Da iniziare', 'in_corso': 'In corso', 'completata': 'Completata', 'saltata': 'Saltata'}[f.stato] }}">{% if f.stato == "completata" %}✓{% elif f.stato == "saltata" %}–{% else %}{{ f.numero }}{% endif %}</span>
@@ -250,4 +251,5 @@
     {% endif %}
   </section>
 </div>
+{{ note_interne(note, "/pratiche/%d/note" % p.id, citazioni, puo_modificare(utente, "/pratiche/%d/note" % p.id)) }}
 {% endblock %}

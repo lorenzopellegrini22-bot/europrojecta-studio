@@ -370,7 +370,9 @@ def crea(request: Request, db: Db, utente: Autenticato, form: Form) -> Response:
 
 
 @router.get("/pratiche/{pratica_id}")
-def scheda(request: Request, pratica_id: int, db: Db, _: Autenticato) -> Response:
+def scheda(request: Request, pratica_id: int, db: Db, utente: Autenticato) -> Response:
+    from app.squadra.router import contesto_note
+
     p = _pratica(db, pratica_id)
     numero = _intero(request.query_params.get("fase"))
     fase = next((f for f in p.fasi if f.numero == numero), None) or p.fase_attiva or p.fasi[0]
@@ -408,6 +410,7 @@ def scheda(request: Request, pratica_id: int, db: Db, _: Autenticato) -> Respons
             ),
             "messaggio": request.query_params.get("msg"),
             "esito": request.query_params.get("esito"),
+            **contesto_note(db, utente, "pratica", p.id),
         },
     )
 

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "_parziali/documentazione.html" import documentazione %}
+{% from "_parziali/note.html" import note_interne with context %}
+{% block titolo %}{{ o.titolo | truncate(60) }} · Opportunità · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<nav aria-label="breadcrumb"><ul><li><a href="/opportunita">Opportunità</a></li><li><a href="/opportunita?cliente={{ o.azienda_id }}">{{ o.azienda.ragione_sociale }}</a></li><li>Dettaglio</li></ul></nav>
+<hgroup>
+  <h1>{{ o.titolo }}</h1>
+  <p>
+    <span class="punteggio">{{ o.punteggio }}</span>
+    <small class="etichetta">{{ "AI" if o.punteggio_ai is not none else "regole" }}</small>
+    <small class="etichetta">{{ "Bando" if o.bando_id else "Appalto" }}</small>
+    <small class="etichetta">{{ etichette.get(o.stato, o.stato) }}</small>
+    per <a href="/clienti/{{ o.azienda_id }}">{{ o.azienda.ragione_sociale }}</a>
+    {% if o.scadenza %} · scade il {{ o.scadenza | data }}{% endif %}
+  </p>
+</hgroup>
+
+<div class="gruppo-pulsanti">
+  <a href="{{ '/bandi/%d' % o.bando_id if o.bando_id else '/appalti/%d' % o.appalto_id }}" role="button" class="secondary outline piccolo">Apri la scheda {{ "del bando" if o.bando_id else "della gara" }}</a>
+  <form method="post" action="/opportunita/{{ o.id }}/pratica"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="piccolo">Apri pratica</button></form>
+  {% for st, etichetta in (("interessante", "Interessante"), ("scartata", "Scarta")) if o.stato != st %}
+  <form method="post" action="/opportunita/{{ o.id }}/stato"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="stato" value="{{ st }}"><input type="hidden" name="torna" value="/opportunita/{{ o.id }}"><button class="secondary outline piccolo">{{ etichetta }}</button></form>
+  {% endfor %}
+</div>
+
+<div class="grid">
+  <article>
+    <header><strong>Perché è adatta</strong></header>
+    <small>
+      {% for m in o.motivi.soddisfatti %}<span class="motivo-ok">✓ {{ m }}</span><br>{% endfor %}
+      {% for m in o.motivi.da_verificare %}<span class="motivo-verifica">? {{ m }}</span><br>{% endfor %}
+    </small>
+    {% if o.motivazione_ai %}<p><small><strong>Valutazione AI:</strong> {{ o.motivazione_ai }}</small></p>{% endif %}
+  </article>
+  <article>
+    <header><strong>Documentazione</strong></header>
+    {{ documentazione(documenti, "Nessun documento trovato: apri la scheda.") }}
+  </article>
+</div>
+
+{{ note_interne(note, "/opportunita/%d/note" % o.id, citazioni, puo_modificare(utente, "/opportunita/%d/note" % o.id, "POST")) }}
+{% endblock %}

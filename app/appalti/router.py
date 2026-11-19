@@ -241,7 +241,9 @@ def _appalto(db: Session, appalto_id: int) -> Appalto:
 
 
 @router.get("/appalti/{appalto_id}")
-def scheda(request: Request, appalto_id: int, db: Db, _: Autenticato) -> Response:
+def scheda(request: Request, appalto_id: int, db: Db, utente: Autenticato) -> Response:
+    from app.squadra.router import contesto_seguito
+
     a = _appalto(db, appalto_id)
     ai_ok, ai_motivo = disponibile(db)
     return render(
@@ -251,6 +253,7 @@ def scheda(request: Request, appalto_id: int, db: Db, _: Autenticato) -> Respons
             "a": a,
             "righe": righe_scheda(a),
             "voci_documenti": voci_gara(a),
+            **contesto_seguito(db, utente, appalto_id=a.id),
             "testo": testo_scheda(a),
             "ai_ok": ai_ok,
             "ai_motivo": ai_motivo,

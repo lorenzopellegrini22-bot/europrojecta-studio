@@ -139,7 +139,9 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
 
 
 @router.get("/bandi/{bando_id}")
-def scheda(request: Request, db: Db, _: Autenticato, bando_id: int) -> Response:
+def scheda(request: Request, db: Db, utente: Autenticato, bando_id: int) -> Response:
+    from app.squadra.router import contesto_seguito
+
     bando = db.get(Bando, bando_id, options=[selectinload(Bando.requisiti)])
     if bando is None:
         raise HTTPException(status_code=404)
@@ -160,6 +162,7 @@ def scheda(request: Request, db: Db, _: Autenticato, bando_id: int) -> Response:
             "bando": bando,
             "documenti": documenti,
             "voci_documenti": voci_bando(bando, documenti),
+            **contesto_seguito(db, utente, bando_id=bando.id),
             "req": bando.requisiti,
             "versioni": versioni,
             "compatibili": list(
