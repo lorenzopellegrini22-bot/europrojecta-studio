@@ -297,7 +297,7 @@ def test_pdf_dei_bandi_letti_dall_ai(
     assert any("DOCUMENTO PDF" in c["input"] for c in finto.chiamate)
 
     pagina = client.get(f"/bandi/{bandi[0].id}").text
-    assert "Documenti PDF" in pagina and "1 pagine lette" in pagina
+    assert "Documentazione" in pagina and "PDF letti dall" in pagina and "1 pagine lette" in pagina
 
 
 def test_pdf_vietato_caricato_a_mano(
