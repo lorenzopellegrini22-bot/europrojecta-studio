@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.auth.dipendenze import richiede_titolare, utente_corrente, verifica_csrf
 from app.config import get_settings
 from app.db import get_db
+from app.documenti.documentazione import voci_bando
 from app.jobs import attivita
 from app.jobs.esecuzione import esegui_job
 from app.models import (
@@ -145,18 +146,20 @@ def scheda(request: Request, db: Db, _: Autenticato, bando_id: int) -> Response:
     versioni = db.scalar(
         select(func.count()).select_from(BandoVersione).where(BandoVersione.bando_id == bando.id)
     )
+    documenti = list(
+        db.scalars(
+            select(DocumentoBando)
+            .where(DocumentoBando.bando_id == bando.id)
+            .order_by(DocumentoBando.id)
+        )
+    )
     return render(
         request,
         "bandi/scheda.html",
         {
             "bando": bando,
-            "documenti": list(
-                db.scalars(
-                    select(DocumentoBando)
-                    .where(DocumentoBando.bando_id == bando.id)
-                    .order_by(DocumentoBando.id)
-                )
-            ),
+            "documenti": documenti,
+            "voci_documenti": voci_bando(bando, documenti),
             "req": bando.requisiti,
             "versioni": versioni,
             "compatibili": list(

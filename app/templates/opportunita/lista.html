@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_parziali/documentazione.html" import documentazione as elenco_documenti %}
 {% block titolo %}Opportunità · {{ NOME_APP }}{% endblock %}
 {% block contenuto %}
 <div class="intestazione">
@@ -58,6 +59,11 @@
           {% for m in o.motivi.soddisfatti %}<span class="motivo-ok">✓ {{ m }}</span> {% endfor %}
           {% for m in o.motivi.da_verificare %}<span class="motivo-verifica">? {{ m }}</span> {% endfor %}
         </small>
+        {% set docs = documentazione.get(o.id, []) %}
+        <details class="doc-opportunita">
+          <summary>Documentazione{% if docs %} ({{ docs | length }}){% endif %}</summary>
+          {{ elenco_documenti(docs, "Nessun documento trovato: apri la scheda.") }}
+        </details>
         {% if o.motivazione_ai %}
         <details>
           <summary><small>Valutazione AI{% if o.punteggio_regole is not none %} (regole: {{ o.punteggio_regole }}){% endif %}</small></summary>

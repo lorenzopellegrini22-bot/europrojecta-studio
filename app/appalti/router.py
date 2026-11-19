@@ -18,6 +18,7 @@ from app.appalti.scheda import CATEGORIE_SOA, FONTI, prevalente, righe_scheda, t
 from app.appalti.ted import ATTRIBUZIONE
 from app.auth.dipendenze import richiede_titolare, utente_corrente, verifica_csrf
 from app.db import get_db
+from app.documenti.documentazione import voci_gara
 from app.jobs import attivita
 from app.jobs.esecuzione import esegui_job
 from app.models import JobRun, Utente
@@ -249,6 +250,7 @@ def scheda(request: Request, appalto_id: int, db: Db, _: Autenticato) -> Respons
         {
             "a": a,
             "righe": righe_scheda(a),
+            "voci_documenti": voci_gara(a),
             "testo": testo_scheda(a),
             "ai_ok": ai_ok,
             "ai_motivo": ai_motivo,

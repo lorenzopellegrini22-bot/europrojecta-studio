@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "bandi/_macro.html" import badge_stato, territorio %}
+{% from "_parziali/documentazione.html" import documentazione %}
 {% block titolo %}{{ bando.titolo[:60] }} · {{ NOME_APP }}{% endblock %}
 {% macro riga(etichetta, campo, valore, prov=none) -%}
   {%- set chiave_prov = prov or campo -%}
@@ -49,17 +50,16 @@
     {% if bando.note_apertura_chiusura %}<p><small>{{ bando.note_apertura_chiusura }}</small></p>{% endif %}
   </article>
   <article>
-    <header><strong>Link</strong></header>
-    <ul>
-      {% if bando.link_ufficiale %}<li><a href="{{ bando.link_ufficiale }}" target="_blank" rel="noopener noreferrer">Pagina ufficiale</a></li>{% endif %}
-      {% if bando.link_domande %}<li><a href="{{ bando.link_domande }}" target="_blank" rel="noopener noreferrer">Piattaforma per le domande</a></li>{% endif %}
-      {% if bando.id_rna %}<li>ID nel Registro Nazionale Aiuti: {{ bando.id_rna }}</li>{% endif %}
-    </ul>
+    <header><strong>Documentazione</strong></header>
+    {{ documentazione(voci_documenti, "Nessun documento indicato dalla fonte.") }}
+    {% if bando.id_rna %}<p><small>ID nel Registro Nazionale Aiuti: {{ bando.id_rna }}</small></p>{% endif %}
     <div id="documenti">
     {% set msg = request.query_params.get("msg") %}
     {% if msg %}<div class="messaggio {{ 'ok' if request.query_params.get('esito') == 'ok' else 'errore' }}" role="status">{{ msg }}</div>{% endif %}
     {% if documenti %}
-    <p><strong>Documenti PDF</strong> <small>(letti dall'AI quando hanno testo)</small></p>
+    {% set da_caricare = documenti | selectattr("errore") | rejectattr("sha256") | list %}
+    <details{% if da_caricare %} open{% endif %}>
+    <summary><small>PDF letti dall'AI{% if da_caricare %} · {{ da_caricare | length }} da caricare a mano{% endif %}</small></summary>
     <ul>
       {% for d in documenti %}
       <li>
@@ -78,9 +78,10 @@
       </li>
       {% endfor %}
     </ul>
+    </details>
     {% endif %}
     <details>
-      <summary>Aggiungi un altro PDF del bando</summary>
+      <summary><small>Aggiungi un altro PDF del bando</small></summary>
       <form method="post" action="/bandi/{{ bando.id }}/documenti" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="file" name="file" accept="application/pdf,.pdf" required aria-label="PDF">

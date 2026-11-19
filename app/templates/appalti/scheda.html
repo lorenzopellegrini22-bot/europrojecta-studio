@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_parziali/documentazione.html" import documentazione %}
 {% block titolo %}{{ a.titolo | truncate(60) }} · Appalti · {{ NOME_APP }}{% endblock %}
 {% block contenuto %}
 <nav aria-label="breadcrumb"><ul><li><a href="/appalti">Appalti</a></li><li>{{ a.cig and ("CIG " ~ a.cig) or a.id_esterno }}</li></ul></nav>
@@ -39,10 +40,8 @@
       <tr>
         <th scope="row">{{ etichetta }}</th>
         <td>
-          {% if etichetta == "Documentazione" and valore != "—" %}
-            <ul class="documentazione">
-            {% for riga in valore.split("\n") %}{% set parti = riga.rsplit(": ", 1) %}<li><a href="{{ parti[1] }}" target="_blank" rel="noopener noreferrer">{{ parti[0] }}</a></li>{% endfor %}
-            </ul>
+          {% if etichetta == "Documentazione" %}
+            {{ documentazione(voci_documenti, "Nessun documento trovato.") }}
             {% if not a.documenti_letti_il %}
             <form method="post" action="/appalti/{{ a.id }}/documenti" class="in-linea"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Cerca i documenti adesso</button></form>
             {% else %}

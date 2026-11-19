@@ -6,7 +6,7 @@ from typing import Annotated, Any
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from sqlalchemy.orm import Session
 
 from app import audit
@@ -121,3 +121,19 @@ def carica_insieme(
     return RedirectResponse(
         f"/documenti/da-caricare?esito={esito}&msg={quote(' '.join(parti))}", status_code=303
     )
+
+
+@router.get("/bandi/{bando_id}/documenti/{documento_id}")
+def scarica(bando_id: int, documento_id: int, db: Db, _: Autenticato) -> Response:
+    """PDF salvato nell'app (caricato a mano): si scarica da qui, non c'è un link all'ente."""
+    d = db.get(DocumentoBando, documento_id)
+    if d is None or d.bando_id != bando_id or not d.percorso:
+        raise HTTPException(404)
+    base = s.cartella().resolve()
+    file = (base / d.percorso).resolve()
+    if not file.is_relative_to(base) or not file.is_file():
+        raise HTTPException(404)
+    nome = "".join(c for c in (d.titolo or "documento") if c.isalnum() or c in " ._-")[:80]
+    if not nome.lower().endswith(".pdf"):
+        nome += ".pdf"
+    return FileResponse(file, media_type="application/pdf", filename=nome)

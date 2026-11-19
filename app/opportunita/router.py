@@ -57,6 +57,30 @@ def _opportunita(db: Session, oid: int) -> Opportunita:
     return o
 
 
+def _documentazione(db: Session, elenco: list[Opportunita]) -> dict[int, list[dict]]:
+    """Documentazione di ogni opportunità (bando o gara), con una sola query per i PDF."""
+    from app.documenti.documentazione import voci_bando, voci_gara
+    from app.models.documenti import DocumentoBando
+
+    ids = {o.bando_id for o in elenco if o.bando_id}
+    pdf: dict[int, list[DocumentoBando]] = {}
+    if ids:
+        for d in db.scalars(
+            select(DocumentoBando)
+            .where(DocumentoBando.bando_id.in_(ids))
+            .order_by(DocumentoBando.id)
+        ):
+            pdf.setdefault(d.bando_id, []).append(d)
+    return {
+        o.id: voci_bando(o.bando, pdf.get(o.bando_id, []))
+        if o.bando
+        else voci_gara(o.appalto)
+        if o.appalto
+        else []
+        for o in elenco
+    }
+
+
 @router.get("/opportunita")
 def lista(request: Request, db: Db, _: Autenticato) -> Response:
     p = request.query_params
@@ -83,6 +107,7 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
     per_cliente: dict[int, list[Opportunita]] = {}
     for o in elenco:
         per_cliente.setdefault(o.azienda_id, []).append(o)
+    documentazione = _documentazione(db, elenco)
     senza_profilo = db.scalar(
         select(func.count())
         .select_from(Azienda)
@@ -97,6 +122,7 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
         "opportunita/lista.html",
         {
             "per_cliente": per_cliente,
+            "documentazione": documentazione,
             "totale": len(elenco),
             "filtri": {"stato": stato, "tipo": tipo, "cliente": cliente},
             "clienti": list(db.scalars(select(Azienda).order_by(Azienda.ragione_sociale))),
