@@ -181,3 +181,51 @@ def _pdf_pymupdf(documento: str, consulente: str) -> bytes:
 
 def aggiorna(r: ReportBando, form: dict[str, Any]) -> None:
     r.contenuto = {k: (form.get(k) or "").strip()[:5000] for k, _ in SEZIONI}
+
+
+def word(r: ReportBando, b: Bando, consulente: str) -> bytes:
+    """Lo stesso report in Word (.docx), da ritoccare con Word o Google Documenti prima
+    dell'invio: stesse sezioni e stesso testo del PDF."""
+    import io
+
+    from docx import Document
+    from docx.shared import Pt, RGBColor
+
+    from app.documenti.word import pulito
+
+    doc = Document()
+    doc.styles["Normal"].font.name = "Calibri"
+    doc.styles["Normal"].font.size = Pt(11)
+    doc.core_properties.title = pulito(b.titolo or "Report")[:250]
+    doc.core_properties.author = pulito(consulente or "")[:250]
+    sopra = doc.add_paragraph()
+    sopra.add_run(f"Scheda bando · preparata per {pulito(r.azienda.ragione_sociale)}").italic = True
+    doc.add_heading(pulito(b.titolo or "Bando"), level=1)
+    dettagli = [b.ente or ""]
+    if b.data_chiusura:
+        dettagli.append(f"scadenza {b.data_chiusura:%d/%m/%Y}")
+    dettagli.append(f"{datetime.now(UTC):%d/%m/%Y}")
+    doc.add_paragraph(" · ".join(pulito(x) for x in dettagli if x))
+    for chiave, titolo in SEZIONI:
+        testo = pulito((r.contenuto or {}).get(chiave) or "").strip()
+        if not testo:
+            continue
+        doc.add_heading(titolo, level=2)
+        for riga in testo.splitlines():
+            riga = riga.strip()
+            if not riga:
+                continue
+            if riga.startswith("• "):
+                doc.add_paragraph(riga[2:], style="List Bullet")
+            else:
+                doc.add_paragraph(riga)
+    chiusura = doc.add_paragraph("Restiamo a disposizione per preparare insieme la domanda.")
+    chiusura.add_run("\n")
+    chiusura.add_run(pulito(consulente or "")).bold = True
+    fonte = ATTRIBUZIONE + (f" Link ufficiale: {b.link_ufficiale}" if b.link_ufficiale else "")
+    piccolo = doc.add_paragraph().add_run(pulito(fonte))
+    piccolo.font.size = Pt(8)
+    piccolo.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
+    uscita = io.BytesIO()
+    doc.save(uscita)
+    return uscita.getvalue()

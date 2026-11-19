@@ -22,6 +22,7 @@
     <button name="azione" value="approva">Approva</button>
     {% else %}
     <a href="/report/{{ r.id }}/pdf" role="button">Scarica il PDF</a>
+    <a href="/report/{{ r.id }}/word" role="button" class="secondary" title="Da modificare con Word o Google Documenti">Scarica in Word</a>
     {% if r.stato == "approvato" %}<button name="azione" value="inviato" class="secondary">Segna come inviato al cliente</button>{% endif %}
     <button name="azione" value="riapri" class="secondary outline">Riapri per modificare</button>
     {% endif %}

@@ -2,6 +2,7 @@
 (il sito lo vieta nel robots.txt, o dà errore). Il consulente apre il link nel browser, salva il
 PDF e lo carica qui: il testo viene letto subito e l'AI rianalizza il bando la notte dopo."""
 
+import contextlib
 from typing import Annotated, Any
 from urllib.parse import quote
 
@@ -120,6 +121,45 @@ def carica_insieme(
     esito = "ok" if caricati and not errori else "errore"
     return RedirectResponse(
         f"/documenti/da-caricare?esito={esito}&msg={quote(' '.join(parti))}", status_code=303
+    )
+
+
+@router.get("/bandi/{bando_id}/documenti/{documento_id}/word")
+def scarica_word(bando_id: int, documento_id: int, db: Db, _: Autenticato) -> Response:
+    """Il PDF del bando in Word (.docx), da modificare con Word o Google Documenti."""
+    from app.documenti import word
+
+    d = db.get(DocumentoBando, documento_id)
+    if d is None or d.bando_id != bando_id or not (d.percorso or d.testo_estratto):
+        raise HTTPException(404)
+    dati, contenuto, copia = None, None, None
+    if d.percorso:
+        base = s.cartella().resolve()
+        file = (base / d.percorso).resolve()
+        if file.is_relative_to(base) and file.is_file():
+            # i PDF lunghi richiedono qualche secondo: il Word si tiene accanto al PDF
+            copia = file.with_name(f"{file.stem}.{word.VERSIONE}.docx")
+            if copia.is_file():
+                contenuto = copia.read_bytes()
+            else:
+                dati = file.read_bytes()
+    if contenuto is None:
+        if dati is None and not d.testo_estratto:
+            raise HTTPException(404)
+        contenuto = word.in_word(dati, d.titolo or "Documento del bando", d.testo_estratto)
+        if copia is not None and dati is not None:
+            # cartella di sola lettura: si rigenera ogni volta
+            with contextlib.suppress(OSError):
+                copia.write_bytes(contenuto)
+    nome = word.nome_file(d.titolo)
+    return Response(
+        contenuto,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={
+            "Content-Disposition": (
+                f"attachment; filename=\"documento.docx\"; filename*=UTF-8''{quote(nome)}"
+            )
+        },
     )
 
 

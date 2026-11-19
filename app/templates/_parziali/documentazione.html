@@ -2,7 +2,7 @@
 {% macro documentazione(voci, vuoto="Nessun documento trovato: apri la pagina ufficiale.") -%}
 {% if voci %}
 <ul class="documentazione">
-  {% for v in voci %}<li><a href="{{ v.url }}" target="_blank" rel="noopener noreferrer"{% if v.titolo != v.etichetta %} title="{{ v.titolo }}"{% endif %}>{{ v.etichetta }}</a></li>{% endfor %}
+  {% for v in voci %}<li><a href="{{ v.url }}" target="_blank" rel="noopener noreferrer"{% if v.titolo != v.etichetta %} title="{{ v.titolo }}"{% endif %}>{{ v.etichetta }}</a>{% if v.word %} <a href="{{ v.word }}" class="formato" title="Scarica in Word (.docx): si apre e si modifica con Word, LibreOffice o Google Documenti">Word</a>{% endif %}</li>{% endfor %}
 </ul>
 {% else %}<span class="non-noto">{{ vuoto }}</span>{% endif %}
 {%- endmacro %}

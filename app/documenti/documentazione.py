@@ -39,7 +39,7 @@ def voci(documenti: list[dict[str, Any]], nomi: dict[str, str] | None = None) ->
             continue
         titolo = (d.get("titolo") or "").strip() or "Documento"
         tipo = d.get("tipo") or tipo_documento(titolo)
-        elenco.append({"tipo": tipo, "titolo": titolo, "url": d["url"]})
+        elenco.append({"tipo": tipo, "titolo": titolo, "url": d["url"], "word": d.get("word")})
     conta: dict[str, int] = {}
     for v in elenco:
         conta[v["tipo"]] = conta.get(v["tipo"], 0) + 1
@@ -67,7 +67,10 @@ def voci_bando(bando: Any, documenti: list[Any]) -> list[dict]:
             url = f"/bandi/{d.bando_id}/documenti/{d.id}"
         else:
             url = d.url
-        elenco.append({"titolo": d.titolo or "Documento", "url": url})
+        voce = {"titolo": d.titolo or "Documento", "url": url}
+        if d.percorso or d.testo_estratto:  # salvato o letto dall'app: si può avere in Word
+            voce["word"] = f"/bandi/{d.bando_id}/documenti/{d.id}/word"
+        elenco.append(voce)
     risultato = voci(elenco, NOMI_BANDO)
     url_visti = {v["url"] for v in risultato}
     for titolo, url in (

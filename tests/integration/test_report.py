@@ -78,3 +78,15 @@ def test_report_bozza_approvazione_pdf(client, crea_utente, accedi, db, monkeypa
     # Senza WeasyPrint (Vercel): sempre PyMuPDF
     monkeypatch.setitem(sys.modules, "weasyprint", None)
     controlla_pdf(client.get(f"/report/{rid}/pdf"))
+
+    # Lo stesso report in Word, con le sezioni del PDF
+    from docx import Document
+
+    r = client.get(f"/report/{rid}/word")
+    assert r.status_code == 200 and r.content.startswith(b"PK")
+    assert r.headers["content-disposition"].endswith('.docx"')
+    d = Document(io.BytesIO(r.content))
+    testi = [p.text for p in d.paragraphs]
+    assert "Il bando in breve" in testi and "Sintesi corretta dal consulente." in testi
+    assert any(a.ragione_sociale in t for t in testi) and any("CC BY 4.0" in t for t in testi)
+    assert "Scarica in Word" in client.get(f"/report/{rid}").text

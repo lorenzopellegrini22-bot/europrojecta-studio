@@ -75,6 +75,11 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
   fonte o, se mancano, dalla pagina ufficiale dell'ente (qualche decina di pagine a notte, finché
   tutti i bandi aperti sono passati). Se un sito carica i file in un modo che l'app non legge,
   resta il link «Pagina ufficiale del bando».
+- **Word**: accanto a ogni PDF letto dall'app c'è il pulsante «Word», che scarica il documento
+  in formato .docx per modificarlo (titoli, grassetti, elenchi e tabelle ricostruiti; intestazioni
+  e numeri di pagina tolti). Si apre con Word o LibreOffice; per **Google Documenti** caricalo su
+  Google Drive e scegli «Apri con Google Documenti». È una conversione: per le parti ufficiali
+  (importi, scadenze) fa fede il PDF originale. Un PDF molto lungo richiede qualche secondo.
 - **Revisione bandi (AI):** confermi o correggi i campi incerti; le correzioni prevalgono.
 - **PDF da caricare:** i PDF che i siti non lasciano scaricare in automatico: apri i link (il
   browser li scarica) e caricali **tutti insieme**; ognuno va da solo al bando giusto.
@@ -85,7 +90,8 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
   spesa AI. Se non c'è niente di nuovo arriva comunque un messaggio breve.
 - Nella pagina **Opportunità** segna ogni proposta come **Utile**, **Non pertinente** o
   **Già noto**: serve a migliorare la precisione (pagina Statistiche).
-- Da un'opportunità apri una **pratica** o prepari un **Report PDF** per il cliente.
+- Da un'opportunità apri una **pratica** o prepari un **Report PDF** per il cliente. Dopo
+  l'approvazione il report si scarica anche **in Word**, per ritoccarlo prima dell'invio.
 
 ## 6. Aggiornamenti ai clienti
 - Per ogni cliente scegli la frequenza (ogni settimana / ogni mese) nella scheda; le

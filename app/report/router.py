@@ -92,3 +92,20 @@ def scarica_pdf(rid: int, db: Db, utente: Autenticato) -> Response:
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{nome}.pdf"'},
     )
+
+
+@router.get("/report/{rid}/word")
+def scarica_word(rid: int, db: Db, utente: Autenticato) -> Response:
+    """Il report in Word, per ritoccarlo prima dell'invio (dopo l'approvazione, come il PDF)."""
+    r = _report(db, rid)
+    if r.stato == "bozza":
+        msg = quote("Approva il report prima di scaricarlo.")
+        return RedirectResponse(f"/report/{r.id}?esito=errore&msg={msg}", status_code=303)
+    b = db.get(Bando, r.bando_id)
+    nome = f"bando-{b.id}-{r.azienda.ragione_sociale[:30]}".replace(" ", "-")
+    nome = "".join(c for c in nome if c.isalnum() or c in "-_.") or "report"
+    return Response(
+        s.word(r, b, utente.nome),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f'attachment; filename="{nome}.docx"'},
+    )

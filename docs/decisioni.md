@@ -452,6 +452,29 @@ Nuova impostazione `VERIFICA_DUE_PASSAGGI` (predefinita `true`). Con `false` il 
   ogni regione in più delle sedi (al massimo 60). Il campo accetta anche «Prato PO»,
   «Prato, PO» e il CAP davanti; con la provincia sbagliata l'errore indica quella giusta.
 
+## 2026-11-19 — PDF dei bandi in Word
+
+- Richiesta: documenti dei bandi modificabili con Word o Google Documenti. Pulsante «Word»
+  accanto a ogni PDF che l'app ha salvato o letto (`/bandi/{id}/documenti/{doc}/word`).
+- Conversione in Python, senza servizi esterni (va anche su Vercel): PyMuPDF (già usato per
+  l'OCR) legge testo, corpi e grassetti; `python-docx` (nuova dipendenza, MIT) scrive il file.
+  Righe spezzate riunite, parole col trattino ricomposte, voci di elenco separate, titoli dal
+  corpo del carattere o dal grassetto, intestazioni e piè di pagina ripetuti e numeri di pagina
+  tolti, tabelle con le linee ricostruite come tabelle Word. Scansioni o file mancanti: si usa il
+  testo già letto (OCR compreso).
+- Tabelle: `find_tables(use_layout=False)`. Con il modello di layout (predefinito in PyMuPDF 2)
+  la ricerca costava 1–4 s a pagina e su un PDF reale mandava in crash il processo. Le tabelle si
+  cercano solo nelle pagine con almeno 6 linee disegnate, al massimo 8 s per documento.
+- Il file Word si scrive direttamente nell'XML: con le funzioni normali di python-docx un PDF di
+  314 pagine richiedeva oltre 100 s (ogni paragrafo nuovo scorre tutti i precedenti).
+- Google Documenti: niente collegamento a Google Drive (servirebbe l'accesso OAuth all'account);
+  il .docx si carica su Drive e si apre con Google Documenti.
+- Anche il report per il cliente si scarica in Word (dopo l'approvazione, come il PDF), scritto
+  direttamente dalle sezioni del report. Il Word di un PDF lungo si salva accanto al PDF
+  (`<nome>.word1.docx`): dalla seconda volta si scarica subito.
+- Verifica: tutti i 127 PDF salvati convertiti senza errori (mediana 0,9 s, massimo 21 s per
+  314 pagine); 5 simulazioni d'uso complete su una copia del database senza errori.
+
 ## Decisioni dal brief (riassunto)
 - FastAPI con endpoint sincroni; PostgreSQL 16 + pgvector; SQLAlchemy 2 (`Mapped[...]`), psycopg 3, Alembic.
 - Jinja2 + HTMX salvati nel repository, nessuna risorsa da CDN (Pico.css sostituito da uno stile proprio, vedi sopra).
