@@ -166,6 +166,11 @@ def test_sedi_operative_contano_nel_territorio(db, istat_caricato):
     assert any("provincia della sede operativa (FI)" in m for m in es.soddisfatti)
     es, _ = valuta_bando_con_motivo(a, bando(titolo="CCIAA Firenze - Voucher digitali"), ctx)
     assert any("Ente della provincia di una sede" in m for m in es.soddisfatti)
+    # con i due punti dopo il nome dell'ente
+    es, _ = valuta_bando_con_motivo(a, bando(titolo="CCIAA Firenze: voucher digitali"), ctx)
+    assert any("Ente della provincia di una sede" in m for m in es.soddisfatti)
+    es, _ = valuta_bando_con_motivo(a, bando(titolo="CCIAA Pisa: voucher per Firenze"), ctx)
+    assert not any("Ente della provincia di una sede" in m for m in es.soddisfatti)
     # senza la sede operativa lo stesso bando toscano è escluso
     solo_legale = N(sedi=[legale], sede_legale=legale, dimensione_manuale="piccola",
                     ateco_primario=None)  # fmt: skip

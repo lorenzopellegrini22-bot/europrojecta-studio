@@ -57,6 +57,8 @@ TABELLE: dict[str, Any] = {
     "opportunita": m.Opportunita,
     "aggiornamenti_clienti": m.AggiornamentoCliente,
     "report_bandi": m.ReportBando,
+    "note": m.Commento,
+    "bandi_seguiti": m.Seguito,
     "modelli_pratica": m.ModelloPratica,
     "modelli_fasi": m.ModelloFase,
     "modelli_operazioni": m.ModelloOperazione,

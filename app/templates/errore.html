@@ -2,7 +2,7 @@
 {% block titolo %}Errore · {{ NOME_APP }}{% endblock %}
 {% block contenuto %}
 <article class="accesso">
-  <h2>Operazione non consentita</h2>
+  <h2>{{ titolo or "Operazione non consentita" }}</h2>
   <p>{{ messaggio }}</p>
   <a href="/" role="button" class="secondary">Torna alla home</a>
 </article>

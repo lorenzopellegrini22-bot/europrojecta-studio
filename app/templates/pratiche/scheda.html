@@ -13,7 +13,7 @@
     <p>
       {% if p.bando %}<a href="/bandi/{{ p.bando.id }}">{{ p.bando.titolo }}</a>{% else %}{{ p.bando_testo }}{% endif %}
       · {{ etichette_stato[p.stato] }}
-      · {{ avanzamento[0] }} operazioni su {{ avanzamento[1] }} chiuse
+      · {{ avanzamento[0] }} su {{ avanzamento[1] }} operazioni chiuse
     </p>
   </hgroup>
   <div class="gruppo-pulsanti">

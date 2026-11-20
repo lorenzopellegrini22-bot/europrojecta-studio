@@ -1,5 +1,6 @@
 """Template Jinja2 e filtri di formattazione."""
 
+import re
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -123,6 +124,17 @@ def _da_leggere(utente: Any) -> int:
 templates.env.globals["puo_modificare"] = _puo_modificare
 templates.env.globals["da_leggere"] = _da_leggere
 templates.env.filters["menzioni"] = _menzioni
+
+
+_DIMENSIONE_FILE = re.compile(r"\s*\(\s*pdf\s*[\d.,]+\s*[kmg]b\s*\)\s*$", re.I)
+
+
+def _senza_dimensione(titolo: str | None) -> str:
+    """«Allegato 4 ( pdf 555.84 KB)» → «Allegato 4»: la dimensione scritta dai siti degli enti."""
+    return _DIMENSIONE_FILE.sub("", titolo or "")
+
+
+templates.env.filters["senza_dimensione"] = _senza_dimensione
 
 
 def render(

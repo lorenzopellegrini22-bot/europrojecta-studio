@@ -66,9 +66,13 @@
     <ul>
       {% for d in documenti %}
       <li>
-        {% if d.url.startswith("caricato-a-mano:") %}{{ d.titolo | truncate(80) }} <small class="etichetta">caricato a mano</small>
-        {% else %}<a href="{{ d.url }}" target="_blank" rel="noopener noreferrer">{{ d.titolo | truncate(80) }}</a>{% endif %}
-        <small>{% if d.testo_estratto %}· {{ d.pagine }} pagine lette{% elif d.errore %}· {{ "il sito non permette lo scarico automatico" if "robots" in d.errore else d.errore }}{% else %}· da scaricare stanotte{% endif %}</small>
+        {% if d.url.startswith("caricato-a-mano:") %}{{ d.titolo | senza_dimensione | truncate(80) }} <small class="etichetta">caricato a mano</small>
+        <form method="post" action="/bandi/{{ bando.id }}/documenti/{{ d.id }}/elimina" class="in-linea">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="secondary outline piccolo">Elimina</button>
+        </form>
+        {% else %}<a href="{{ d.url }}" target="_blank" rel="noopener noreferrer">{{ d.titolo | senza_dimensione | truncate(80) }}</a>{% endif %}
+        <small>{% if d.testo_estratto %}· {{ d.pagine }} {{ "pagina letta" if d.pagine == 1 else "pagine lette" }}{% elif d.errore %}· {{ "il sito non permette lo scarico automatico" if "robots" in d.errore else d.errore }}{% else %}· da scaricare stanotte{% endif %}</small>
         {% if not d.sha256 and d.errore %}
         <form method="post" action="/bandi/{{ bando.id }}/documenti" enctype="multipart/form-data" class="carica-file">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

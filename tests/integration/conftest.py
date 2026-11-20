@@ -89,3 +89,12 @@ def accedi(client: TestClient, fabbrica: sessionmaker[Session]):
         return re.findall(r"<li>([a-z0-9]{5}-[a-z0-9]{5})</li>", r.text)
 
     return _accedi
+
+
+@pytest.fixture(autouse=True)
+def documenti_bandi_temporanei(tmp_path, monkeypatch):
+    """I PDF dei bandi salvati dai test vanno in una cartella temporanea, non in dati/."""
+    from app.documenti import servizio
+
+    cartella = tmp_path / "documenti_bandi"
+    monkeypatch.setattr(servizio, "cartella", lambda: cartella)

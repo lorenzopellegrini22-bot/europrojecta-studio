@@ -302,7 +302,18 @@ class VoceScadenza:
     promemoria: Any = None  # Scadenza del cliente (tipo "promemoria")
 
 
-def scadenze(db: Session, dal: date, al: date, utente_id: int | None = None) -> list[VoceScadenza]:
+def scadenze(
+    db: Session,
+    dal: date,
+    al: date,
+    utente_id: int | None = None,
+    promemoria: bool | None = None,
+) -> list[VoceScadenza]:
+    """Operazioni, presentazioni e promemoria dei clienti tra dal e al. Con utente_id solo le
+    sue; i promemoria non hanno un responsabile: di norma compaiono solo nella vista di tutto
+    lo studio, promemoria=True li aggiunge anche a quella personale (pagina Oggi del titolare)."""
+    if promemoria is None:
+        promemoria = not utente_id
     voci: list[VoceScadenza] = []
     q = (
         select(PraticaOperazione)
@@ -361,7 +372,7 @@ def scadenze(db: Session, dal: date, al: date, utente_id: int | None = None) -> 
             )
         )
     # Promemoria dei clienti (scheda cliente → Scadenze), non ancora completati
-    if not utente_id:
+    if promemoria:
         from app.models.crm_esteso import Scadenza
 
         for sc in db.scalars(

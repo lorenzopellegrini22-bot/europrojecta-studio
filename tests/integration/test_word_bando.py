@@ -10,6 +10,7 @@ from sqlalchemy import select
 
 from app.documenti import servizio
 from app.models import Bando, DocumentoBando, Fonte
+from tests.integration.conftest import csrf
 
 pytestmark = pytest.mark.integration
 
@@ -84,3 +85,42 @@ def test_scarica_in_word(client, crea_utente, accedi, db):
 def test_word_richiede_accesso(client, db):
     r = client.get("/bandi/1/documenti/1/word", follow_redirects=False)
     assert r.status_code in (303, 401)
+
+
+def test_elimina_pdf_caricato_a_mano(client, crea_utente, accedi, db):
+    b = _bando(db)
+    accedi(crea_utente())
+    token = csrf(client, f"/bandi/{b.id}")
+    r = client.post(
+        f"/bandi/{b.id}/documenti",
+        data={"csrf_token": token},
+        files={"file": ("sbagliato.pdf", _pdf("Testo caricato per errore."), "application/pdf")},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303 and "esito=ok" in r.headers["location"]
+    d = db.scalar(select(DocumentoBando).where(DocumentoBando.bando_id == b.id))
+    file, did = servizio.cartella() / d.percorso, d.id
+    assert file.is_file()
+    client.get(f"/bandi/{b.id}/documenti/{d.id}/word")  # crea la copia Word accanto al PDF
+    scheda = client.get(f"/bandi/{b.id}").text
+    assert f"/bandi/{b.id}/documenti/{d.id}/elimina" in scheda
+
+    r = client.post(f"/bandi/{b.id}/documenti/{d.id}/elimina", data={"csrf_token": token},
+                    follow_redirects=False)  # fmt: skip
+    assert r.status_code == 303 and "eliminato" in r.headers["location"]
+    db.expire_all()
+    assert db.get(DocumentoBando, did) is None
+    assert not file.exists() and not list(file.parent.glob(f"{file.stem}.*.docx"))
+
+
+def test_non_si_eliminano_i_pdf_della_fonte(client, crea_utente, accedi, db):
+    b = _bando(db)
+    d = DocumentoBando(bando_id=b.id, url="https://ente.example/bando.pdf", titolo="Bando",
+                       tentativi=0, testo_estratto="Testo.", pagine=1)  # fmt: skip
+    db.add(d)
+    db.commit()
+    accedi(crea_utente())
+    token = csrf(client, f"/bandi/{b.id}")
+    assert f"/documenti/{d.id}/elimina" not in client.get(f"/bandi/{b.id}").text
+    r = client.post(f"/bandi/{b.id}/documenti/{d.id}/elimina", data={"csrf_token": token})
+    assert r.status_code == 404

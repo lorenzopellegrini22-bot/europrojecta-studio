@@ -11,11 +11,17 @@ from typing import Annotated
 from urllib.parse import urlsplit
 
 from fastapi import Depends, FastAPI, Request
+from fastapi.exception_handlers import (
+    http_exception_handler,
+    request_validation_exception_handler,
+)
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import NOME_APP
 from app.aggiornamenti.router import router as aggiornamenti_router
@@ -130,6 +136,46 @@ def _csrf(request: Request, _: CsrfNonValido) -> Response:
         {"messaggio": "La pagina è scaduta. Ricaricala e riprova."},
         403,
     )
+
+
+MESSAGGI_ERRORE = {
+    404: (
+        "Pagina non trovata",
+        "La pagina o l'elemento che cerchi non esiste, o è stato eliminato.",
+    ),
+    405: (
+        "Operazione non disponibile",
+        "Questa pagina non si apre così: torna indietro e riprova.",
+    ),
+    422: ("Indirizzo non valido", "L'indirizzo della pagina non è corretto: controlla il link."),
+}
+
+
+def _vuole_html(request: Request) -> bool:
+    """Le pagine aperte dal browser ricevono una pagina d'errore, non il JSON di FastAPI."""
+    return (
+        "text/html" in request.headers.get("accept", "")
+        and not request.headers.get("hx-request")
+        and not request.url.path.startswith("/cron")
+    )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def _errore_http(request: Request, exc: StarletteHTTPException) -> Response:
+    if exc.status_code in MESSAGGI_ERRORE and _vuole_html(request):
+        titolo, messaggio = MESSAGGI_ERRORE[exc.status_code]
+        return render(
+            request, "errore.html", {"titolo": titolo, "messaggio": messaggio}, exc.status_code
+        )
+    return await http_exception_handler(request, exc)
+
+
+@app.exception_handler(RequestValidationError)
+async def _errore_validazione(request: Request, exc: RequestValidationError) -> Response:
+    if _vuole_html(request):
+        titolo, messaggio = MESSAGGI_ERRORE[422]
+        return render(request, "errore.html", {"titolo": titolo, "messaggio": messaggio}, 422)
+    return await request_validation_exception_handler(request, exc)
 
 
 app.include_router(auth_router)

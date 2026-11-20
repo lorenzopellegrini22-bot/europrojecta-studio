@@ -83,3 +83,17 @@ def test_ogni_pagina_si_apre(client, crea_utente, accedi, db, ruolo, sezioni):
             errori.append(f"{url}: {r.status_code}")
     assert not errori, "Pagine con errore: " + ", ".join(errori)
     assert client.get("/").status_code == 200
+
+
+def test_pagine_di_errore_leggibili(client, crea_utente, accedi):
+    """Dal browser, un link sbagliato mostra una pagina dell'app, non il JSON di FastAPI."""
+    accedi(crea_utente())
+    html = {"accept": "text/html"}
+    r = client.get("/bandi/99999999", headers=html)
+    assert r.status_code == 404 and "Pagina non trovata" in r.text and '"detail"' not in r.text
+    r = client.get("/clienti/abc", headers=html)
+    assert r.status_code == 422 and "Indirizzo non valido" in r.text
+    r = client.get("/pagina-che-non-esiste", headers=html)
+    assert r.status_code == 404 and "Pagina non trovata" in r.text
+    # chi non chiede HTML (script, HTMX) riceve ancora la risposta breve
+    assert client.get("/bandi/99999999").json() == {"detail": "Not Found"}

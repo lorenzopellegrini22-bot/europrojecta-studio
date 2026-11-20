@@ -70,7 +70,7 @@
       {%- set percorso = request.url.path %}
       <nav class="menu" id="menu-principale" aria-label="Menu principale">
         <form method="get" action="/cerca" role="search" class="ricerca-menu">
-          <input type="search" name="q" placeholder="Cerca cliente, P.IVA, pratica, CIG…" aria-label="Cerca in tutta l'app" value="{{ request.query_params.get('q', '') if percorso == '/cerca' else '' }}">
+          <input type="search" name="q" placeholder="Cerca cliente, P.IVA…" title="Clienti, P.IVA, codici pratica, protocolli, CIG e bandi" aria-label="Cerca in tutta l'app" value="{{ request.query_params.get('q', '') if percorso == '/cerca' else '' }}">
         </form>
         <ul>
           <li><a href="/"{% if percorso == "/" %} aria-current="page"{% endif %}>Home</a></li>

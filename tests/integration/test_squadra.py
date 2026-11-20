@@ -281,3 +281,18 @@ def test_torna_solo_dentro_l_app(client, crea_utente, accedi, db):
     r = client.post(f"/opportunita/{o.id}/stato",
                     data={"csrf_token": token, "stato": "interessante", "torna": "//esempio.test/x"})  # fmt: skip
     assert r.headers["location"] == "/opportunita"
+
+
+def test_oggi_mostra_i_promemoria_dei_clienti_al_titolare(client, crea_utente, accedi, db):
+    from app.models.crm_esteso import Scadenza
+
+    a = _azienda(db)
+    titolo = f"Inviare la visura {uuid.uuid4().hex[:6]}"
+    db.add(Scadenza(azienda_id=a.id, titolo=titolo, data=date.today() + timedelta(days=5)))
+    titolare = _utente(crea_utente, db, "Titolare Oggi")
+    collaboratore = _utente(crea_utente, db, "Collab Oggi", "collaboratore")
+    accedi(titolare)
+    assert titolo in client.get("/oggi").text
+    client.cookies.clear()
+    accedi(collaboratore)  # i promemoria non hanno un responsabile: non sono «suoi»
+    assert titolo not in client.get("/oggi").text

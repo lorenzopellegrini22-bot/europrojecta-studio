@@ -74,5 +74,6 @@ def test_export_completo_solo_titolare(client, crea_utente, accedi, db):
     z = zipfile.ZipFile(io.BytesIO(r.content))
     nomi = z.namelist()
     assert "dati/aziende.csv" in nomi and "dati/progetti.csv" in nomi and "LEGGIMI.txt" in nomi
+    assert "dati/note.csv" in nomi and "dati/bandi_seguiti.csv" in nomi
     intestazione = z.read("dati/aziende.csv").decode("utf-8-sig").splitlines()[0]
     assert "ragione_sociale" in intestazione and "partita_iva" in intestazione

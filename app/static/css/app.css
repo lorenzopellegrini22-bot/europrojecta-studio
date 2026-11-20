@@ -1373,7 +1373,14 @@ ul.documentazione a.formato { font-size: 0.75rem; padding: 0 0.3rem; margin-left
 
 /* Ricerca unica nel menu laterale */
 .ricerca-menu { margin: 0 0 0.75rem; }
-.ricerca-menu input[type="search"] { width: 100%; margin: 0; font-size: 0.875rem; padding: 0.4rem 0.6rem; }
+.ricerca-menu input[type="search"] {
+  width: 100%; margin: 0; font-size: 0.875rem;
+  /* la lente di Pico sta a sinistra: il testo parte dopo, non sopra */
+  padding: 0.4rem 0.6rem 0.4rem 2rem;
+  padding-inline-start: 2rem;
+  background-position: center left 0.6rem;
+  background-size: 0.95rem auto;
+}
 .ricerca-pagina { display: flex; gap: 0.5rem; align-items: stretch; margin-bottom: 1rem; }
 .ricerca-pagina input { flex: 1; margin: 0; }
 .ricerca-pagina button { margin: 0; }

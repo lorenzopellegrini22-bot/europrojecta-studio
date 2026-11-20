@@ -338,7 +338,8 @@ def _ente_di_altre_province(a: Azienda, b: Bando, e: Esito, ctx: Contesto) -> bo
         return False
     from app.utils.ricerca import normalizza
 
-    testo = normalizza(locale)
+    # «CCIAA Firenze: voucher digitali»: dopo i due punti c'è l'oggetto, non l'ente
+    testo = normalizza(locale).split(":")[0]
     # Solo enti provinciali o comunali: «Regione Friuli Venezia Giulia» non è la provincia di
     # Venezia, «Regione Molise» non è il comune di Molise; GAL e unioni non hanno un nome sicuro
     if not testo.startswith(PROVINCIALI):

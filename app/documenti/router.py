@@ -8,6 +8,7 @@ from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse, Response
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app import audit
@@ -62,7 +63,9 @@ def carica(
     audit.registra(db, utente, "bando", b.id, "modifica", {"pdf_caricato": nome})
     db.commit()
     messaggio = (
-        f"PDF «{nome}» caricato: {doc.pagine} pagine lette. L'AI lo userà alla prossima analisi."
+        f"PDF «{nome}» caricato: {doc.pagine} "
+        f"{'pagina letta' if doc.pagine == 1 else 'pagine lette'}. "
+        "L'AI lo userà alla prossima analisi."
         if doc.testo_estratto
         else f"PDF «{nome}» caricato, ma senza testo leggibile (scansione)."
     )
@@ -122,6 +125,36 @@ def carica_insieme(
     return RedirectResponse(
         f"/documenti/da-caricare?esito={esito}&msg={quote(' '.join(parti))}", status_code=303
     )
+
+
+@router.post(
+    "/bandi/{bando_id}/documenti/{documento_id}/elimina", dependencies=[Depends(verifica_csrf)]
+)
+def elimina(bando_id: int, documento_id: int, db: Db, utente: Autenticato) -> Response:
+    """Toglie un PDF caricato a mano per sbaglio: l'AI non lo legge più."""
+    d = db.get(DocumentoBando, documento_id)
+    if d is None or d.bando_id != bando_id or not d.url.startswith("caricato-a-mano:"):
+        raise HTTPException(404)
+    if d.percorso:
+        base = s.cartella().resolve()
+        file = (base / d.percorso).resolve()
+        altri = db.scalar(
+            select(func.count())
+            .select_from(DocumentoBando)
+            .where(DocumentoBando.percorso == d.percorso, DocumentoBando.id != d.id)
+        )
+        # lo stesso PDF può servire a più bandi (caricamento insieme): il file resta finché serve
+        if file.is_relative_to(base) and not altri:
+            with contextlib.suppress(OSError):
+                file.unlink(missing_ok=True)
+                for copia in file.parent.glob(f"{file.stem}.*.docx"):
+                    copia.unlink(missing_ok=True)
+    nome = d.titolo or "documento"
+    db.delete(d)
+    audit.registra(db, utente, "bando", bando_id, "modifica", {"pdf_eliminato": nome})
+    db.commit()
+    messaggio = f"PDF «{nome}» eliminato: l'AI non lo userà più."
+    return RedirectResponse(f"/bandi/{bando_id}?esito=ok&msg={quote(messaggio)}#documenti", 303)
 
 
 @router.get("/bandi/{bando_id}/documenti/{documento_id}/word")

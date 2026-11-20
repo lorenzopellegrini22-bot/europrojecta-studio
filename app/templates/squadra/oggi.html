@@ -4,8 +4,12 @@
 <li>
   <span class="data{% if v.data < oggi %} scaduta{% endif %}">{{ v.data | data }}</span>
   <span>
+    {% if v.tipo == "promemoria" %}<a href="/clienti/{{ v.promemoria.azienda_id }}#scadenze">{{ v.titolo }}</a>
+    <small>{{ v.promemoria.azienda.ragione_sociale }}, promemoria del cliente</small>
+    {% else %}
     {% if v.operazione %}<a href="/pratiche/{{ v.pratica.id }}?fase={{ v.fase.numero }}#op-{{ v.operazione.id }}">{{ v.titolo }}</a>{% else %}<a href="/pratiche/{{ v.pratica.id }}">{{ v.titolo }}</a>{% endif %}
     <small>{{ v.pratica.azienda.ragione_sociale }}, {{ v.pratica.codice }}</small>
+    {% endif %}
   </span>
 </li>
 {%- endmacro %}

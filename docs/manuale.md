@@ -29,7 +29,8 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
 ### Uso di ogni giorno
 - **Oggi** (menu, sotto Home): le tue scadenze della settimana e quelle in ritardo, le pratiche
   di cui sei responsabile, le migliori opportunità nuove, le note in cui ti hanno citato e le
-  novità dei bandi e delle gare che segui. Il numero accanto a «Oggi» conta le cose da leggere.
+  novità dei bandi e delle gare che segui (per il titolare anche i promemoria dei clienti). Il
+  numero accanto a «Oggi» conta le cose da leggere.
 - **Cerca** (casella in alto nel menu): nome del cliente, P.IVA, codice fiscale, codice
   pratica, protocollo, CIG o titolo di un bando. Se c'è un solo risultato si apre subito.
 - **Calendario**: in «Oggi» → «Crea il link al calendario», poi aggiungilo a Google Calendar,
@@ -83,6 +84,8 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
 - **Revisione bandi (AI):** confermi o correggi i campi incerti; le correzioni prevalgono.
 - **PDF da caricare:** i PDF che i siti non lasciano scaricare in automatico: apri i link (il
   browser li scarica) e caricali **tutti insieme**; ognuno va da solo al bando giusto.
+- Un PDF caricato a mano per sbaglio si toglie con «Elimina» nella scheda del bando (sotto «PDF
+  letti dall'AI»): l'AI non lo legge più.
 
 ## 5. Opportunità ed email del mattino
 - Ogni mattina alle 7 ricevi un'email con i nuovi bandi adatti a ciascun cliente, il
@@ -105,5 +108,6 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
 - Lo **Scadenzario** raccoglie operazioni, presentazioni e promemoria dei clienti.
 
 ## 8. I tuoi dati
-- **Esporta tutti i dati** (menu Studio): uno zip con tutti i dati in CSV e gli allegati.
+- **Esporta tutti i dati** (menu Studio): uno zip con tutti i dati in CSV (anche le note dello
+  studio e i bandi seguiti) e gli allegati.
 - I backup sono giornalieri e cifrati (vedi `docs/ripristino.md`).

@@ -71,7 +71,12 @@ def salva(rid: int, db: Db, utente: Autenticato, form: Form) -> Response:
         if azione == "approva":
             r.stato, r.approvato_il = "approvato", datetime.now(UTC)
     db.commit()
-    return RedirectResponse(f"/report/{r.id}?esito=ok&msg={quote('Salvato')}", status_code=303)
+    messaggio = {
+        "approva": "Report approvato: ora si scarica in PDF e in Word.",
+        "riapri": "Report riaperto: puoi modificarlo.",
+        "inviato": "Report segnato come inviato.",
+    }.get(azione, "Bozza salvata.")
+    return RedirectResponse(f"/report/{r.id}?esito=ok&msg={quote(messaggio)}", status_code=303)
 
 
 @router.get("/report/{rid}/pdf")

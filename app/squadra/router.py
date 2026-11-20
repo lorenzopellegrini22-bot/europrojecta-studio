@@ -33,7 +33,14 @@ def _contesto_oggi(db: Session, utente: Utente) -> dict:
     oggi = date.today()
     ctx: dict = {"oggi": oggi, "citazione": note.citazione(utente)}
     if puo_vedere(utente, "/pratiche"):
-        voci = scadenze(db, oggi - timedelta(days=60), oggi + timedelta(days=7), utente.id)
+        # il titolare vede anche i promemoria dei clienti, che non hanno un responsabile
+        voci = scadenze(
+            db,
+            oggi - timedelta(days=60),
+            oggi + timedelta(days=7),
+            utente.id,
+            promemoria=utente.is_titolare,
+        )
         ctx["in_ritardo"] = [v for v in voci if v.data < oggi]
         ctx["settimana"] = [v for v in voci if v.data >= oggi]
         ctx["mie_pratiche"] = list(

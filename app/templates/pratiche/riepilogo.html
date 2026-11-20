@@ -15,7 +15,7 @@
   <dt>Importo richiesto</dt><dd>{{ p.importo_richiesto | euro }}</dd>
   <dt>Importo concesso</dt><dd>{{ p.importo_concesso | euro }}</dd>
   <dt>Protocollo</dt><dd>{{ p.protocollo or "—" }}</dd>
-  <dt>Avanzamento</dt><dd>{{ avanzamento[0] }} operazioni su {{ avanzamento[1] }} chiuse</dd>
+  <dt>Avanzamento</dt><dd>{{ avanzamento[0] }} su {{ avanzamento[1] }} operazioni chiuse</dd>
   <dt>Riepilogo al</dt><dd>{{ oggi | data }}</dd>
 </dl>
 {% if p.note %}<p class="note-testo">{{ p.note }}</p>{% endif %}
