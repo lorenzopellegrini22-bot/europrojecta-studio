@@ -51,6 +51,9 @@
        {% if bando.data_chiusura and bando.data_chiusura >= oggi %}<small> (tra {{ (bando.data_chiusura - oggi).days }} giorni)</small>{% endif %}
     </p>
     {% if bando.note_apertura_chiusura %}<p><small>{{ bando.note_apertura_chiusura }}</small></p>{% endif %}
+    {% if bando.stato == "aperto" and not bando.data_chiusura and bando.data_apertura and (oggi - bando.data_apertura).days > 1095 %}
+    <p class="messaggio attenzione"><small>Aperto dal {{ bando.data_apertura.year }} senza una data di chiusura: spesso è uno sportello permanente, ma verifica sulla pagina ufficiale che sia ancora attivo.</small></p>
+    {% endif %}
   </article>
   <article>
     <header><strong>Documentazione</strong></header>

@@ -190,6 +190,9 @@ def applica_record(
             run.modificati += 1
         else:
             run.invariati += 1
+            # record uguale ma letto meglio (es. date ricavate dalle note): si aggiornano
+            bando.data_apertura = rec.data_apertura
+            bando.data_chiusura = rec.data_chiusura
             if ririsolvi:
                 scrivi_requisiti(bando, rec.requisiti)
 

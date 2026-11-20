@@ -62,6 +62,36 @@ def _data(valore: Any) -> date | None:
         return None
 
 
+_DATA_NOTA = r"(\d{1,2})[./-](\d{1,2})[./-](\d{4})"
+_DAL_AL = re.compile(rf"\bdal\s+(?:giorno\s+)?{_DATA_NOTA}\s+(?:al|fino al)\s+{_DATA_NOTA}", re.I)
+_ENTRO = re.compile(
+    rf"\b(?:entro\s+(?:e\s+non\s+oltre\s+)?(?:il|le\s+ore\s+[\d.:]+\s+del)|fino\s+al|scadenza(?:\s+il)?:?)\s+{_DATA_NOTA}",
+    re.I,
+)
+
+
+def _data_nota(g: tuple[str, str, str]) -> date | None:
+    try:
+        return date(int(g[2]), int(g[1]), int(g[0]))
+    except ValueError:
+        return None
+
+
+def date_dalle_note(note: str | None) -> tuple[date | None, date | None]:
+    """Date scritte solo nelle note della fonte («dal 30.01.2026 al 03.03.2026», «Entro il
+    31/12/2026»): servono quando mancano i campi delle date, altrimenti lo stato del bando
+    resta sconosciuto e il bando non compare tra gli aperti. Solo forme non ambigue."""
+    if not note:
+        return None, None
+    m = _DAL_AL.search(note)
+    if m:
+        return _data_nota(m.groups()[:3]), _data_nota(m.groups()[3:])
+    m = _ENTRO.search(note)
+    if m:
+        return None, _data_nota(m.groups())
+    return None, None
+
+
 def _importo(valore: Any) -> Decimal | None:
     """Gli importi a 0 nella fonte significano "non indicato".
     Importi oltre IMPORTO_MASSIMO_PLAUSIBILE sono errori di compilazione: si scartano."""
@@ -197,6 +227,10 @@ def interpreta_record(r: dict[str, Any]) -> RecordBando | None:
     titolo = _testo(r.get("Titolo"))
     if not id_esterno or not titolo:
         return None
+    apertura, chiusura = _data(r.get("Data_apertura")), _data(r.get("Data_chiusura"))
+    note = _testo(r.get("Note_di_apertura_chiusura"))
+    if apertura is None and chiusura is None:
+        apertura, chiusura = date_dalle_note(note)
     return RecordBando(
         id_esterno=id_esterno,
         id_rna=_testo(r.get("idBando")),
@@ -205,9 +239,9 @@ def interpreta_record(r: dict[str, Any]) -> RecordBando | None:
         descrizione=_testo(r.get("Descrizione")),
         link_ufficiale=_testo(r.get("Link_istituzionale")),
         link_domande=_testo(r.get("Link_piattaforma_domande")),
-        data_apertura=_data(r.get("Data_apertura")),
-        data_chiusura=_data(r.get("Data_chiusura")),
-        note_apertura_chiusura=_testo(r.get("Note_di_apertura_chiusura")),
+        data_apertura=apertura,
+        data_chiusura=chiusura,
+        note_apertura_chiusura=note,
         raw=r,
         requisiti=requisiti_da_fonte(r),
     )

@@ -27,3 +27,16 @@ def test_regione_della_fonte():
         regione_della_fonte(Fonte(codice="incentivi_italia", nome="Incentivi.gov.it", url="x"))
         is None
     )
+
+
+def test_stessa_pagina_ufficiale():
+    from app.bandi.doppioni import pagina
+
+    # lo stesso bando, link scritti in modo diverso dalla Regione e dalla fonte nazionale
+    assert pagina("https://www.sviluppo.toscana.it/minibond") == pagina(
+        "https://www.sviluppo.toscana.it/bando/minibond/"
+    )
+    assert pagina("https://www.lazioinnova.it/bandi/basket-bond-lazio/") != pagina(
+        "https://www.lazioinnova.it/bandi/basket-bond-lazio-contributo-sui-costi/"
+    )
+    assert pagina("https://www.regione.it/") is None and pagina(None) is None

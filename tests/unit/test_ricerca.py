@@ -34,3 +34,14 @@ def test_sinonimi_del_settore():
     gruppi = termini("digitalizzazione")
     assert any("digital" in g for g in gruppi)
     assert any("export" in g for g in termini("internazionalizzazione imprese"))
+
+
+def test_apostrofi_e_sigle():
+    """Misurato il 20/11/2026: «credito d'imposta» trovava 8 bandi aperti, «credito di
+    imposta» 23 (i titoli usano l'apostrofo tipografico); «R&S» mostrava tutti i bandi."""
+    assert termini("credito d'imposta") == termini("credito d’imposta") == [["credit"], ["impost"]]
+    assert termini("credito d'imposta") == termini("credito di imposta")
+    assert termini("dell'innovazione") == [["innovazion"]]
+    assert termini("R&S") == termini("r & s") == termini("ricerca e sviluppo")
+    assert termini("Smart&Start") == [["smart"], ["start"]]
+    assert normalizza("d’imposta") == "d'imposta"

@@ -9,10 +9,16 @@ Regole (misurate sui dati del 18/11/2026: su 44 bandi regionali aperti, 2 doppio
 i titoli simili sotto la soglia erano bandi diversi di altre Regioni):
 - titoli simili: indice di Jaccard sulle parole significative >= 0,6;
 - stessa Regione: l'ente o le regioni del bando nazionale contengono quella della fonte;
-- scadenze compatibili: se entrambe note, distanti al massimo 7 giorni.
+- scadenze compatibili: se entrambe note, distanti al massimo 7 giorni;
+- stessa pagina ufficiale (dominio e ultima parte dell'indirizzo, es. «.../minibond» e
+  «.../bando/minibond/»): basta una somiglianza dei titoli >= 0,3. Il 20/11/2026 «Bando 1.3.2 –
+  Sostegno alle PMI (Minibond)» di Sviluppo Toscana compariva anche come «PR Toscana FESR
+  2021-2027 - 1.3.2.1 Sostegno alle PMI…» (somiglianza 0,42); con la soglia bassa ma senza la
+  stessa pagina si sarebbero uniti bandi diversi (es. due misure «Basket Bond Lazio»).
 """
 
 import re
+from urllib.parse import urlsplit
 
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session, selectinload
@@ -23,6 +29,7 @@ from app.utils.territorio import REGIONI
 
 FONTE_NAZIONALE = "incentivi_italia"
 SOGLIA = 0.6
+SOGLIA_STESSA_PAGINA = 0.3
 GIORNI_SCADENZA = 7
 VUOTE = {
     "di", "e", "per", "la", "il", "lo", "del", "della", "delle", "dei", "degli", "a", "in",
@@ -42,6 +49,18 @@ def parole(titolo: str) -> set[str]:
 def somiglianza(a: str, b: str) -> float:
     pa, pb = parole(a), parole(b)
     return len(pa & pb) / len(pa | pb) if pa and pb else 0.0
+
+
+def pagina(link: str | None) -> tuple[str, str] | None:
+    """(dominio, ultima parte dell'indirizzo) della pagina ufficiale, per confrontare i link
+    scritti in modo diverso dalle due fonti."""
+    if not link:
+        return None
+    parti = urlsplit(link.strip())
+    segmenti = [s for s in parti.path.lower().split("/") if s and s not in ("bando", "bandi")]
+    if not parti.netloc or not segmenti:
+        return None
+    return parti.netloc.lower().removeprefix("www."), segmenti[-1]
 
 
 def regione_della_fonte(fonte: Fonte) -> str | None:
@@ -87,19 +106,24 @@ def collega(db: Session) -> str:
         pr = parole(reg.titolo)
         if not pr:
             continue
+        pagina_reg = pagina(reg.link_ufficiale)
         migliore, punteggio = None, 0.0
         for naz in nazionali:
             pn = parole_naz[naz.id]
             if not pn or naz.id in collegati:
                 continue
             s = len(pr & pn) / len(pr | pn)
+            stessa_pagina = pagina_reg is not None and pagina_reg == pagina(naz.link_ufficiale)
+            if s < (SOGLIA_STESSA_PAGINA if stessa_pagina else SOGLIA):
+                continue
+            # a parità, vince il bando nazionale con la stessa pagina ufficiale
+            voto = s + (1 if stessa_pagina else 0)
             if (
-                s > punteggio
-                and s >= SOGLIA
+                voto > punteggio
                 and _stessa_regione(naz, regione)
                 and _scadenze_compatibili(reg, naz)
             ):
-                migliore, punteggio = naz, s
+                migliore, punteggio = naz, voto
         if migliore is not None:
             collegati[migliore.id] = reg.id
     # Toglie i collegamenti non più validi, poi scrive quelli nuovi

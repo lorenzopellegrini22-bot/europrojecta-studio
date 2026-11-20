@@ -17,8 +17,9 @@ from typing import Any
 
 from sqlalchemy import and_, case, func, literal, or_
 
-CON_ACCENTI = "àáâäãèéêëìíîïòóôöõùúûüçñ"
-SENZA_ACCENTI = "aaaaaeeeeiiiiooooouuuucn"
+# anche gli apostrofi tipografici diventano dritti (come normalizza)
+CON_ACCENTI = "àáâäãèéêëìíîïòóôöõùúûüçñ’‘"
+SENZA_ACCENTI = "aaaaaeeeeiiiiooooouuuucn''"
 
 PAROLE_VUOTE = {
     "a", "ad", "al", "alla", "alle", "agli", "ai", "con", "da", "dal", "dalla", "dei", "del",
@@ -44,8 +45,8 @@ MAX_PAROLE = 8
 
 
 def normalizza(testo: str) -> str:
-    """Minuscolo e senza accenti (lato Python, per confronti e test)."""
-    t = unicodedata.normalize("NFKD", testo.lower())
+    """Minuscolo, senza accenti e con l'apostrofo dritto (i titoli usano spesso «’»)."""
+    t = unicodedata.normalize("NFKD", testo.lower().replace("’", "'").replace("‘", "'"))
     return "".join(c for c in t if not unicodedata.combining(c))
 
 
@@ -58,6 +59,9 @@ def _radice(parola: str) -> str:
 def termini(q: str) -> list[list[str]]:
     """La ricerca divisa in gruppi: ogni gruppo deve trovarsi, basta una forma del gruppo."""
     testo = normalizza(q or "")
+    # «R&S» sono due lettere sole: la ricerca restava vuota e mostrava tutti i bandi
+    testo = re.sub(r"(?<!\w)r\s*&\s*s(?!\w)", " ricerca sviluppo ", testo)
+    testo = testo.replace("&", " ")  # «Smart&Start» = «smart start»
     gruppi: list[list[str]] = []
     for sinonimi in SINONIMI:
         forme = [normalizza(s) for s in sinonimi]
@@ -65,8 +69,11 @@ def termini(q: str) -> list[list[str]]:
         if trovata:
             gruppi.append(forme)
             testo = re.sub(rf"(?<!\w){re.escape(trovata)}\w*", " ", testo)
-    for parola in re.findall(r"[\w.'-]+", testo):
-        parola = parola.strip(".'-")
+    # «d'imposta», «dell'impresa»: l'articolo apostrofato si toglie, così la parola si trova
+    # sia con l'apostrofo dritto sia con quello tipografico dei titoli
+    testo = re.sub(r"(?<!\w)(?:d|l|dell|dall|nell|sull|all|un|quest)'", " ", testo)
+    for parola in re.findall(r"[\w.-]+", testo):
+        parola = parola.strip(".-")
         if len(parola) < 2 or parola in PAROLE_VUOTE:
             continue
         gruppi.append([_radice(parola)])

@@ -127,3 +127,24 @@ def test_testo_pdf_senza_caratteri_nulli(monkeypatch):
     monkeypatch.setattr("pypdf.PdfReader", Lettore)
     testo, _ = servizio.testo_pdf(pdf_con_testo("x"))
     assert "\x00" not in testo and "fine" in testo
+
+
+def test_avviso_per_bandi_aperti_da_anni_senza_scadenza(client, crea_utente, accedi, db):
+    fonte = db.scalar(select(Fonte).where(Fonte.codice == "prova_pagina")) or Fonte(
+        codice="prova_pagina", nome="Prova", url="https://esempio.test"
+    )
+    db.add(fonte)
+    db.flush()
+
+    def bando(apertura):
+        b = Bando(fonte_id=fonte.id, id_esterno=uuid.uuid4().hex, titolo="Sportello",
+                  stato="aperto", raw={}, hash_contenuto="d" * 64, data_apertura=apertura)  # fmt: skip
+        db.add(b)
+        db.flush()
+        return b
+
+    vecchio, recente = bando(date(2005, 5, 8)), bando(date.today() - timedelta(days=200))
+    db.commit()
+    accedi(crea_utente())
+    assert "Aperto dal 2005 senza una data di chiusura" in client.get(f"/bandi/{vecchio.id}").text
+    assert "senza una data di chiusura" not in client.get(f"/bandi/{recente.id}").text

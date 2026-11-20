@@ -128,3 +128,24 @@ def test_json_non_valido(tmp_path):
     p.write_text('[{"ID_Incentivo": "1"', encoding="utf-8")  # troncato
     with pytest.raises(ErroreFormato):
         FONTE.interpreta(p)
+
+
+def test_date_dalle_note_quando_mancano_i_campi():
+    """19 bandi con lo stato «sconosciuto» il 20/11/2026: le date erano solo nelle note."""
+    from datetime import date
+
+    from app.sources.incentivi_italia.parser import date_dalle_note
+
+    assert date_dalle_note("dal 30.01.2026 al 03.03.2026") == (date(2026, 1, 30), date(2026, 3, 3))
+    assert date_dalle_note("Entro il 31/12/2026.") == (None, date(2026, 12, 31))
+    assert date_dalle_note("entro le ore 12.00 del 30/06/2026") == (None, date(2026, 6, 30))
+    assert date_dalle_note("COMPETENZA ANNO 2026") == (None, None)
+    assert date_dalle_note("2026/2026") == (None, None)
+    assert date_dalle_note("entro il 31/02/2026") == (None, None)  # data impossibile
+    base = {"ID_Incentivo": "x1", "Titolo": "Bando"}
+    rec = interpreta_record({**base, "Note_di_apertura_chiusura": "Entro il 31/12/2026."})
+    assert rec.data_chiusura == date(2026, 12, 31)
+    # i campi della fonte, quando ci sono, prevalgono sulle note
+    rec = interpreta_record({**base, "Data_chiusura": "2026-05-01",
+                             "Note_di_apertura_chiusura": "Entro il 31/12/2026."})  # fmt: skip
+    assert rec.data_chiusura == date(2026, 5, 1)
