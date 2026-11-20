@@ -36,7 +36,15 @@
   {{ pulsante_segui("bando", bando.id, segue, puo_scrivere) }}
   <a href="/prefattibilita/nuova?bando_id={{ bando.id }}" role="button" class="secondary outline piccolo">Verifica per un cliente</a>
   <a href="/revisione/{{ bando.id }}" role="button" class="secondary outline piccolo">Rivedi i requisiti</a>
+  {% if manuale and puo_modificare_bandi %}
+  <a href="/bandi/{{ bando.id }}/modifica" role="button" class="secondary outline piccolo">Modifica</a>
+  <form method="post" action="/bandi/{{ bando.id }}/elimina" class="in-linea">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="secondary outline piccolo">Elimina</button>
+  </form>
+  {% endif %}
 </div>
+{% if manuale %}<p><small class="etichetta">inserito dallo studio</small>{% if request.query_params.get("inserito") %} <span class="messaggio ok">Bando aggiunto: da stanotte compare nelle opportunità dei clienti adatti (o subito con «Aggiorna adesso» in Opportunità).</span>{% endif %}</p>{% endif %}
 </div>
 {{ novita_seguito(novita_qui) }}
 {% if req and req.sintesi %}
@@ -163,5 +171,5 @@
   {% if versioni %} · {{ versioni }} versioni precedenti salvate{% endif %}
   {% if bando.scomparso_dal_feed_il %} · <strong>non più presente nella fonte dal {{ bando.scomparso_dal_feed_il | data_ora }}</strong>{% endif %}
 </small></p>
-<p><small class="attribuzione">{{ attribuzione }}</small></p>
+{% if attribuzione %}<p><small class="attribuzione">{{ attribuzione }}</small></p>{% endif %}
 {% endblock %}

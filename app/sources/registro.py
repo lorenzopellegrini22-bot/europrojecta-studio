@@ -6,7 +6,10 @@ verificato formato, robots.txt e condizioni d'uso (vedi docs/fonti/).
 
 from app.sources.base import Fonte
 from app.sources.incentivi_italia import FONTE as INCENTIVI_ITALIA
+from app.sources.invitalia import FONTE as INVITALIA
 from app.sources.regioni.lazio import FONTE as REGIONE_LAZIO
 from app.sources.regioni.toscana import FONTE as REGIONE_TOSCANA
 
-FONTI: dict[str, Fonte] = {f.codice: f for f in (INCENTIVI_ITALIA, REGIONE_LAZIO, REGIONE_TOSCANA)}
+FONTI: dict[str, Fonte] = {
+    f.codice: f for f in (INCENTIVI_ITALIA, INVITALIA, REGIONE_LAZIO, REGIONE_TOSCANA)
+}

@@ -9,6 +9,9 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.auth.dipendenze import richiede_titolare, utente_corrente, verifica_csrf
+from app.auth.permessi import puo_modificare
+from app.bandi.manuali import CODICE_FONTE as FONTE_MANUALE
+from app.bandi.manuali import e_manuale
 from app.config import get_settings
 from app.db import get_db
 from app.documenti.documentazione import voci_bando
@@ -61,7 +64,7 @@ def forme_disponibili(db: Session) -> list[str]:
 
 
 @router.get("/bandi")
-def lista(request: Request, db: Db, _: Autenticato) -> Response:
+def lista(request: Request, db: Db, utente: Autenticato) -> Response:
     p = request.query_params
     q = (p.get("q") or "").strip()
     stato = p.get("stato") or "attivi"
@@ -134,8 +137,21 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
             "forme": forme_disponibili(db),
             "scadenze": SCADENZE,
             "oggi": date.today(),
+            "puo_modificare_bandi": puo_modificare(utente, "/bandi/nuovo", "POST"),
         },
     )
+
+
+def attribuzione(bando: Bando) -> str | None:
+    """Citazione della fonte sotto la scheda: ogni fonte la sua (licenze e note legali)."""
+    from app.sources.invitalia import ATTRIBUZIONE as INVITALIA
+
+    codice = bando.fonte.codice if bando.fonte else None
+    if codice == "incentivi_italia":
+        return ATTRIBUZIONE
+    if codice == "invitalia":
+        return INVITALIA
+    return None
 
 
 @router.get("/bandi/{bando_id}")
@@ -186,15 +202,20 @@ def scheda(request: Request, db: Db, utente: Autenticato, bando_id: int) -> Resp
                     .options(selectinload(Bando.fonte))
                 )
             ),
-            "attribuzione": ATTRIBUZIONE,
+            "attribuzione": attribuzione(bando),
             "oggi": date.today(),
+            "manuale": e_manuale(db, bando),
+            "puo_modificare_bandi": puo_modificare(utente, "/bandi/nuovo", "POST"),
         },
     )
 
 
 @router.get("/fonti")
 def fonti(request: Request, db: Db, _: Autenticato) -> Response:
-    elenco = db.scalars(select(Fonte).order_by(Fonte.nome)).all()
+    # i bandi inseriti a mano non hanno una raccolta: la fonte «manuale» non si mostra
+    elenco = db.scalars(
+        select(Fonte).where(Fonte.codice != FONTE_MANUALE).order_by(Fonte.nome)
+    ).all()
     runs = db.scalars(
         select(FonteRun)
         .options(selectinload(FonteRun.fonte))

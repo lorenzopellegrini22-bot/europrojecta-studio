@@ -69,7 +69,8 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
   provincia in **Appalti**.
 
 ## 4. Bandi e appalti
-- Ogni notte l'app raccoglie i bandi nazionali e regionali e le gare (TED, Consip); l'AI
+- Ogni notte l'app raccoglie i bandi nazionali (Incentivi Italia e Invitalia) e regionali e le
+  gare (TED, Consip); l'AI
   legge i bandi nuovi o cambiati e ne ricava i requisiti, segnando «da verificare» quello
   che il testo non dice.
 - **Documentazione** (in ogni bando, gara e opportunità): i PDF del bando, presi dai dati della
@@ -81,6 +82,11 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
   e numeri di pagina tolti). Si apre con Word o LibreOffice; per **Google Documenti** caricalo su
   Google Drive e scegli «Apri con Google Documenti». È una conversione: per le parti ufficiali
   (importi, scadenze) fa fede il PDF originale. Un PDF molto lungo richiede qualche secondo.
+- **Aggiungi un bando** (pagina Bandi): per le misure che le fonti non hanno. Scrivi titolo,
+  ente, descrizione, date e requisiti (territorio, dimensioni, forma, ATECO, importi): il bando
+  entra nella ricerca e nelle opportunità dei clienti come gli altri e si chiude da solo alla
+  data di chiusura. Si modifica o si elimina dalla sua scheda (etichetta «inserito dallo
+  studio»).
 - **Revisione bandi (AI):** confermi o correggi i campi incerti; le correzioni prevalgono.
 - **PDF da caricare:** i PDF che i siti non lasciano scaricare in automatico: apri i link (il
   browser li scarica) e caricali **tutti insieme**; ognuno va da solo al bando giusto.

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% macro campo(nome, etichetta, tipo="text", extra="") -%}
+<label>{{ etichetta }}
+  <input type="{{ tipo }}" name="{{ nome }}" value="{{ v.get(nome) or '' }}" {{ extra | safe }}>
+</label>
+{%- endmacro %}
+{% set titolo_pagina = "Modifica bando" if bando else "Nuovo bando" %}
+{% block titolo %}{{ titolo_pagina }} · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<nav aria-label="breadcrumb"><ul><li><a href="/bandi">Bandi</a></li>{% if bando %}<li><a href="/bandi/{{ bando.id }}">{{ bando.titolo | truncate(50) }}</a></li>{% endif %}<li>{{ "Modifica" if bando else "Nuovo" }}</li></ul></nav>
+<hgroup>
+  <h1>{{ titolo_pagina }}</h1>
+  <p>Per le misure che le fonti automatiche non hanno (es. Resto al Sud 2.0, Transizione 5.0): il bando entra nella ricerca, nei filtri e nelle opportunità dei clienti come gli altri.</p>
+</hgroup>
+{% if errori %}<div class="messaggio errore" role="alert">{% for e in errori %}{{ e }}{% if not loop.last %}<br>{% endif %}{% endfor %}</div>{% endif %}
+
+<form method="post" action="{{ '/bandi/%d/modifica' % bando.id if bando else '/bandi/nuovo' }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <article>
+    <header><strong>Il bando</strong></header>
+    {{ campo("titolo", "Titolo *", extra="required") }}
+    {{ campo("ente", "Ente", extra='placeholder="es. Invitalia, Ministero delle Imprese e del Made in Italy"') }}
+    <label>Descrizione
+      <textarea name="descrizione" rows="5" placeholder="Cosa finanzia, a chi si rivolge, quali spese: è il testo che la ricerca e l'AI confrontano con i progetti dei clienti.">{{ v.get("descrizione") or "" }}</textarea>
+    </label>
+    <div class="grid">
+      {{ campo("link_ufficiale", "Pagina ufficiale", "url", 'placeholder="https://"') }}
+      {{ campo("link_domande", "Dove si presenta la domanda", "url", 'placeholder="https://"') }}
+    </div>
+  </article>
+
+  <article>
+    <header><strong>Date</strong></header>
+    <div class="grid">
+      {{ campo("data_apertura", "Apertura", "date") }}
+      {{ campo("data_chiusura", "Chiusura", "date") }}
+      <label>Stato, se non ci sono date
+        <select name="stato_dichiarato">
+          <option value="">—</option>
+          {% for k, e in stati %}<option value="{{ k }}" {% if v.get("stato_dichiarato") == k %}selected{% endif %}>{{ e }}</option>{% endfor %}
+        </select>
+      </label>
+    </div>
+    {{ campo("note", "Note su apertura e chiusura", extra='placeholder="es. sportello fino a esaurimento delle risorse"') }}
+    <p><small>Lo stato si aggiorna da solo ogni notte: con la chiusura passata il bando diventa «chiuso».</small></p>
+  </article>
+
+  <article>
+    <header><strong>Requisiti</strong> <small>(quelli che scrivi qui prevalgono su quanto ricava l'AI)</small></header>
+    <fieldset>
+      <legend>Territorio</legend>
+      <label class="casella"><input type="radio" name="ambito" value="nazionale" {% if v.get("ambito") != "regionale" %}checked{% endif %}> Tutta Italia</label>
+      <label class="casella"><input type="radio" name="ambito" value="regionale" {% if v.get("ambito") == "regionale" %}checked{% endif %}> Solo alcune regioni</label>
+    </fieldset>
+    <details {% if v.get("regioni") %}open{% endif %}>
+      <summary>Regioni (per i bandi regionali)</summary>
+      <div class="griglia-caselle">
+        {% for r in regioni %}<label class="casella"><input type="checkbox" name="regioni" value="{{ r }}" {% if r in (v.get("regioni") or []) %}checked{% endif %}> {{ r }}</label>{% endfor %}
+      </div>
+    </details>
+    <label>Comuni (facoltativo, uno per riga: solo se il bando è comunale)
+      <textarea name="comuni" rows="2">{{ v.get("comuni") or "" }}</textarea>
+    </label>
+    <fieldset>
+      <legend>Dimensioni d'impresa ammesse (nessuna = da verificare)</legend>
+      {% for k, e in dimensioni %}<label class="casella"><input type="checkbox" name="dimensioni" value="{{ k }}" {% if k in (v.get("dimensioni") or []) %}checked{% endif %}> {{ e }}</label>{% endfor %}
+    </fieldset>
+    <fieldset>
+      <legend>Forma dell'agevolazione</legend>
+      <div class="griglia-caselle">
+        {% for f in forme %}<label class="casella"><input type="checkbox" name="forme" value="{{ f }}" {% if f in (v.get("forme") or []) %}checked{% endif %}> {{ f }}</label>{% endfor %}
+      </div>
+      {{ campo("forma_altra", "Altra forma") }}
+    </fieldset>
+    <div class="grid">
+      {{ campo("ateco", "Codici ATECO ammessi (vuoto = tutti)", extra='placeholder="es. 25.62; 28.41"') }}
+      <label>Versione ATECO
+        <select name="ateco_versione">
+          {% for x in ("2007", "2025") %}<option value="{{ x }}" {% if v.get("ateco_versione") == x %}selected{% endif %}>{{ x }}</option>{% endfor %}
+        </select>
+      </label>
+    </div>
+    <div class="grid">
+      {{ campo("importo_max", "Agevolazione massima per impresa (€)", extra='inputmode="decimal"') }}
+      {{ campo("dotazione", "Dotazione complessiva (€)", extra='inputmode="decimal"') }}
+    </div>
+  </article>
+  <button type="submit">{{ "Salva le modifiche" if bando else "Aggiungi il bando" }}</button>
+  <a href="{{ '/bandi/%d' % bando.id if bando else '/bandi' }}" role="button" class="secondary outline">Annulla</a>
+</form>
+{% endblock %}

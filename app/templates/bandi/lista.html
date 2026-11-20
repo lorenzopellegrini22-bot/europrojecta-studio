@@ -2,10 +2,13 @@
 {% from "bandi/_macro.html" import badge_stato, territorio %}
 {% block titolo %}Bandi · {{ NOME_APP }}{% endblock %}
 {% block contenuto %}
+<div class="intestazione">
 <hgroup>
   <h1>Bandi</h1>
-  <p>{{ totale }} bandi trovati. Fonte: Incentivi Italia, aggiornata ogni notte.</p>
+  <p>{{ totale }} bandi trovati. Fonti: Incentivi Italia, Regioni e Invitalia, aggiornate ogni notte, più quelli inseriti dallo studio.</p>
 </hgroup>
+{% if puo_modificare_bandi %}<a href="/bandi/nuovo" role="button" class="secondary">Aggiungi un bando</a>{% endif %}
+</div>
 
 <form method="get" action="/bandi" class="filtri">
   <input type="search" name="q" value="{{ filtri.q }}" placeholder="Cerca nel titolo, ente o descrizione" aria-label="Cerca">

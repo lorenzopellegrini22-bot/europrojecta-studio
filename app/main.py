@@ -38,6 +38,7 @@ from app.auth.dipendenze import (
 from app.auth.invito import router as invito_router
 from app.auth.router import router as auth_router
 from app.auth.utenti import router as utenti_router
+from app.bandi.manuali import router as bandi_manuali_router
 from app.bandi.router import router as bandi_router
 from app.cestino.router import router as cestino_router
 from app.clienti.crm import router as crm_router
@@ -183,6 +184,7 @@ app.include_router(auth_router)
 app.include_router(cron_router)
 app.include_router(account_router)
 app.include_router(integrazioni_router)
+app.include_router(bandi_manuali_router)
 app.include_router(bandi_router)
 app.include_router(crm_router)
 app.include_router(utenti_router)

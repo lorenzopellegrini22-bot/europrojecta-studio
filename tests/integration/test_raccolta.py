@@ -192,7 +192,14 @@ def test_pagine_bandi(client, crea_utente, accedi, db, tmp_path):
     bando = _bandi(db, fonte)[0]
     r = client.get(f"/bandi/{bando.id}")
     assert r.status_code == 200
-    assert "CC BY 4.0" in r.text
+    # la licenza di Incentivi Italia si cita solo sui suoi bandi (questa è una fonte di prova)
+    assert "CC BY 4.0" not in r.text
+    from app.bandi.router import attribuzione
+    from app.models import Fonte
+
+    for codice, attesa in (("incentivi_italia", "CC BY 4.0"), ("invitalia", "Invitalia")):
+        finto = Bando(titolo="x", fonte=Fonte(codice=codice, nome=codice, url="x"))
+        assert attesa in attribuzione(finto)
     assert client.get("/bandi/999999999").status_code == 404
 
     r = client.get("/fonti")

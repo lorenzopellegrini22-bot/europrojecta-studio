@@ -29,6 +29,13 @@ def raccolta_bandi(forza: bool = False, solo: str | None = None) -> str:
             if run.esito in ("errore", "fermato_sanita"):
                 fallite.append(codice)
     riepilogo = "\n".join(righe) or "Nessuna fonte attiva."
+    from app.bandi.manuali import aggiorna_stati as stati_manuali
+
+    with get_sessionmaker()() as db:
+        cambiati = stati_manuali(db)
+        db.commit()
+    if cambiati:
+        riepilogo += f"\nBandi inseriti dallo studio: {cambiati} cambiati di stato."
     try:
         from app.bandi.doppioni import collega
 

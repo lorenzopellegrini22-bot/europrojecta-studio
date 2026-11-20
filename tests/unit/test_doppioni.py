@@ -40,3 +40,19 @@ def test_stessa_pagina_ufficiale():
         "https://www.lazioinnova.it/bandi/basket-bond-lazio-contributo-sui-costi/"
     )
     assert pagina("https://www.regione.it/") is None and pagina(None) is None
+
+
+def test_invitalia_collegata_alle_misure_nazionali():
+    """Titoli brevi di Invitalia contro quelli lunghi di Incentivi Italia (dati del 20/11/2026)."""
+    from app.bandi.doppioni import parole
+
+    breve, lungo = (
+        parole("Smart&Start Italia"),
+        parole("Smart&Start Italia - Sostegno alle startup innovative"),
+    )
+    assert breve <= lungo and len(breve) >= 2
+    # «Legge 181» non basta per unirla a una singola area di crisi
+    assert (
+        somiglianza("Legge 181", "Legge 181/1989 - Riqualificazione dell'area di crisi di Gela")
+        < 0.3
+    )

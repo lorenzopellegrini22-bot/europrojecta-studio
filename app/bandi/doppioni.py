@@ -1,5 +1,9 @@
 """Bandi doppi tra la fonte nazionale (Incentivi Italia) e le fonti regionali.
 
+Vale anche per Invitalia: le misure che gestisce (ON, Smart&Start, Nuova Sabatini…) sono
+anche nel dataset nazionale, registrate con l'ente Ministero delle Imprese o Invitalia; i titoli
+di Invitalia sono brevi, quindi basta che tutte le loro parole compaiano nel titolo nazionale.
+
 Lo stesso bando regionale può arrivare due volte: dal portale della Regione e dal dataset
 nazionale. Si tiene come principale quello della fonte regionale (più aggiornata, con i PDF)
 e il nazionale viene collegato con `bando_canonico_id`: non compare più nelle liste, nelle
@@ -28,6 +32,9 @@ from app.utils.ricerca import normalizza
 from app.utils.territorio import REGIONI
 
 FONTE_NAZIONALE = "incentivi_italia"
+FONTE_INVITALIA = "invitalia"
+# enti con cui Incentivi Italia registra le misure che Invitalia gestisce
+ENTI_INVITALIA = ("invitalia", "ministero delle imprese", "sviluppo economico")
 SOGLIA = 0.6
 SOGLIA_STESSA_PAGINA = 0.3
 GIORNI_SCADENZA = 7
@@ -61,6 +68,12 @@ def pagina(link: str | None) -> tuple[str, str] | None:
     if not parti.netloc or not segmenti:
         return None
     return parti.netloc.lower().removeprefix("www."), segmenti[-1]
+
+
+def _gestito_da_invitalia(nazionale: Bando) -> bool:
+    ente = normalizza(nazionale.ente or "")
+    link = (nazionale.link_ufficiale or "").lower()
+    return any(x in ente for x in ENTI_INVITALIA) or "invitalia.it" in link
 
 
 def regione_della_fonte(fonte: Fonte) -> str | None:
@@ -100,8 +113,9 @@ def collega(db: Session) -> str:
     parole_naz = {b.id: parole(b.titolo) for b in nazionali}
     collegati: dict[int, int] = {}
     for reg in regionali:
+        invitalia = fonti[reg.fonte_id].codice == FONTE_INVITALIA
         regione = regione_della_fonte(fonti[reg.fonte_id])
-        if regione is None:
+        if regione is None and not invitalia:
             continue
         pr = parole(reg.titolo)
         if not pr:
@@ -114,15 +128,18 @@ def collega(db: Session) -> str:
                 continue
             s = len(pr & pn) / len(pr | pn)
             stessa_pagina = pagina_reg is not None and pagina_reg == pagina(naz.link_ufficiale)
-            if s < (SOGLIA_STESSA_PAGINA if stessa_pagina else SOGLIA):
+            # i titoli di Invitalia sono brevi («Smart&Start Italia»): basta che le loro parole
+            # siano tutte nel titolo nazionale («Smart&Start Italia - Sostegno alle startup…»)
+            contenuto = invitalia and len(pr) >= 2 and pr <= pn and s >= SOGLIA_STESSA_PAGINA
+            if s < (SOGLIA_STESSA_PAGINA if stessa_pagina else SOGLIA) and not contenuto:
+                continue
+            if invitalia and not _gestito_da_invitalia(naz):
+                continue
+            if not invitalia and not _stessa_regione(naz, regione):  # type: ignore[arg-type]
                 continue
             # a parità, vince il bando nazionale con la stessa pagina ufficiale
             voto = s + (1 if stessa_pagina else 0)
-            if (
-                voto > punteggio
-                and _stessa_regione(naz, regione)
-                and _scadenze_compatibili(reg, naz)
-            ):
+            if voto > punteggio and _scadenze_compatibili(reg, naz):
                 migliore, punteggio = naz, voto
         if migliore is not None:
             collegati[migliore.id] = reg.id
