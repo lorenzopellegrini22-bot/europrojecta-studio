@@ -113,7 +113,8 @@ def backup_esterno() -> str:
 
 
 def pulizia() -> str:
-    """Elimina le sessioni scadute e i log degli accessi più vecchi di un anno."""
+    """Elimina le sessioni scadute, i log degli accessi più vecchi di un anno e quello che
+    è nel cestino da più di 30 giorni."""
     ora = datetime.now(UTC)
     with get_sessionmaker()() as db:
         sessioni = db.execute(delete(Sessione).where(Sessione.scade_il < ora)).rowcount
@@ -122,8 +123,14 @@ def pulizia() -> str:
                 LogAccesso.creato_il < ora - timedelta(days=CONSERVAZIONE_LOG_ACCESSI_GIORNI)
             )
         ).rowcount
+        from app.cestino.servizio import svuota_scaduti
+
+        cestino = svuota_scaduti(db, ora)
         db.commit()
-    return f"Eliminate {sessioni} sessioni scadute e {log} log di accesso vecchi."
+    return (
+        f"Eliminate {sessioni} sessioni scadute, {log} log di accesso vecchi e "
+        f"{cestino} elementi rimasti nel cestino oltre 30 giorni."
+    )
 
 
 GIORNI_PREAVVISO = 3

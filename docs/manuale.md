@@ -107,7 +107,19 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
 - Pratiche a fasi da modelli personalizzabili, con checklist, documenti, email al cliente.
 - Lo **Scadenzario** raccoglie operazioni, presentazioni e promemoria dei clienti.
 
-## 8. I tuoi dati
+## 8. Cestino
+- Quello che elimini (clienti, pratiche, documenti, referenti, progetti, attività, promemoria,
+  aiuti de minimis, prefattibilità, note, segnalatori, modelli, PDF dei bandi) va nel
+  **Cestino** (menu Amministrazione, solo titolare) con tutto ciò che conteneva: un cliente
+  torna con referenti, progetti, documenti e scadenze, una pratica con fasi, allegati e note.
+- Subito dopo l'eliminazione compare l'avviso «spostato nel cestino» con **Annulla**.
+- Dal cestino: **Ripristina**, **Elimina per sempre** o **Svuota il cestino**. Dopo 30 giorni
+  gli elementi spariscono da soli, file compresi.
+- Se il ripristino non è possibile l'app spiega perché: ad esempio un referente il cui cliente
+  è stato eliminato (ripristina prima il cliente) o un cliente la cui partita IVA è stata
+  usata nel frattempo da un nuovo cliente.
+
+## 9. I tuoi dati
 - **Esporta tutti i dati** (menu Studio): uno zip con tutti i dati in CSV (anche le note dello
   studio e i bandi seguiti) e gli allegati.
 - I backup sono giornalieri e cifrati (vedi `docs/ripristino.md`).

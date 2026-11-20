@@ -4,6 +4,7 @@ from app.models.ai import BandoOverride, Embedding, EstrazioneBando, Impostazion
 from app.models.appalti import Appalto
 from app.models.auth import AuditLog, CodiceRecupero, LogAccesso, Sessione, Utente
 from app.models.bandi import Bando, BandoRequisiti, BandoVersione, Fonte, FonteRun
+from app.models.cestino import ElementoCestino
 from app.models.collaborazione import Commento, Menzione, NovitaSeguito, Seguito
 from app.models.crm import Azienda, AziendaAteco, Referente, Sede, Segnalatore
 from app.models.crm_esteso import (
@@ -39,6 +40,7 @@ from app.models.pratiche import (
 from app.models.riferimenti import AtecoRaccordo, Comune
 
 __all__ = [
+    "ElementoCestino",
     "Commento",
     "Menzione",
     "NovitaSeguito",

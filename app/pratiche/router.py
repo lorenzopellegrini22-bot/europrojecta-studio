@@ -557,13 +557,17 @@ def elimina_operazione(pratica_id: int, op_id: int, db: Db, utente: Autenticato)
 def elimina(pratica_id: int, db: Db, utente: Titolare) -> Response:
     p = _pratica(db, pratica_id)
     audit.registra(db, utente, "pratica", p.id, "elimina", {"codice": p.codice})
+    from app.cestino import servizio as cestino
+
+    descrizione = f"{p.codice} · {p.azienda.ragione_sociale}" if p.azienda else p.codice
+    e = cestino.sposta(db, utente, p, "pratica", descrizione, f"/pratiche/{p.id}")
     db.delete(p)
     db.flush()
     from app.squadra.note import pulisci_orfane
 
     pulisci_orfane(db)  # le note della pratica spariscono con lei
     db.commit()
-    return RedirectResponse("/pratiche", status_code=303)
+    return RedirectResponse(f"/pratiche?cestino={e.id}", status_code=303)
 
 
 # --- Scadenzario -------------------------------------------------------------------------
@@ -717,9 +721,12 @@ def elimina_modello(modello_id: int, db: Db, utente: Titolare) -> Response:
     """Le pratiche già aperte restano intatte: hanno la loro copia di fasi e operazioni."""
     m = _modello(db, modello_id)
     audit.registra(db, utente, "modello_pratica", m.id, "elimina", {"nome": m.nome})
+    from app.cestino import servizio as cestino
+
+    e = cestino.sposta(db, utente, m, "modello di pratica", m.nome, f"/modelli/{m.id}")
     db.delete(m)
     db.commit()
-    return RedirectResponse("/modelli", status_code=303)
+    return RedirectResponse(f"/modelli?cestino={e.id}", status_code=303)
 
 
 @router.post("/modelli/{modello_id}/fasi", dependencies=CSRF)
@@ -930,7 +937,11 @@ def scarica_allegato(allegato_id: int, db: Db, _: Autenticato) -> Response:
 def elimina_allegato(allegato_id: int, db: Db, utente: Autenticato) -> Response:
     a = _allegato(db, allegato_id)
     pratica_id, azienda_id = a.pratica_id, a.azienda_id
-    archivio.elimina_file(a.percorso)
+    from app.cestino import servizio as cestino
+
+    # il file resta sul disco finché l'allegato non lascia il cestino
+    torna = f"/pratiche/{pratica_id}#allegati" if pratica_id else f"/clienti/{azienda_id}#documenti"
+    e = cestino.sposta(db, utente, a, "documento", a.nome_originale, torna)
     if pratica_id is not None:
         audit.registra(db, utente, "pratica", pratica_id, "elimina", {"allegato": a.nome_originale})
     else:
@@ -938,6 +949,4 @@ def elimina_allegato(allegato_id: int, db: Db, utente: Autenticato) -> Response:
         audit.registra(db, utente, "azienda", azienda_id, "elimina", dettagli)
     db.delete(a)
     db.commit()
-    if pratica_id is None:
-        return RedirectResponse(f"/clienti/{azienda_id}#documenti", status_code=303)
-    return RedirectResponse(f"/pratiche/{pratica_id}#allegati", status_code=303)
+    return RedirectResponse(cestino.con_avviso_id(torna, e.id), status_code=303)

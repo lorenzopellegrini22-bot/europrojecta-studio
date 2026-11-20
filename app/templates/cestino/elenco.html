@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block titolo %}Cestino · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<div class="intestazione">
+  <hgroup>
+    <h1>Cestino</h1>
+    <p>Quello che si elimina resta qui {{ giorni }} giorni, con tutto ciò che conteneva (referenti, pratiche, allegati, note): poi sparisce per sempre.</p>
+  </hgroup>
+  {% if elementi %}
+  <details class="zona-pericolo">
+    <summary>Svuota il cestino</summary>
+    <form method="post" action="/cestino/svuota">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <p>{{ elementi | length }} {{ "elemento verrà eliminato" if elementi | length == 1 else "elementi verranno eliminati" }} per sempre, compresi i loro file.</p>
+      <button type="submit" class="pulsante-pericolo">Svuota per sempre</button>
+    </form>
+  </details>
+  {% endif %}
+</div>
+{% set msg = request.query_params.get("msg") %}
+{% if msg %}<div class="messaggio {{ 'ok' if request.query_params.get('esito') == 'ok' else 'errore' }}" role="status">{{ msg }}</div>{% endif %}
+{% if not elementi %}
+<article><p class="vuoto">Il cestino è vuoto.</p></article>
+{% else %}
+<div class="overflow-auto">
+<table class="striped cestino">
+  <thead><tr><th>Cosa</th><th>Eliminato</th><th>Resta fino al</th><th></th></tr></thead>
+  <tbody>
+  {% for e in elementi %}
+    <tr>
+      <td><small class="etichetta">{{ e.tipo }}</small> {{ e.descrizione }}</td>
+      <td>{{ e.creato_il | data_ora }}{% if e.eliminato_da %}<br><small>{{ e.eliminato_da.nome }}</small>{% endif %}</td>
+      <td>{{ scade_il(e) | data }}</td>
+      <td class="azioni-cestino">
+        <form method="post" action="/cestino/{{ e.id }}/ripristina" class="in-linea">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="piccolo">Ripristina</button>
+        </form>
+        <details class="in-linea">
+          <summary><small>Elimina per sempre</small></summary>
+          <form method="post" action="/cestino/{{ e.id }}/elimina">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="pulsante-pericolo piccolo">Conferma: elimina per sempre</button>
+          </form>
+        </details>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

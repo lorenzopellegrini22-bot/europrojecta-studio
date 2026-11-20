@@ -54,7 +54,9 @@ def test_documento_dell_azienda_nel_database(client, crea_utente, accedi, db, az
     assert "Visura%20camerale%20%C3%A8.pdf" in scaricato.headers["content-disposition"]
 
     r = client.post(f"/allegati/{a.id}/elimina", data={"csrf_token": token})
-    assert r.status_code == 303 and r.headers["location"] == f"/clienti/{azienda.id}#documenti"
+    assert r.status_code == 303
+    assert r.headers["location"].startswith(f"/clienti/{azienda.id}?cestino=")
+    assert r.headers["location"].endswith("#documenti")
     aid = a.id
     db.expunge_all()
     assert db.scalar(select(Allegato).where(Allegato.id == aid)) is None

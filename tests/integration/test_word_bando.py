@@ -107,9 +107,17 @@ def test_elimina_pdf_caricato_a_mano(client, crea_utente, accedi, db):
 
     r = client.post(f"/bandi/{b.id}/documenti/{d.id}/elimina", data={"csrf_token": token},
                     follow_redirects=False)  # fmt: skip
-    assert r.status_code == 303 and "eliminato" in r.headers["location"]
+    assert r.status_code == 303 and "cestino=" in r.headers["location"]
     db.expire_all()
     assert db.get(DocumentoBando, did) is None
+    assert file.exists()  # resta finché il PDF è nel cestino
+    from app.cestino import servizio as cestino
+    from app.models import ElementoCestino
+
+    e = db.scalar(select(ElementoCestino).where(ElementoCestino.tabella == "documento_bando",
+                                                ElementoCestino.oggetto_id == did))  # fmt: skip
+    cestino.elimina_definitivamente(db, e)
+    db.commit()
     assert not file.exists() and not list(file.parent.glob(f"{file.stem}.*.docx"))
 
 

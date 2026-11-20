@@ -179,8 +179,8 @@
   <summary>Elimina il cliente</summary>
   <form method="post" action="/clienti/{{ azienda.id }}/elimina">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <p>Il cliente e i suoi referenti verranno eliminati definitivamente.</p>
-    <button type="submit" class="pulsante-pericolo">Elimina definitivamente</button>
+    <p>Il cliente, con referenti, progetti, documenti e scadenze, va nel cestino: si può ripristinare per 30 giorni.</p>
+    <button type="submit" class="pulsante-pericolo">Elimina</button>
   </form>
 </details>
 {% endif %}

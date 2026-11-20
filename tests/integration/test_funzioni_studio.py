@@ -280,6 +280,15 @@ def test_allegati_della_pratica(client, crea_utente, accedi, db, tmp_path, monke
     )
     assert "esito=errore" in r.headers["location"]
     client.post(f"/allegati/{allegato.id}/elimina", data={"csrf_token": token})
+    # il file resta finché l'allegato è nel cestino; sparisce quando lo si svuota
+    assert list(tmp_path.rglob("*.pdf"))
+    from app.cestino import servizio as cestino
+    from app.models import ElementoCestino
+
+    e = db.scalar(select(ElementoCestino).where(ElementoCestino.tabella == "allegato")
+                  .order_by(ElementoCestino.id.desc()))  # fmt: skip
+    cestino.elimina_definitivamente(db, e)
+    db.commit()
     assert not list(tmp_path.rglob("*.pdf"))
 
 

@@ -173,6 +173,9 @@ def elimina(sid: int, db: Db, utente: Titolare) -> Response:
     """I clienti segnalati restano: perdono solo il collegamento al segnalatore."""
     s = _segnalatore(db, sid)
     audit.registra(db, utente, "segnalatore", s.id, "elimina", {"nome": s.nome})
+    from app.cestino import servizio as cestino
+
+    e = cestino.sposta(db, utente, s, "segnalatore", s.nome, f"/segnalatori/{s.id}")
     db.delete(s)
     db.commit()
-    return RedirectResponse("/segnalatori", status_code=303)
+    return RedirectResponse(f"/segnalatori?cestino={e.id}", status_code=303)

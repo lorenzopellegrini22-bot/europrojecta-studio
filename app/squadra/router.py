@@ -195,10 +195,14 @@ def _elimina_nota(db: Session, utente: Utente, oggetto: str, oid: int, cid: int)
         raise HTTPException(404)
     if c.utente_id != utente.id and not utente.is_titolare:
         raise HTTPException(403)
+    from app.cestino import servizio as cestino
+
+    torna = note.link(oggetto, oid)
+    e = cestino.sposta(db, utente, c, "nota", c.testo[:80], torna)
     db.delete(c)
     audit.registra(db, utente, oggetto, oid, "modifica", {"nota_eliminata": cid})
     db.commit()
-    return RedirectResponse(note.link(oggetto, oid), 303)
+    return RedirectResponse(cestino.con_avviso_id(torna, e.id), 303)
 
 
 @router.post("/pratiche/{pid}/note/{cid}/elimina", dependencies=CSRF)

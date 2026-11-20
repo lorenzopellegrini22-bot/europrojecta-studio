@@ -483,3 +483,15 @@ Nuova impostazione `VERIFICA_DUE_PASSAGGI` (predefinita `true`). Con `false` il 
 - Autenticazione propria: argon2id + TOTP + sessioni lato server.
 - Deploy Docker Compose su VPS con Caddy; backup restic cifrati.
 - Enum come varchar con check constraint; importi `Numeric(14,2)`; nomi di dominio in italiano.
+
+## Cestino con copia, non «eliminazione logica»
+Quello che si elimina va nella tabella `cestino` come copia JSON: la riga e tutte quelle che il
+database elimina con lei (chiavi esterne ON DELETE CASCADE seguite a catena, più le note di
+pratiche e opportunità che non hanno chiave esterna), con i collegamenti che l'eliminazione
+azzera (SET NULL). Il ripristino reinserisce le righe con gli stessi id nell'ordine delle
+dipendenze. Alternativa scartata: una colonna `eliminato_il` in ogni tabella, che obbliga a
+filtrare ogni query (un filtro dimenticato mostra dati eliminati). I file degli allegati e dei
+PDF dei bandi restano sul disco finché l'elemento non lascia il cestino (30 giorni, job
+`pulizia`). Se nel frattempo è nato un conflitto (stessa partita IVA, genitore eliminato) il
+ripristino si ferma e spiega il motivo, senza modificare nulla.
+

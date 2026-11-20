@@ -75,9 +75,23 @@ def _lista(form: dict[str, Any], nome: str) -> list[str]:
     return [v] if isinstance(v, str) else list(v)
 
 
-def _torna(azienda_id: int, ancora: str, msg: str | None = None) -> Response:
-    extra = f"?msg={quote(msg)}" if msg else ""
+def _torna(
+    azienda_id: int, ancora: str, msg: str | None = None, cestino: int | None = None
+) -> Response:
+    parametri = [f"msg={quote(msg)}"] if msg else []
+    if cestino is not None:  # «spostato nel cestino · Annulla» (base.html)
+        parametri.append(f"cestino={cestino}")
+    extra = "?" + "&".join(parametri) if parametri else ""
     return RedirectResponse(f"/clienti/{azienda_id}{extra}#{ancora}", status_code=303)
+
+
+def _nel_cestino(
+    db: Session, utente: Utente, oggetto: Any, tipo: str, descrizione: str, ancora: str
+) -> int:
+    from app.cestino import servizio as cestino
+
+    link = f"/clienti/{oggetto.azienda_id}#{ancora}"
+    return cestino.sposta(db, utente, oggetto, tipo, descrizione, link).id
 
 
 # --- Progetti d'investimento ----------------------------------------------------------
@@ -143,9 +157,10 @@ def salva_progetto(
         raise HTTPException(404)
     if form.get("elimina") == "1":
         audit.registra(db, utente, "progetto", p.id, "elimina", {"titolo": p.titolo})
+        eid = _nel_cestino(db, utente, p, "progetto", p.titolo, "progetti")
         db.delete(p)
         db.commit()
-        return _torna(azienda_id, "progetti")
+        return _torna(azienda_id, "progetti", cestino=eid)
     valori = _valori_progetto(form)
     if valori is None:
         return RedirectResponse(
@@ -191,9 +206,10 @@ def elimina_attivita(azienda_id: int, attivita_id: int, db: Db, utente: Autentic
     if x is None or x.azienda_id != azienda_id:
         raise HTTPException(404)
     audit.registra(db, utente, "attivita", x.id, "elimina", {"testo": x.testo[:200]})
+    eid = _nel_cestino(db, utente, x, "attività", x.testo[:80], "attivita")
     db.delete(x)
     db.commit()
-    return _torna(azienda_id, "attivita")
+    return _torna(azienda_id, "attivita", cestino=eid)
 
 
 # --- Scadenze (promemoria) -----------------------------------------------------------------
@@ -219,18 +235,24 @@ def aggiorna_scadenza(
     if s is None or s.azienda_id != azienda_id:
         raise HTTPException(404)
     azione = testo(form, "azione")
+    eid = None
     if azione == "completa":
         s.completata, s.completata_il = True, datetime.now(UTC)
     elif azione == "riapri":
         s.completata, s.completata_il = False, None
     elif azione == "elimina":
         audit.registra(db, utente, "scadenza", s.id, "elimina", {"titolo": s.titolo})
+        eid = _nel_cestino(db, utente, s, "promemoria", s.titolo, "scadenze")
         db.delete(s)
     db.commit()
     torna = testo(form, "torna")
     if torna and torna.startswith("/"):
+        if eid is not None:
+            from app.cestino.servizio import con_avviso_id
+
+            torna = con_avviso_id(torna, eid)
         return RedirectResponse(torna, status_code=303)
-    return _torna(azienda_id, "scadenze")
+    return _torna(azienda_id, "scadenze", cestino=eid)
 
 
 # --- De minimis ----------------------------------------------------------------------------
@@ -270,9 +292,11 @@ def elimina_aiuto(azienda_id: int, aiuto_id: int, db: Db, utente: Autenticato) -
     if x is None or x.azienda_id != azienda_id:
         raise HTTPException(404)
     audit.registra(db, utente, "aiuto_de_minimis", x.id, "elimina", {"importo": str(x.importo)})
+    descrizione = f"{x.ente or 'Aiuto'} del {x.data_concessione:%d/%m/%Y}"
+    eid = _nel_cestino(db, utente, x, "aiuto de minimis", descrizione, "de-minimis")
     db.delete(x)
     db.commit()
-    return _torna(azienda_id, "de-minimis")
+    return _torna(azienda_id, "de-minimis", cestino=eid)
 
 
 # --- Consensi dei referenti ---------------------------------------------------------------

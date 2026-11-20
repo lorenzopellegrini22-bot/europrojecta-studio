@@ -378,6 +378,10 @@ def ricalcola(pid: int, db: Db, _: Autenticato) -> Response:
 def elimina(pid: int, db: Db, utente: Titolare) -> Response:
     pf = _carica(db, pid)
     audit.registra(db, utente, "prefattibilita", pf.id, "elimina", None)
+    from app.cestino import servizio as cestino
+
+    descrizione = f"{pf.azienda.ragione_sociale} · {pf.nome_bando}"[:200]
+    e = cestino.sposta(db, utente, pf, "prefattibilità", descrizione, f"/prefattibilita/{pf.id}")
     db.delete(pf)
     db.commit()
-    return RedirectResponse("/prefattibilita", status_code=303)
+    return RedirectResponse(f"/prefattibilita?cestino={e.id}", status_code=303)

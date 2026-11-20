@@ -171,3 +171,18 @@ def testo(form: dict[str, Any], campo: str) -> str | None:
         valore = valore[0] if valore else ""
     valore = (valore or "").strip()
     return valore or None
+
+
+def _elemento_cestino(utente: Any, valore: str | None) -> Any:
+    """L'elemento appena messo nel cestino (avviso «Eliminato · Annulla» in base.html)."""
+    from sqlalchemy.orm import object_session
+
+    from app.models import ElementoCestino
+
+    db = object_session(utente) if utente is not None else None
+    if db is None or not valore or not valore.isdigit():
+        return None
+    return db.get(ElementoCestino, int(valore))
+
+
+templates.env.globals["elemento_cestino"] = _elemento_cestino

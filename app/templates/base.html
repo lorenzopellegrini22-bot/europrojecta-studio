@@ -49,6 +49,7 @@
     ("/impostazioni/utenti", "Utenti e permessi", "/impostazioni/utenti"),
     ("/import", "Importa clienti", None),
     ("/export", "Esporta tutti i dati", None),
+    ("/cestino", "Cestino", None),
   ]),
 ] -%}
 {%- macro attiva(percorso, href, prefisso) -%}
@@ -102,6 +103,21 @@
       </div>
     </aside>
     <main class="contenuto container">
+      {%- set nel_cestino = elemento_cestino(utente, request.query_params.get("cestino")) %}
+      {% if nel_cestino %}
+      <div class="messaggio ok avviso-cestino" role="status">
+        <span>{{ nel_cestino.tipo | capitalize }} «{{ nel_cestino.descrizione }}» spostato nel cestino.</span>
+        {% if utente.is_titolare %}
+        <form method="post" action="/cestino/{{ nel_cestino.id }}/ripristina" class="in-linea">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="secondary outline piccolo">Annulla</button>
+        </form>
+        <a href="/cestino" class="piccolo">Apri il cestino</a>
+        {% else %}<small>Il titolare può recuperarlo dal cestino per 30 giorni.</small>{% endif %}
+      </div>
+      {% elif request.query_params.get("ripristinato") %}
+      <div class="messaggio ok" role="status">{{ request.query_params.get("ripristinato") }} ripristinato dal cestino.</div>
+      {% endif %}
       {% block contenuto %}{% endblock %}
     </main>
   </div>

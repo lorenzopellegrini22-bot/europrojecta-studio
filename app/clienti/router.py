@@ -678,13 +678,16 @@ def elimina(request: Request, azienda_id: int, db: Db, utente: Titolare) -> Resp
             400,
         )
     audit.registra(db, utente, "azienda", a.id, "elimina", {"ragione_sociale": a.ragione_sociale})
+    from app.cestino import servizio as cestino
+
+    e = cestino.sposta(db, utente, a, "cliente", a.ragione_sociale, f"/clienti/{a.id}")
     db.delete(a)
     db.flush()
     from app.squadra.note import pulisci_orfane
 
     pulisci_orfane(db)  # note delle sue opportunità
     db.commit()
-    return RedirectResponse("/clienti", status_code=303)
+    return RedirectResponse(f"/clienti?cestino={e.id}", status_code=303)
 
 
 @router.post("/clienti/{azienda_id}/referenti", dependencies=CSRF)
@@ -724,9 +727,14 @@ def elimina_referente(azienda_id: int, referente_id: int, db: Db, utente: Autent
     a = _azienda(db, azienda_id)
     ref = next((r for r in a.referenti if r.id == referente_id), None)
     if ref is not None:
+        from app.cestino import servizio as cestino
+
+        link = f"/clienti/{a.id}#referenti"
+        e = cestino.sposta(db, utente, ref, "referente", ref.nome_completo, link)
         a.referenti.remove(ref)
         audit.registra(
             db, utente, "azienda", a.id, "modifica", {"referente_eliminato": ref.nome_completo}
         )
         db.commit()
+        return RedirectResponse(f"/clienti/{a.id}?cestino={e.id}#referenti", status_code=303)
     return RedirectResponse(f"/clienti/{a.id}#referenti", status_code=303)

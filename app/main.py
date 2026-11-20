@@ -39,6 +39,7 @@ from app.auth.invito import router as invito_router
 from app.auth.router import router as auth_router
 from app.auth.utenti import router as utenti_router
 from app.bandi.router import router as bandi_router
+from app.cestino.router import router as cestino_router
 from app.clienti.crm import router as crm_router
 from app.clienti.router import router as clienti_router
 from app.clienti.segnalatori import router as segnalatori_router
@@ -200,6 +201,7 @@ app.include_router(squadra_router)
 app.include_router(opportunita_router)
 app.include_router(estrazione_router)
 app.include_router(documenti_router)
+app.include_router(cestino_router)
 
 
 @app.get("/")
