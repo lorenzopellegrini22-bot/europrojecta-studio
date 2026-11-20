@@ -106,7 +106,7 @@
       {%- set nel_cestino = elemento_cestino(utente, request.query_params.get("cestino")) %}
       {% if nel_cestino %}
       <div class="messaggio ok avviso-cestino" role="status">
-        <span>{{ nel_cestino.tipo | capitalize }} «{{ nel_cestino.descrizione }}» spostato nel cestino.</span>
+        <span>{{ nel_cestino.tipo[:1] | upper }}{{ nel_cestino.tipo[1:] }} «{{ nel_cestino.descrizione }}» spostato nel cestino.</span>
         {% if utente.is_titolare %}
         <form method="post" action="/cestino/{{ nel_cestino.id }}/ripristina" class="in-linea">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

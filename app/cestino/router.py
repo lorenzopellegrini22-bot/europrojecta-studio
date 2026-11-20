@@ -57,7 +57,7 @@ def ripristina(eid: int, db: Db, utente: Autenticato) -> Response:
     audit.registra(db, utente, tabella, oggetto_id, "crea", {"ripristinato": descrizione})
     db.commit()
     # la pagina mostra «… ripristinato» (avviso in base.html, valido su ogni pagina)
-    avviso = ("ripristinato", f"{tipo.capitalize()} «{descrizione}»")
+    avviso = ("ripristinato", f"{tipo[:1].upper()}{tipo[1:]} «{descrizione}»")
     destinazione = link or "/cestino"
     base, _, ancora = destinazione.partition("#")
     separatore = "&" if "?" in base else "?"

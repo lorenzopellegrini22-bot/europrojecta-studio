@@ -1404,7 +1404,13 @@ ul.documentazione a.formato { font-size: 0.75rem; padding: 0 0.3rem; margin-left
 form.in-linea { display: inline-block; margin: 0; }
 
 /* ---------- Cestino ---------- */
-.avviso-cestino { display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem; align-items: center; }
+/* resta in vista anche quando la pagina torna a una sezione (#documenti, #referenti…) */
+.avviso-cestino {
+  display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem; align-items: center;
+  position: sticky; top: 0.5rem; z-index: 20;
+  background: color-mix(in srgb, var(--tono) 12%, var(--superficie));
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+}
 .avviso-cestino form { margin: 0; }
 .azioni-cestino { white-space: nowrap; }
 .azioni-cestino details { margin: 0 0 0 0.5rem; vertical-align: middle; }

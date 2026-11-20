@@ -132,3 +132,14 @@ def test_non_si_eliminano_i_pdf_della_fonte(client, crea_utente, accedi, db):
     assert f"/documenti/{d.id}/elimina" not in client.get(f"/bandi/{b.id}").text
     r = client.post(f"/bandi/{b.id}/documenti/{d.id}/elimina", data={"csrf_token": token})
     assert r.status_code == 404
+
+
+def test_avviso_cestino_mantiene_le_maiuscole(client, crea_utente, accedi, db):
+    b = _bando(db)
+    accedi(crea_utente())
+    token = csrf(client, f"/bandi/{b.id}")
+    client.post(f"/bandi/{b.id}/documenti", data={"csrf_token": token},
+                files={"file": ("a.pdf", _pdf("Testo."), "application/pdf")})  # fmt: skip
+    d = db.scalar(select(DocumentoBando).where(DocumentoBando.bando_id == b.id))
+    r = client.post(f"/bandi/{b.id}/documenti/{d.id}/elimina", data={"csrf_token": token})
+    assert "PDF del bando «a.pdf» spostato nel cestino" in client.get(r.headers["location"]).text
