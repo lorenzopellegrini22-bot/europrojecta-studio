@@ -80,6 +80,9 @@ class Esito:
     soddisfatti: list[str] = field(default_factory=list)
     da_verificare: list[str] = field(default_factory=list)
     progetto_id: int | None = None
+    # Punteggio massimo, quando il bando quasi certamente non vale per il cliente ma non si
+    # può escludere (es. Camera di commercio di un'altra provincia): resta sotto la soglia
+    tetto: int | None = None
 
     def motivi(self) -> dict[str, list[str]]:
         return {"soddisfatti": self.soddisfatti, "da_verificare": self.da_verificare}
@@ -120,6 +123,13 @@ def _della(sede: Any) -> str:
 def regioni_cliente(a: Azienda) -> set[str]:
     """Regioni per gli appalti: quelle delle sedi più le regioni di interesse."""
     return set(a.regioni_interesse or []) | regioni_sedi(a)
+
+
+DIVISIONI_ATECO_AMPIO = 60  # su 88: oltre, il bando è aperto a quasi tutti i settori
+
+
+def _ateco_ampio(ammessi: list[str]) -> bool:
+    return len({c.replace(".", "")[:2] for c in ammessi}) >= DIVISIONI_ATECO_AMPIO
 
 
 def _ateco_ok(codice: str, ammessi: list[str]) -> bool:
@@ -186,9 +196,12 @@ def valuta_bando_con_motivo(
     Principio: si esclude solo quando il requisito del bando è certo e il dato del cliente
     è noto; in tutti gli altri casi il requisito è «da verificare»."""
     try:
-        return _valuta(a, b, contesto or Contesto()), None
+        esito = _valuta(a, b, contesto or Contesto())
     except Escluso as e:
         return None, str(e)
+    if esito.tetto is not None:
+        esito.punteggio = min(esito.punteggio, esito.tetto)
+    return esito, None
 
 
 def _valuta(a: Azienda, b: Bando, ctx: Contesto) -> Esito:
@@ -264,7 +277,9 @@ def _valuta(a: Azienda, b: Bando, ctx: Contesto) -> Esito:
             e.punteggio -= 10
     else:
         locale = ente_locale(b)
-        if locale:
+        if locale and _ente_di_altre_province(a, b, e, ctx):
+            pass  # es. «Comune di Cividale del Friuli» per un negozio di Padova: sotto soglia
+        elif locale:
             # Ente locale con territorio non indicato: quasi sempre vale solo lì. Non si
             # esclude (potrebbe essere la sede), ma il punteggio scende sotto la soglia.
             e.da_verificare.append(f"Bando di un ente locale ({locale}): verificare il territorio")
@@ -275,8 +290,12 @@ def _valuta(a: Azienda, b: Bando, ctx: Contesto) -> Esito:
     return _altri_filtri(a, req, b, e, ctx)
 
 
-PROVINCIALI = ("camera di commercio", "cciaa", "provincia di", "comune di", "citta metropolitana")
-ENTI_LOCALI = ("comune di ", "provincia di ", "citta metropolitana", "unione dei comuni",
+# «Provincia autonoma di»: Trento e Bolzano sono nella stessa regione ma hanno bandi propri
+# (120 bandi aperti il 21/11/2026; quelli di Bolzano arrivavano a un ristorante di Trento)
+PROVINCIALI = ("camera di commercio", "cciaa", "provincia di", "provincia autonoma di",
+               "comune di", "citta metropolitana")  # fmt: skip
+ENTI_LOCALI = ("comune di ", "provincia di ", "provincia autonoma di ", "citta metropolitana",
+               "unione dei comuni",
                "camera di commercio", "cciaa ", "gal ", "regione ")  # fmt: skip
 
 
@@ -349,6 +368,7 @@ def _ente_di_altre_province(a: Azienda, b: Bando, e: Esito, ctx: Contesto) -> bo
     for prefisso in (
         "camera di commercio",
         "cciaa",
+        "provincia autonoma di",
         "provincia di",
         "comune di",
         "citta metropolitana di",
@@ -386,6 +406,9 @@ def _ente_di_altre_province(a: Azienda, b: Bando, e: Esito, ctx: Contesto) -> bo
         f"Bando di {locale}: di solito solo per le imprese di {', '.join(sorted(sigle))}"
     )
     e.punteggio -= 25
+    # Collaudo su 50 aziende (21/11/2026): con i bonus di settore, ATECO e progetto il voucher
+    # turismo della CCIAA di Bari arrivava a 75 per un hotel di Lecce
+    e.tetto = PUNTEGGIO_MINIMO - 5
     return True
 
 
@@ -434,8 +457,8 @@ def _settori_fonte(a: Azienda, b: Bando, e: Esito) -> None:
     from app.opportunita.settori import SETTORI, settori_possibili
 
     ammessi = (getattr(b, "raw", None) or {}).get("Settore_Attivita") or []
-    if not ammessi or len(set(ammessi)) >= len(SETTORI):
-        return
+    if not ammessi or len(set(ammessi)) >= len(SETTORI) * 2 // 3:
+        return  # tutti o quasi: non distingue i clienti
     primario = a.ateco_primario
     possibili = settori_possibili(primario.codice if primario is not None else None)
     if possibili is None:
@@ -542,10 +565,14 @@ FINALITA_PER_CATEGORIA: dict[str, tuple[str, ...]] = {
 PAROLE_PER_CATEGORIA: dict[str, re.Pattern[str]] = {
     c: re.compile(p)
     for c, p in {
-        "macchinari e attrezzature": r"beni strumentali|macchinar|attrezzatur|impiant|sabatini"
+        # non «impianti» da solo: fotovoltaici, sportivi… (FERX e Credito Sportivo finivano in
+        # cima per chi voleva comprare macchinari, collaudo del 21/11/2026)
+        "macchinari e attrezzature": r"beni strumentali|macchinar|attrezzatur|sabatini"
+        r"|impianti (?:produttivi|industriali|e macchinari)"
         r"|\b[45]\.0\b|ammodernament",
         "digitale e software": r"digital|software|e.?commerce|cloud|cyber|\bict\b|informatic",
-        "ricerca e sviluppo": r"ricerca|sviluppo sperimentale|innovazion",
+        # «startup innovative», «PMI innovative» (Smart&Start, collaudo del 21/11/2026)
+        "ricerca e sviluppo": r"ricerca|sviluppo sperimentale|innovazion|innovativ",
         "energia e ambiente": r"energ|fotovolt|rinnovabil|efficientament|ecologic|\bgreen\b"
         r"|agrisolare|conto termico|decarbonizz|economia circolare",
         "formazione": r"formazion|competenze|riqualificazione professionale",
@@ -668,7 +695,11 @@ def _altri_filtri(a: Azienda, req: Any, b: Bando, e: Esito, ctx: Contesto) -> Es
             esito = confronta(
                 primario.codice, versione_az, req.ateco_ammessi, versione_bando, ctx.raccordo
             )
-            if esito == "si":
+            if esito == "si" and _ateco_ampio(req.ateco_ammessi):
+                # aperto a quasi tutti i settori: l'ATECO ammesso non dice molto
+                e.soddisfatti.append(f"ATECO {primario.codice} ammesso (quasi tutti i settori)")
+                e.punteggio += 5
+            elif esito == "si":
                 e.soddisfatti.append(f"ATECO {primario.codice} tra gli ammessi")
                 e.punteggio += 20
             elif esito == "forse":
@@ -818,6 +849,36 @@ def valuta_appalto(a: Azienda, ap: Appalto, regioni: set[str]) -> Esito | None:
     return e
 
 
+def senza_titoli_ripetuti(
+    gruppo: list[tuple[str, int, Esito]], titoli: dict[int, str]
+) -> list[tuple[str, int, Esito]]:
+    """Una sola opportunità per titolo: la stessa fonte a volte pubblica due schede della
+    stessa misura con link diversi (Provincia di Bolzano, collaudo del 21/11/2026). Il
+    gruppo è già ordinato: resta la scheda con il punteggio più alto."""
+    from app.utils.ricerca import normalizza
+
+    visti: set[str] = set()
+    tenuti = []
+    for g in gruppo:
+        chiave = " ".join(re.findall(r"[a-z0-9]+", normalizza(titoli.get(g[1], ""))))
+        if chiave and chiave in visti:
+            continue
+        visti.add(chiave)
+        tenuti.append(g)
+    return tenuti
+
+
+def punteggio_finale(grezzo: int) -> int:
+    """Il punteggio delle regole su 0-100. Sopra 80 si comprime invece di tagliare a 100:
+    con progetto, settore, ATECO e regione un bando arriva a 150, e tagliando a 100 i migliori
+    risultavano tutti pari (collaudo del 21/11/2026), perdendo l'ordine nella pagina."""
+    import math
+
+    if grezzo <= 80:
+        return max(0, grezzo)
+    return 80 + round(19 * (1 - math.exp(-(grezzo - 80) / 35)))
+
+
 def _salva(
     db: Session,
     azienda: Azienda,
@@ -831,7 +892,7 @@ def _salva(
         chiave = (tipo, oggetto_id)
         tenute.add(chiave)
         o = esistenti.get(chiave)
-        punteggio = max(0, min(100, esito.punteggio))
+        punteggio = punteggio_finale(esito.punteggio)
         if o is None:
             o = Opportunita(
                 azienda_id=azienda.id,
@@ -873,7 +934,13 @@ def abbina(db: Session, oggi: date | None = None) -> str:
     bandi = list(
         db.scalars(
             select(Bando)
-            .where(Bando.stato.in_(("aperto", "in_arrivo")), Bando.bando_canonico_id.is_(None))
+            .where(
+                Bando.stato.in_(("aperto", "in_arrivo")),
+                Bando.bando_canonico_id.is_(None),
+                # lo stato si ricalcola con la raccolta notturna: se quella salta, un bando
+                # scaduto ieri non deve comparire tra le opportunità
+                or_(Bando.data_chiusura.is_(None), Bando.data_chiusura >= oggi),
+            )
             .options(selectinload(Bando.requisiti))
         )
     )
@@ -892,6 +959,7 @@ def abbina(db: Session, oggi: date | None = None) -> str:
 
     territorio = rif_territorio.in_memoria(db)
     raccordo = rif_ateco.in_memoria(db)
+    titoli = {b.id: b.titolo for b in bandi}
     totale_nuove = 0
     for a in clienti:
         esistenti = {
@@ -915,9 +983,11 @@ def abbina(db: Session, oggi: date | None = None) -> str:
             if (es := valuta_appalto(a, ap, regioni)) is not None
         ]
         migliori = []
-        for gruppo in (trovate_b, trovate_a):
+        for sono_bandi, gruppo in ((True, trovate_b), (False, trovate_a)):
             gruppo = [g for g in gruppo if g[2].punteggio >= PUNTEGGIO_MINIMO]
             gruppo.sort(key=lambda g: -g[2].punteggio)
+            if sono_bandi:
+                gruppo = senza_titoli_ripetuti(gruppo, titoli)
             migliori += gruppo[: limite_per_tipo(a)]
         nuove, tenute = _salva(db, a, migliori, esistenti, ora)
         totale_nuove += nuove

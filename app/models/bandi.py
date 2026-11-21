@@ -123,6 +123,9 @@ class Bando(ConTimestamp, Base):
     scomparso_dal_feed_il: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # Ultima lettura della pagina ufficiale per trovare i PDF (bando, allegati, FAQ)
     pagina_letta_il: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Testo della pagina ufficiale (senza menu e piè di pagina): l'AI lo legge con i PDF, o al
+    # loro posto quando il sito non li lascia scaricare
+    testo_pagina: Mapped[str | None] = mapped_column(Text)
     bando_canonico_id: Mapped[int | None] = mapped_column(
         ForeignKey("bando.id", ondelete="SET NULL")
     )

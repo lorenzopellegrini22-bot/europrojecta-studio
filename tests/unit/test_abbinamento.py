@@ -316,3 +316,65 @@ def test_impresa_giovane_e_camera_di_commercio_con_nome_lungo():
     cciaa.descrizione, cciaa.raw, cciaa.data_apertura, cciaa.data_chiusura = None, {}, None, None
     es, _ = valuta_bando_con_motivo(bergamo, cciaa, Contesto(oggi=oggi, territorio=t))
     assert any("BS" in m for m in es.da_verificare) and es.punteggio < 45
+
+
+def test_collaudo_su_50_aziende():
+    """Errori trovati il 21/11/2026 simulando 50 aziende sui bandi veri."""
+    from app.opportunita.abbinamento import (
+        Contesto,
+        Esito,
+        finanzia,
+        punteggio_finale,
+        senza_titoli_ripetuti,
+        valuta_bando_con_motivo,
+    )
+    from app.riferimenti.territorio import Territorio, VoceComune
+
+    oggi = date(2026, 11, 21)
+    t = Territorio(sigla_da_provincia={"bari": "BA", "lecce": "LE", "bolzano": "BZ",
+                                       "trento": "TN", "udine": "UD", "padova": "PD"})  # fmt: skip
+    t.per_nome["cividale del friuli"].append(
+        VoceComune("030026", "Cividale del Friuli", "UD", "Udine", "Friuli-Venezia Giulia")
+    )
+
+    def bando(titolo, ente=None, **req):
+        b = _bando(titolo=titolo, **req)
+        b.ente, b.descrizione, b.raw = ente, None, {}
+        b.data_apertura = b.data_chiusura = None
+        return b
+
+    # Camera di commercio di un'altra provincia: sotto la soglia anche con tutti i bonus
+    hotel = _cliente(sede_legale=N(regione="Puglia", comune_testo="Lecce", provincia="LE"),
+                     ateco_primario=N(codice="55.10", versione="2007"))  # fmt: skip
+    camera = "Camera di Commercio, Industria, Artigianato e Agricoltura di Bari"
+    cciaa = bando("Voucher turismo 2026", regioni=["Puglia"], ateco_ammessi=["55"], ente=camera)
+    es, _ = valuta_bando_con_motivo(hotel, cciaa, Contesto(oggi=oggi, territorio=t))
+    assert es.punteggio < 45
+    # Provincia autonoma di Bolzano per un'impresa di Trento
+    trento = _cliente(sede_legale=N(regione="Trentino-Alto Adige/Südtirol", comune_testo="Trento",
+                                    provincia="TN"))  # fmt: skip
+    bz = bando("Contributi alle imprese", regioni=["Trentino-Alto Adige/Südtirol"],
+               ente="Provincia Autonoma di Bolzano - Ripartizione Economia")  # fmt: skip
+    es, _ = valuta_bando_con_motivo(trento, bz, Contesto(oggi=oggi, territorio=t))
+    assert es.punteggio < 45 and any("BZ" in m for m in es.da_verificare)
+    # Comune senza territorio indicato: la provincia si ricava dal nome del comune
+    padova = _cliente(sede_legale=N(regione="Veneto", comune_testo="Padova", provincia="PD"))
+    cividale = bando("Contributi alle imprese", territorio="sconosciuto", regioni=None,
+                     ente="COMUNE DI CIVIDALE DEL FRIULI")  # fmt: skip
+    es, _ = valuta_bando_con_motivo(padova, cividale, Contesto(oggi=oggi, territorio=t))
+    assert es.punteggio < 45 and any("UD" in m for m in es.da_verificare)
+    # «impianti» da solo (fotovoltaici, sportivi) non vuol dire macchinari
+    ferx = bando("FERX - Accesso diretto per impianti fino a 1 MW")
+    assert "macchinari e attrezzature" not in finanzia(ferx, ferx.requisiti)["titolo"]
+    # ATECO ammesso da un bando aperto a quasi tutti i settori: pochi punti
+    tutti = [f"{d:02d}" for d in range(1, 100)]
+    ampio, _ = valuta_bando_con_motivo(_cliente(), bando("A", ateco_ammessi=tutti), Contesto())
+    stretto, _ = valuta_bando_con_motivo(_cliente(), bando("B", ateco_ammessi=["41"]), Contesto())
+    assert stretto.punteggio - ampio.punteggio == 15
+    # punteggio: sopra 80 si comprime ma l'ordine resta
+    assert punteggio_finale(44) == 44 and punteggio_finale(80) == 80
+    assert punteggio_finale(105) < punteggio_finale(125) < punteggio_finale(150) < 100
+    # stessa misura in due schede della stessa fonte: una sola opportunità
+    gruppo = [("bando", 1, Esito(90)), ("bando", 2, Esito(80)), ("bando", 3, Esito(70))]
+    titoli = {1: "Servizi di vicinato - Bolzano", 2: "Servizi di vicinato – Bolzano", 3: "Altro"}
+    assert [g[1] for g in senza_titoli_ripetuti(gruppo, titoli)] == [1, 3]

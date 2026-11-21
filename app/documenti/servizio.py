@@ -153,10 +153,20 @@ class ErroreDocumento(Exception):
     pass
 
 
+class PaginaWeb(ErroreDocumento):
+    """Il link del documento porta a una pagina web, non a un PDF: se ne legge il testo."""
+
+    def __init__(self, dati: bytes, charset: str | None) -> None:
+        super().__init__("Il link non porta a un PDF.")
+        self.dati, self.charset = dati, charset
+
+
 def scarica_pdf(client: httpx.Client, url: str) -> bytes:
     limite = MAX_MB * 1024 * 1024
     http._attendi_turno(url)
     with client.stream("GET", url) as r:
+        tipo = r.headers.get("content-type", "").lower()
+        charset = r.charset_encoding
         if r.status_code >= 400:
             raise ErroreDocumento(f"Il sito ha risposto {r.status_code}.")
         lunghezza = r.headers.get("content-length")
@@ -168,6 +178,9 @@ def scarica_pdf(client: httpx.Client, url: str) -> bytes:
             if len(dati) > limite:
                 raise ErroreDocumento(f"PDF troppo grande (oltre {MAX_MB} MB).")
     if not bytes(dati[:1024]).lstrip().startswith(b"%PDF"):
+        inizio = bytes(dati[:2048]).lstrip().lower()
+        if "html" in tipo or inizio.startswith((b"<!doctype html", b"<html")):
+            raise PaginaWeb(bytes(dati), charset)
         raise ErroreDocumento("Il link non porta a un PDF.")
     return bytes(dati)
 
@@ -266,6 +279,8 @@ def _scarica_e_leggi(
     try:
         dati = scarica_pdf(client, doc.url)
         testo, pagine = testo_pdf(dati, db, quota)
+    except PaginaWeb as e:
+        return _leggi_pagina_web(doc, e)
     except ErroreDocumento as e:
         doc.errore = str(e)
         return False
@@ -294,6 +309,20 @@ def _scarica_e_leggi(
         if len(testo) >= MIN_TESTO
         else "PDF senza testo leggibile (scansione non letta dall'OCR)."
     )
+    return bool(testo)
+
+
+def _leggi_pagina_web(doc: DocumentoBando, pagina: PaginaWeb) -> bool:
+    """Molti link dei bandi portano alla pagina dell'ente invece che al PDF: il testo della
+    pagina vale comunque per l'AI (senza file da conservare: è sul sito)."""
+    from app.documenti.pagina import testo_della_pagina
+
+    testo = testo_della_pagina(http.decodifica(pagina.dati, pagina.charset))
+    doc.sha256 = hashlib.sha256(pagina.dati).hexdigest()
+    doc.mime = "text/html"
+    doc.dimensione = len(pagina.dati)
+    doc.testo_estratto = testo
+    doc.errore = None if testo else "Il link porta a una pagina web senza testo utile."
     return bool(testo)
 
 
@@ -458,14 +487,26 @@ def testo_per_ai(db: Session, bando_id: int, budget: int) -> str:
             f"automatico):\n{elenco}\nI requisiti che potrebbero essere in questi documenti "
             "vanno segnati da_verificare."
         )
-    if not docs or budget <= 0:
-        return avviso[: max(budget, 0)]
-    parte = budget // len(docs)
-    pezzi = []
+    # La pagina ufficiale conta come un documento: da sola quando i PDF non si sono potuti
+    # scaricare, insieme ai PDF negli altri casi
+    from app.models import Bando
+
+    bando = db.get(Bando, bando_id)
+    pagina = getattr(bando, "testo_pagina", None)
+    fonti: list[tuple[str, str]] = []
+    if pagina:
+        fonti.append((f"PAGINA UFFICIALE DEL BANDO: {bando.link_ufficiale}", pagina))
     for d in docs:
-        brani = brani_utili(d.testo_estratto or "", parte)
-        pezzi.append(f"\n\nDOCUMENTO PDF: {d.titolo or d.url}\n{brani}")
-    return ("".join(pezzi) + avviso)[:budget]
+        tipo = "DOCUMENTO PDF" if d.mime in (None, "application/pdf") else "DOCUMENTO (pagina web)"
+        fonti.append((f"{tipo}: {d.titolo or d.url}", d.testo_estratto or ""))
+    budget = max(budget, 0)
+    if not fonti:
+        return avviso[:budget]
+    # l'avviso sui documenti non letti non deve essere tagliato via dal budget
+    disponibile = max(budget - len(avviso), 0)
+    parte = disponibile // len(fonti)
+    pezzi = [f"\n\n{titolo}\n{brani_utili(testo, parte)}" for titolo, testo in fonti]
+    return ("".join(pezzi)[:disponibile] + avviso)[:budget]
 
 
 # --- Caricamento manuale -----------------------------------------------------------------

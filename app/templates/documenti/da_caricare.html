@@ -12,6 +12,7 @@
   <summary><span class="icona-info" aria-hidden="true">i</span> Perché alcuni PDF non si scaricano da soli</summary>
   <p>Alcuni siti pubblici chiedono ai programmi automatici di non scaricare i loro file (lo dicono nel file «robots.txt»). L'app rispetta questa richiesta. Una persona invece può aprire e salvare il PDF normalmente dal browser: basta un clic sul link e poi «Carica».</p>
   <p>Altri PDF non si scaricano per un errore del sito (pagina non trovata, sito irraggiungibile): l'app riprova da sola dopo 7 giorni, ma puoi caricarli subito.</p>
+  <p>Nel frattempo l'AI legge il testo della pagina ufficiale del bando, che spesso riporta già beneficiari, spese e importi. Il PDF resta utile per i dettagli.</p>
 </details>
 
 {% if righe %}
@@ -40,8 +41,8 @@
     <tr>
       <td><a href="/bandi/{{ b.id }}">{{ b.titolo | truncate(80) }}</a><br><small>scade il {{ b.data_chiusura | data }}</small></td>
       <td>{% if not d.url.startswith("caricato-a-mano:") %}<a href="{{ d.url }}" target="_blank" rel="noopener noreferrer">{{ d.titolo | truncate(60) }}</a>{% else %}{{ d.titolo }}{% endif %}</td>
-      <td><small>{{ "Il sito non permette lo scarico automatico" if d.errore == vietato else d.errore }}</small></td>
-      <td>
+      <td><small>{{ "Il sito non permette lo scarico automatico" if d.errore == vietato else d.errore }}</small>{% if b.testo_pagina %}<br><small class="nota-ok">Intanto l'AI legge il testo della pagina ufficiale.</small>{% endif %}</td>
+      <td class="cella-carica">
         <form method="post" action="/bandi/{{ b.id }}/documenti" enctype="multipart/form-data">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <input type="hidden" name="documento_id" value="{{ d.id }}">

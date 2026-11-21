@@ -148,3 +148,64 @@ def test_avviso_per_bandi_aperti_da_anni_senza_scadenza(client, crea_utente, acc
     accedi(crea_utente())
     assert "Aperto dal 2005 senza una data di chiusura" in client.get(f"/bandi/{vecchio.id}").text
     assert "senza una data di chiusura" not in client.get(f"/bandi/{recente.id}").text
+
+
+PAGINA_TESTO = """<html><body><header>Menu del sito</header><form id="aspnet"><main>
+<h1>Voucher turismo 2026</h1>
+<p>Beneficiari: micro e piccole imprese con sede in provincia, codici ATECO 55 e 56.</p>
+<p>Spese ammissibili: arredi, attrezzature e siti web. Contributo a fondo perduto del 50%,
+fino a 5.000 euro, in regime de minimis.</p>
+<button>Stampa</button>
+</main></form><footer>Note legali</footer></body></html>"""
+
+
+def test_testo_della_pagina_per_l_ai_anche_senza_pdf(db, monkeypatch):
+    """Il PDF non si scarica (robots.txt): l'AI legge comunque la pagina ufficiale. Un link
+    «documento» che porta a una pagina web viene letto come pagina (21/11/2026)."""
+    from app.documenti import servizio
+    from app.documenti.servizio import elabora, testo_per_ai
+    from app.sources import http
+
+    monkeypatch.setattr(http, "INTERVALLO_MINIMO_SECONDI", 0)
+    assert pagina.pagina_del_bando("https://www.irpiniasannio.camcom.it/bando-voucher-2026")
+    assert not pagina.pagina_del_bando("https://www.regione.abruzzo.it/")
+    assert not pagina.pagina_del_bando("https://www.ente.it/index.html")
+    testo = pagina.testo_della_pagina(PAGINA_TESTO)
+    assert "Spese ammissibili" in testo and "Menu del sito" not in testo
+    assert "Stampa" not in testo and "Note legali" not in testo
+
+    fonte = db.scalar(select(Fonte).where(Fonte.codice == "prova_pagina")) or Fonte(
+        codice="prova_pagina", nome="Prova", url="https://esempio.test"
+    )
+    db.add(fonte)
+    db.flush()
+    base = f"https://camera.example/{uuid.uuid4().hex}"
+    b = Bando(fonte_id=fonte.id, id_esterno=uuid.uuid4().hex, titolo="Voucher turismo",
+              stato="aperto", raw={}, hash_contenuto="t" * 64, link_ufficiale=f"{base}/voucher")  # fmt: skip
+    db.add(b)
+    db.commit()
+
+    def gestore(req: httpx.Request) -> httpx.Response:
+        if req.url.path == "/robots.txt":
+            return httpx.Response(200, text="User-agent: *\nDisallow: /riservato/\n")
+        return httpx.Response(200, text=PAGINA_TESTO, headers={"content-type": "text/html"})
+
+    with httpx.Client(transport=httpx.MockTransport(gestore)) as c:
+        pagina.leggi_pagina(db, b, c, Robots(c))
+        vietato = DocumentoBando(bando_id=b.id, url="https://vietato.example/riservato/bando.pdf",
+                                 titolo="Bando", tentativi=0)  # fmt: skip
+        web = DocumentoBando(bando_id=b.id, url=f"{base}/dettaglio", titolo="Dettaglio",
+                             tentativi=0)  # fmt: skip
+        db.add_all([vietato, web])
+        db.flush()
+        assert not elabora(db, c, Robots(c), vietato)
+        assert elabora(db, c, Robots(c), web)
+    db.commit()
+    assert "regime de minimis" in b.testo_pagina
+    assert web.mime == "text/html" and web.errore is None and "fondo perduto" in web.testo_estratto
+    assert vietato.errore == servizio.VIETATO_ROBOTS
+    per_ai = testo_per_ai(db, b.id, 6000)
+    assert "PAGINA UFFICIALE DEL BANDO" in per_ai and "DOCUMENTO (pagina web)" in per_ai
+    assert "NON LETTI" in per_ai and "riservato/bando.pdf" in per_ai
+    # i documenti letti come pagina non finiscono tra i «PDF da caricare»
+    assert web.id not in {d.id for _, d in servizio.da_caricare(db)}

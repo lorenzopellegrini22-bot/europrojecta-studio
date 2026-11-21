@@ -96,6 +96,9 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
 - **Revisione bandi (AI):** confermi o correggi i campi incerti; le correzioni prevalgono.
 - **PDF da caricare:** i PDF che i siti non lasciano scaricare in automatico: apri i link (il
   browser li scarica) e caricali **tutti insieme**; ognuno va da solo al bando giusto.
+- Anche senza PDF l'AI non resta a mani vuote: ogni notte legge il **testo della pagina
+  ufficiale** del bando (e delle pagine web indicate come documenti), che spesso riporta già
+  beneficiari, spese e importi. Caricare il PDF resta utile per i dettagli.
 - Un PDF caricato a mano per sbaglio si toglie con «Elimina» nella scheda del bando (sotto «PDF
   letti dall'AI»): l'AI non lo legge più.
 

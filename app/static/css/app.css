@@ -1416,3 +1416,9 @@ form.in-linea { display: inline-block; margin: 0; }
 .azioni-cestino details { margin: 0 0 0 0.5rem; vertical-align: middle; }
 .azioni-cestino details summary { display: inline; cursor: pointer; }
 .azioni-cestino details form { margin: 0.5rem 0 0; }
+
+/* PDF da caricare: il campo file era stretto e il nome del file si leggeva «Ne…ato» */
+td.cella-carica { min-width: 19rem; }
+td.cella-carica input[type="file"] { width: 100%; margin-bottom: 0.5rem; font-size: 0.85rem; }
+
+small.nota-ok { color: var(--ok); }

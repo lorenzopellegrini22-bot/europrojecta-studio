@@ -506,3 +506,27 @@ presentazione), di 5 se lo dice solo la finalità della fonte (generica: «Soste
 investimenti» è su un bando su tre), e scende di 20 se non c'entra. Non si esclude nulla: le
 fonti sono incomplete. Le misure di Invitalia prendono i requisiti mancanti dal doppione di
 Incentivi Italia (`completa_requisiti`), altrimenti sembravano bandi senza dati.
+
+## L'AI legge anche la pagina ufficiale del bando, non solo i PDF
+Molti PDF non si scaricano (robots.txt, siti lenti, link rotti) e molte fonti danno solo il link
+alla pagina dell'ente. Ogni notte (120 pagine, prima i bandi senza nessun testo) si legge la
+pagina ufficiale e se ne salva il testo (`bando.testo_pagina`, senza menu e piè di pagina):
+l'AI lo riceve insieme ai PDF, e da solo quando i PDF mancano. Un link «documento» che porta a
+una pagina web invece che a un PDF viene letto come pagina (mime `text/html`, nessun file
+salvato). Robots.txt e le pause tra richieste allo stesso sito restano rispettati. Il controllo
+«pagina precisa e non home» delle gare chiedeva due livelli di indirizzo e scartava metà delle
+pagine dei bandi («…camcom.it/bando-voucher-turismo-2026»): per i bandi ne basta uno.
+
+## Collaudo dell'abbinamento su 50 aziende (21/11/2026)
+50 aziende di 16 tipi (officina, startup, hotel, azienda agricola, edile, ristorante,
+commercio, export alimentare, studio tecnico, laboratorio R&S, trasporti, parrucchiere,
+cooperativa sociale, mobilificio, cantina, agenzia web) in tutte le regioni, una su cinque con
+una sede operativa altrove, contro gli 825 bandi aperti. Controlli automatici sulle prime 30:
+altra regione o provincia, dimensione, settore, bandi non per imprese, scaduti, doppioni,
+misure attese assenti (Sabatini, Smart&Start, Conto Termico, Parco Agrisolare…).
+Corretti: Camere di commercio di altre province sopra la soglia grazie ai bonus (ora un tetto
+sotto la soglia), Province autonome di Trento e Bolzano confuse, comuni senza territorio
+indicato, «impianti» letto come macchinari, bonus pieno per ATECO ammesso anche quando il bando
+ammette quasi tutti i settori, punteggi sopra 100 tagliati e quindi alla pari, la stessa
+misura in due schede della stessa fonte, bandi con data di chiusura passata se la raccolta
+notturna non ha ancora aggiornato lo stato.
