@@ -29,6 +29,8 @@ PAGINE_PER_NOTTE = 120
 MAX_TESTO_PAGINA = 40_000
 MIN_TESTO_PAGINA = 200
 GIORNI_TRA_LETTURE = 14
+GIORNI_TRA_LETTURE_CON_PDF = 30  # i PDF dicono già il grosso: la pagina serve meno
+QUOTA_CAMBIATA = 0.1  # oltre il 10% del testo diverso, la pagina è cambiata davvero
 MAX_DALLA_PAGINA = 6
 
 # Documenti del sito, non del bando: di solito nel piè di pagina
@@ -117,6 +119,54 @@ def pdf_della_pagina(pagina: str, base: str) -> list[dict[str, str]]:
     return ordinati[:MAX_DALLA_PAGINA]
 
 
+# Righe che cambiano senza che cambi il bando: non rimandano il bando all'AI
+RIGHE_DI_SERVIZIO = re.compile(
+    r"ultimo aggiornamento|ultima modifica|data di (?:creazione|pubblicazione|aggiornamento)"
+    r"|pubblicato il|aggiornato il|visualizzazion|letture|condividi|stampa"
+    r"|\bvot[oi]\b|votes|average:",
+    re.IGNORECASE,
+)
+# Righe che, se cambiano, cambiano il bando: proroghe, sospensioni, importi, requisiti
+RIGHE_RILEVANTI = re.compile(
+    r"prorog|sospes|esaurit|riapert|chiusur|scadenz|termine|dotazione|importo|massimal"
+    r"|percentual|beneficiar|requisit|ammissibil|de minimis|ateco|contribut|euro|€|%",
+    re.IGNORECASE,
+)
+_SEMPRE_RILEVANTI = re.compile(r"prorog|sospes|esaurit|riapert", re.IGNORECASE)
+_DATA = re.compile(r"\b\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}\b")
+# codici generati a ogni visita (Regione Marche: «dca775ab-d3ou-44f0-…») e numeri dei voti
+_CODICE = re.compile(r"[\w-]{16,}")
+
+
+def _di_servizio(riga: str) -> bool:
+    if RIGHE_DI_SERVIZIO.search(riga):
+        return True
+    if _CODICE.fullmatch(riga) and re.search(r"\d", riga):
+        return True
+    return len(riga) <= 8 and not _DATA.search(riga)  # «3.4», «votes)», «Media»
+
+
+def cambiamento_sostanziale(vecchio: str | None, nuovo: str) -> bool:
+    """La pagina riletta è cambiata davvero? Ogni testo diverso rimanda il bando all'AI, e
+    molti siti cambiano a ogni visita una data di aggiornamento o le notizie a lato: si tiene
+    il testo vecchio, e quindi niente nuova analisi, se cambiano solo righe di servizio o poco
+    testo senza proroghe, sospensioni, importi o requisiti (scelta del 22/11/2026)."""
+    if not vecchio:
+        return True
+    prima, dopo = set(vecchio.splitlines()), set(nuovo.splitlines())
+    diverse = [r for r in prima ^ dopo if not _di_servizio(r)]
+    if not diverse:
+        return False
+    for riga in diverse:
+        # una data che cambia può essere una proroga anche senza la parola «scadenza»
+        # («Le domande si presentano dal 1/3 al 30/11/2026»)
+        if _SEMPRE_RILEVANTI.search(riga) or _DATA.search(riga):
+            return True
+        if RIGHE_RILEVANTI.search(riga) and re.search(r"\d", riga):
+            return True
+    return sum(len(r) for r in diverse) > QUOTA_CAMBIATA * max(len(vecchio), len(nuovo))
+
+
 HOME = re.compile(r"^(index|home|default|homepage|it|en)(\.(html?|php|aspx?))?$", re.IGNORECASE)
 
 
@@ -152,7 +202,8 @@ def leggi_pagina(db: Session, b: Bando, client: httpx.Client, robots) -> int:  #
     if letta is None:
         return 0
     testo = testo_della_pagina(letta[0])
-    if testo or b.testo_pagina is None:  # una lettura vuota non cancella quella buona
+    # una lettura vuota non cancella quella buona; un cambiamento minimo non rimanda all'AI
+    if testo and cambiamento_sostanziale(b.testo_pagina, testo):
         b.testo_pagina = testo
     gia = set(db.scalars(select(DocumentoBando.url).where(DocumentoBando.bando_id == b.id)))
     nuovi = 0
@@ -165,10 +216,12 @@ def leggi_pagina(db: Session, b: Bando, client: httpx.Client, robots) -> int:  #
 
 
 def da_leggere(db: Session, limite: int = PAGINE_PER_NOTTE) -> list[Bando]:
-    """Bandi attivi con la pagina mai letta o letta da più di 14 giorni. Prima quelli senza
-    testo della pagina né PDF letti (l'AI non ha nulla oltre la scheda della fonte), poi gli
-    altri; a parità, quelli che chiudono prima."""
-    soglia = datetime.now(UTC) - timedelta(days=GIORNI_TRA_LETTURE)
+    """Bandi attivi con la pagina mai letta o letta da più di 14 giorni (30 se hanno già PDF
+    letti). Prima quelli senza testo della pagina né PDF letti (l'AI non ha nulla oltre la
+    scheda della fonte), poi gli altri; a parità, quelli che chiudono prima."""
+    adesso = datetime.now(UTC)
+    soglia = adesso - timedelta(days=GIORNI_TRA_LETTURE)
+    soglia_con_pdf = adesso - timedelta(days=GIORNI_TRA_LETTURE_CON_PDF)
     con_pdf = select(DocumentoBando.bando_id).where(DocumentoBando.testo_estratto.is_not(None))
     senza_niente = case((and_(Bando.testo_pagina.is_(None), Bando.id.not_in(con_pdf)), 0), else_=1)
     return list(
@@ -178,7 +231,11 @@ def da_leggere(db: Session, limite: int = PAGINE_PER_NOTTE) -> list[Bando]:
                 Bando.stato.in_(("aperto", "in_arrivo")),
                 Bando.bando_canonico_id.is_(None),
                 Bando.link_ufficiale.is_not(None),
-                or_(Bando.pagina_letta_il.is_(None), Bando.pagina_letta_il < soglia),
+                or_(
+                    Bando.pagina_letta_il.is_(None),
+                    Bando.pagina_letta_il < soglia_con_pdf,
+                    and_(Bando.pagina_letta_il < soglia, Bando.id.not_in(con_pdf)),
+                ),
             )
             .order_by(senza_niente, Bando.data_chiusura.asc().nulls_last(), Bando.id)
             .limit(limite)

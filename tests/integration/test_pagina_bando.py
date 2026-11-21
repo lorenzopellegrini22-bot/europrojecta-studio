@@ -209,3 +209,64 @@ def test_testo_della_pagina_per_l_ai_anche_senza_pdf(db, monkeypatch):
     assert "NON LETTI" in per_ai and "riservato/bando.pdf" in per_ai
     # i documenti letti come pagina non finiscono tra i «PDF da caricare»
     assert web.id not in {d.id for _, d in servizio.da_caricare(db)}
+
+
+def test_cambiamenti_minimi_della_pagina_non_rimandano_all_ai():
+    """Molti siti cambiano a ogni visita voti, date di aggiornamento o codici casuali: il
+    bando non deve tornare all'AI (spesa inutile). Proroghe, date e importi sì."""
+    from app.documenti.pagina import cambiamento_sostanziale as cambiato
+
+    base = "\n".join(
+        [
+            "Voucher digitali 2026",
+            "Beneficiari: micro e piccole imprese della provincia.",
+            "Spese ammissibili: software, hardware e consulenze digitali.",
+            "Contributo del 50% fino a 10.000 euro.",
+            "Le domande si presentano dal 1/3/2026 al 30/11/2026.",
+        ]
+        + [f"Paragrafo descrittivo numero {i} del bando con dettagli." for i in range(20)]
+    )
+    assert cambiato(None, base)
+    rumore = [
+        "Ultimo aggiornamento: 21/11/2026",
+        "Average:\n3.4\nvotes)",
+        "dca775ab-d3ou-44f0-9f4f-603ce97faaf6",
+        "Condividi su Linkedin",
+    ]
+    for extra in rumore:
+        assert not cambiato(base, base + "\n" + extra), extra
+    # cambiamenti che contano
+    assert cambiato(base, base + "\nScadenza prorogata al 31/12/2026.")
+    assert cambiato(base, base + "\nSportello sospeso per esaurimento fondi")
+    assert cambiato(base, base.replace("30/11/2026", "15/12/2026"))
+    assert cambiato(base, base.replace("fino a 10.000 euro", "fino a 20.000 euro"))
+    riscritto = base + "\n" + "\n".join(f"Nuova sezione {i} con testo diverso." for i in range(15))
+    assert cambiato(base, riscritto)
+
+
+def test_pagine_con_pdf_si_rileggono_ogni_30_giorni(db):
+    from datetime import UTC, datetime
+
+    fonte = db.scalar(select(Fonte).where(Fonte.codice == "prova_pagina")) or Fonte(
+        codice="prova_pagina", nome="Prova", url="https://esempio.test"
+    )
+    db.add(fonte)
+    db.flush()
+    venti_giorni_fa = datetime.now(UTC) - timedelta(days=20)
+
+    def bando(con_pdf: bool) -> Bando:
+        b = Bando(fonte_id=fonte.id, id_esterno=uuid.uuid4().hex, titolo="Bando riletto",
+                  stato="aperto", raw={}, hash_contenuto="r" * 64,
+                  link_ufficiale=f"https://ente.example/{uuid.uuid4().hex}",
+                  pagina_letta_il=venti_giorni_fa)  # fmt: skip
+        db.add(b)
+        db.flush()
+        if con_pdf:
+            db.add(DocumentoBando(bando_id=b.id, url=f"{b.link_ufficiale}.pdf", tentativi=1,
+                                  testo_estratto="Testo del bando"))  # fmt: skip
+        return b
+
+    senza, con = bando(False), bando(True)
+    db.commit()
+    da_leggere = {x.id for x in pagina.da_leggere(db, limite=10_000)}
+    assert senza.id in da_leggere and con.id not in da_leggere

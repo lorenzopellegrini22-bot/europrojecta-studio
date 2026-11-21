@@ -530,3 +530,14 @@ indicato, «impianti» letto come macchinari, bonus pieno per ATECO ammesso anch
 ammette quasi tutti i settori, punteggi sopra 100 tagliati e quindi alla pari, la stessa
 misura in due schede della stessa fonte, bandi con data di chiusura passata se la raccolta
 notturna non ha ancora aggiornato lo stato.
+
+## L'analisi AI resta notturna, ma solo per cambiamenti veri
+L'analisi gira ogni notte ma tocca solo i bandi nuovi o cambiati (hash dell'input): farla una
+volta a settimana non farebbe risparmiare, ritarderebbe solo i bandi nuovi (dannoso per
+sportelli e click day). Lo spreco era un altro: la pagina ufficiale riletta ogni 14 giorni
+cambia quasi sempre in qualcosa di inutile (voti, «Condividi», date di aggiornamento, codici
+casuali della Regione Marche) e ogni testo diverso rimandava il bando all'AI. Ora
+(`cambiamento_sostanziale`) il testo nuovo sostituisce il vecchio solo se cambiano proroghe,
+sospensioni, date, importi o requisiti, o più del 10% del testo; le pagine dei bandi che
+hanno già PDF letti si rileggono ogni 30 giorni. Misura su 22 pagine vere rilette (22/11/2026):
+12 identiche, 10 diverse, nessuna con un cambiamento sostanziale.
