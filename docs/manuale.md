@@ -58,8 +58,14 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
 - Nella **scheda cliente**: dati, referenti con i **consensi** agli aggiornamenti, progetti
   d'investimento, attività, scadenze, aiuti **de minimis** (plafond residuo stimato),
   opportunità, aggiornamenti inviati e pratiche.
-- I **progetti d'investimento** contano: le spese previste vengono confrontate con quelle
-  ammesse dai bandi.
+- I **progetti d'investimento** sono le esigenze del cliente e pesano molto nelle
+  opportunità: i bandi che finanziano quelle spese salgono in cima (es. macchinari → Nuova
+  Sabatini), quelli che non c'entrano scendono. Il legame si cerca nelle spese ammissibili del
+  bando, poi nel titolo e nella presentazione, infine nella finalità indicata dalla fonte
+  (la più generica, quindi «da verificare»). Scegli le **categorie di spesa** del progetto:
+  se mancano si ricavano dal titolo e dalla descrizione. Un cliente senza progetti attivi
+  riceve i bandi solo in base ai requisiti (territorio, dimensione, ATECO…).
+- Le imprese costituite da meno di tre anni salgono nei bandi per nuove imprese e startup.
 - **Sedi operative** (nel modulo del cliente, un comune per riga, es. «Prato (PO)»): per i bandi
   di regioni, province, comuni e Camere di commercio conta ogni sede, legale o operativa. Senza
   la sede operativa un'azienda di Roma con lo stabilimento a Prato non riceve i bandi toscani.

@@ -281,13 +281,15 @@ ENTI_LOCALI = ("comune di ", "provincia di ", "citta metropolitana", "unione dei
 
 
 def ente_locale(b: Bando) -> str | None:
-    """Nome dell'ente locale che emette il bando (dall'ente o dall'inizio del titolo)."""
+    """Nome dell'ente locale che emette il bando (dall'ente o dall'inizio del titolo).
+    Il nome dell'ente resta intero: «Camera di Commercio, Industria, Artigianato e Agricoltura
+    di Brescia» tagliato a 60 caratteri perdeva la provincia (trovato il 21/11/2026)."""
     from app.utils.ricerca import normalizza
 
     for testo in (getattr(b, "ente", None) or "", (b.titolo or "")[:60]):
         n = normalizza(testo).strip()
         if any(n.startswith(x) for x in ENTI_LOCALI):
-            return testo.strip()[:60]
+            return testo.strip()[:120]
     return None
 
 
@@ -466,6 +468,7 @@ CRISI = re.compile(
     r"crisi d'impresa|crisi aziendale",
     re.IGNORECASE,
 )
+MESI_IMPRESA_GIOVANE = 36
 SOLO_MICRO = re.compile(r"micro[ -]?imprese", re.IGNORECASE)
 ALTRE_DIMENSIONI = re.compile(r"piccol[ae]|medi[ae]|PMI", re.IGNORECASE)
 
@@ -489,6 +492,10 @@ def _segnali_nel_testo(a: Azienda, b: Bando, e: Esito, oggi: date | None) -> Non
                 f"Il testo parla di imprese nuove o in avvio: l'impresa ha {mesi // 12} anni"
             )
             e.punteggio -= 40
+        elif mesi <= MESI_IMPRESA_GIOVANE:
+            # Smart&Start per una startup di pochi mesi era al 26° posto (prova del 21/11/2026)
+            e.soddisfatti.append(f"Bando per imprese nuove: l'impresa ha {mesi} mesi")
+            e.punteggio += 15
     if CRISI.search(f"{getattr(b, 'titolo', '')} {testo[:600]}"):
         e.da_verificare.append("Bando per imprese in crisi o in difficoltà")
         e.punteggio -= 20
@@ -512,6 +519,116 @@ def _apertura_vecchia(b: Bando, e: Esito, oggi: date | None) -> None:
                 f"Aperto dal {apertura:%d/%m/%Y} senza data di chiusura: verificare che sia attivo"
             )
             e.punteggio -= 10
+
+
+# Esigenze del cliente (i suoi progetti d'investimento) contro ciò che il bando finanzia.
+# Le spese ammissibili (categorie_spesa) vengono dall'estrazione AI dei PDF e sono le più
+# precise, ma ce l'hanno pochi bandi; quasi tutti hanno invece la «finalità» della fonte
+# nazionale, e il titolo dice spesso cosa si finanzia («beni strumentali», «fiere»…).
+# Prova del 21/11/2026 con un'officina lombarda che vuole comprare macchinari: senza questo
+# la Nuova Sabatini era al 76° posto (si tengono i primi 30) dietro a bandi di formazione.
+FINALITA_PER_CATEGORIA: dict[str, tuple[str, ...]] = {
+    "macchinari e attrezzature": ("sostegno investimenti",),
+    "digitale e software": ("digitalizzazione",),
+    "ricerca e sviluppo": ("innovazione e ricerca",),
+    "energia e ambiente": ("transizione ecologica",),
+    "formazione": ("formazione",),
+    "assunzioni": ("formazione",),  # «Formazione (lavoro, occupazione, riqualificazione…)»
+    "internazionalizzazione": ("internazionalizzazione",),
+    "immobili e opere": ("sostegno investimenti",),
+    "avvio d'impresa": ("start up", "imprenditoria giovanile", "imprenditoria femminile"),
+    "brevetti e proprieta intellettuale": ("innovazione e ricerca",),
+}
+PAROLE_PER_CATEGORIA: dict[str, re.Pattern[str]] = {
+    c: re.compile(p)
+    for c, p in {
+        "macchinari e attrezzature": r"beni strumentali|macchinar|attrezzatur|impiant|sabatini"
+        r"|\b[45]\.0\b|ammodernament",
+        "digitale e software": r"digital|software|e.?commerce|cloud|cyber|\bict\b|informatic",
+        "ricerca e sviluppo": r"ricerca|sviluppo sperimentale|innovazion",
+        "energia e ambiente": r"energ|fotovolt|rinnovabil|efficientament|ecologic|\bgreen\b"
+        r"|agrisolare|conto termico|decarbonizz|economia circolare",
+        "formazione": r"formazion|competenze|riqualificazione professionale",
+        "assunzioni": r"assunzion|occupazion|inserimento lavorativ|posti di lavoro"
+        r"|giovani laureati",
+        "internazionalizzazione": r"internazionalizz|\bexport|esportaz|mercati esteri|\bfiere?\b",
+        "immobili e opere": r"ristrutturaz|riqualificazione (?:energetica|edilizia)|immobil"
+        r"|opere murarie|edili",
+        "avvio d'impresa": r"nuove imprese|nuova impresa|start ?up|\bavvio|autoimpiego"
+        r"|autoimprenditorialit|da costituire|nuova imprenditorialit|resto al sud",
+        "brevetti e proprieta intellettuale": r"brevett|marchi|proprieta intellettuale",
+        "consulenze": r"consulenz|voucher|temporary manager|servizi qualificati",
+    }.items()
+}
+# Punti per livello di certezza: spese ammissibili del bando, parole del titolo o della
+# presentazione, sola finalità (nelle fonti è spesso generica: «Sostegno investimenti» ha un
+# bando su tre). Senza legami con i progetti attivi il bando scende ma non viene escluso.
+PUNTI_PROGETTO = {"spese": 30, "titolo": 30, "finalita": 5}
+PUNTI_SENZA_PROGETTO = -20
+
+
+def categorie_progetto(p: Any) -> set[str]:
+    """Categorie di spesa del progetto: quelle scelte, oppure ricavate dal testo."""
+    from app.utils.ricerca import normalizza
+
+    scelte = {normalizza(c) for c in p.categorie or [] if c != "altro"}
+    if scelte:
+        return scelte
+    testo = normalizza(f"{getattr(p, 'titolo', '') or ''} {getattr(p, 'descrizione', '') or ''}")
+    return {c for c, r in PAROLE_PER_CATEGORIA.items() if r.search(testo)}
+
+
+def finanzia(b: Bando, req: Any) -> dict[str, set[str]]:
+    """Cosa finanzia il bando, per livello: «spese» (spese ammissibili), «titolo» (parole del
+    titolo o della presentazione), «finalita» (finalità della fonte)."""
+    from app.utils.ricerca import normalizza
+
+    spese = {normalizza(c) for c in getattr(req, "categorie_spesa", None) or []}
+    testo = normalizza(f"{b.titolo or ''} {(getattr(b, 'descrizione', None) or '')[:300]}")
+    titolo = {c for c, r in PAROLE_PER_CATEGORIA.items() if r.search(testo)}
+    finalita = [normalizza(f) for f in getattr(req, "finalita", None) or []]
+    da_finalita = {
+        c for c, ff in FINALITA_PER_CATEGORIA.items() if any(f.startswith(ff) for f in finalita)
+    }
+    return {"spese": spese, "titolo": titolo - spese, "finalita": da_finalita - spese - titolo}
+
+
+def _esigenze(b: Bando, req: Any, e: Esito, ctx: Contesto) -> None:
+    """Il bando finanzia qualcosa che il cliente vuole fare? Se il cliente ha progetti attivi,
+    i bandi adatti salgono e gli altri scendono (non si esclude: le fonti sono incomplete)."""
+    livelli = finanzia(b, req)
+    spese = getattr(req, "categorie_spesa", None)
+    if spese:
+        e.soddisfatti.append("Spese ammissibili: " + ", ".join(spese[:4]))
+    progetti = [(p, categorie_progetto(p)) for p in ctx.progetti if p.attivo]
+    progetti = [(p, c) for p, c in progetti if c]
+    if not progetti:
+        return
+    migliore, comuni, punti = None, set(), 0
+    for p, cat in progetti:
+        for livello, quante in livelli.items():
+            if cat & quante:
+                comuni_p = cat & (livelli["spese"] | livelli["titolo"] | livelli["finalita"])
+                if (PUNTI_PROGETTO[livello], len(comuni_p)) > (punti, len(comuni)):
+                    migliore, comuni, punti = p, comuni_p, PUNTI_PROGETTO[livello]
+                break
+    if migliore is None:
+        e.da_verificare.append("Non risulta collegato ai progetti del cliente")
+        e.punteggio += PUNTI_SENZA_PROGETTO
+        return
+    from app.models.crm_esteso import CATEGORIE_SPESA
+    from app.utils.ricerca import normalizza
+
+    nomi = {normalizza(c): c for c in CATEGORIE_SPESA}  # con gli accenti, per la pagina
+    elenco = ", ".join(sorted(nomi.get(c, c) for c in comuni))
+    if punti == PUNTI_PROGETTO["finalita"]:
+        e.da_verificare.append(
+            f"Forse utile al progetto «{migliore.titolo}» ({elenco}): lo dice solo la finalità"
+        )
+    else:
+        e.soddisfatti.append(f"Adatto al progetto «{migliore.titolo}» ({elenco})")
+    e.punteggio += punti
+    e.progetto_id = migliore.id
 
 
 def _altri_filtri(a: Azienda, req: Any, b: Bando, e: Esito, ctx: Contesto) -> Esito:
@@ -609,21 +726,7 @@ def _altri_filtri(a: Azienda, req: Any, b: Bando, e: Esito, ctx: Contesto) -> Es
                     f"{minimo_aiuto:.0f} €"
                 )
             e.soddisfatti.append(f"De minimis: plafond residuo stimato {p.residuo:.0f} €")
-    # Spese ammissibili contro i progetti del cliente
-    categorie = getattr(req, "categorie_spesa", None)
-    if categorie:
-        attivi = [p for p in ctx.progetti if p.attivo and p.categorie]
-        migliore = max(attivi, key=lambda p: len(set(p.categorie) & set(categorie)), default=None)
-        if migliore is not None and set(migliore.categorie) & set(categorie):
-            comuni = sorted(set(migliore.categorie) & set(categorie))
-            e.soddisfatti.append(f"Progetto «{migliore.titolo}»: spese {', '.join(comuni)}")
-            e.punteggio += 10
-            e.progetto_id = migliore.id
-        else:
-            e.soddisfatti.append("Spese ammissibili: " + ", ".join(categorie[:4]))
-            if attivi:
-                e.da_verificare.append("Le spese del bando non coincidono con i progetti")
-                e.punteggio -= 5
+    _esigenze(b, req, e, ctx)
     _settori_fonte(a, b, e)
     _apertura_vecchia(b, e, ctx.oggi)
     _segnali_nel_testo(a, b, e, ctx.oggi)

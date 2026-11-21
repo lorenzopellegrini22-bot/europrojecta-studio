@@ -248,3 +248,71 @@ def test_uno_o_due_settori_non_escludono():
     b.raw, b.descrizione = {"Settore_Attivita": ["Edilizia"]}, None
     es, motivo = valuta_bando_con_motivo(hotel, b, Contesto())
     assert motivo is None and any("tipo di intervento" in m for m in es.da_verificare)
+
+
+def test_esigenze_del_cliente_contano_nel_punteggio():
+    """Prova del 21/11/2026: un'officina che vuole comprare macchinari riceveva la Nuova
+    Sabatini al 76° posto, dietro a bandi di formazione con più dati compilati."""
+    from app.opportunita.abbinamento import Contesto, valuta_bando_con_motivo
+
+    oggi = date(2026, 11, 21)
+    officina = _cliente(data_costituzione=date(2005, 1, 1))
+    macchinari = N(id=1, titolo="Centro di lavoro CNC", descrizione=None, attivo=True,
+                   categorie=["macchinari e attrezzature"])  # fmt: skip
+    ctx = Contesto(progetti=[macchinari], oggi=oggi)
+
+    def bando(titolo, descrizione=None, finalita=None):
+        b = _bando(titolo=titolo, territorio="nazionale", regioni=None, finalita=finalita)
+        b.descrizione, b.raw, b.ente = descrizione, {}, None
+        b.data_apertura = b.data_chiusura = None
+        return b
+
+    sabatini, _ = valuta_bando_con_motivo(
+        officina, bando("Beni strumentali - Nuova Sabatini", "Acquisto di nuovi macchinari"), ctx
+    )
+    formazione, _ = valuta_bando_con_motivo(
+        officina, bando("Formazione continua", finalita=["Formazione (lavoro, occupazione)"]), ctx
+    )
+    solo_finalita, _ = valuta_bando_con_motivo(
+        officina, bando("Misura regionale 3.1", finalita=["Sostegno investimenti"]), ctx
+    )
+    assert sabatini.progetto_id == 1 and any("CNC" in m for m in sabatini.soddisfatti)
+    assert any("progetti del cliente" in m for m in formazione.da_verificare)
+    assert any("solo la finalità" in m for m in solo_finalita.da_verificare)
+    assert sabatini.punteggio > solo_finalita.punteggio > formazione.punteggio
+    # senza progetti non cambia nulla
+    senza, _ = valuta_bando_con_motivo(officina, bando("Formazione continua"), Contesto(oggi=oggi))
+    assert senza.punteggio > formazione.punteggio
+    # progetto senza categorie: si ricavano dal testo
+    da_testo = N(id=2, titolo="Fotovoltaico sul capannone", descrizione=None, attivo=True,
+                 categorie=None)  # fmt: skip
+    es, _ = valuta_bando_con_motivo(
+        officina, bando("Conto Termico 3.0"), Contesto(progetti=[da_testo], oggi=oggi)
+    )
+    assert es.progetto_id == 2
+
+
+def test_impresa_giovane_e_camera_di_commercio_con_nome_lungo():
+    from app.opportunita.abbinamento import Contesto, valuta_bando_con_motivo
+    from app.riferimenti.territorio import Territorio
+
+    oggi = date(2026, 11, 21)
+    b = _bando(titolo="Smart&Start Italia", territorio="nazionale", regioni=None)
+    b.descrizione, b.raw, b.ente = "Per l'avvio e lo sviluppo delle startup innovative", {}, None
+    b.data_apertura = b.data_chiusura = None
+    giovane, _ = valuta_bando_con_motivo(
+        _cliente(data_costituzione=date(2025, 2, 1)), b, Contesto(oggi=oggi)
+    )
+    vecchia, _ = valuta_bando_con_motivo(
+        _cliente(data_costituzione=date(2005, 2, 1)), b, Contesto(oggi=oggi)
+    )
+    assert any("imprese nuove" in m for m in giovane.soddisfatti)
+    assert giovane.punteggio > vecchia.punteggio + 40
+    # «…Agricoltura di Brescia» tagliato a 60 caratteri perdeva la provincia
+    t = Territorio(sigla_da_provincia={"brescia": "BS", "bergamo": "BG"})
+    bergamo = _cliente(sede_legale=N(regione="Lombardia", comune_testo="Bergamo", provincia="BG"))
+    cciaa = _bando(titolo="Voucher digitali", regioni=["Lombardia"])
+    cciaa.ente = "Camera di Commercio, Industria, Artigianato e Agricoltura di Brescia"
+    cciaa.descrizione, cciaa.raw, cciaa.data_apertura, cciaa.data_chiusura = None, {}, None, None
+    es, _ = valuta_bando_con_motivo(bergamo, cciaa, Contesto(oggi=oggi, territorio=t))
+    assert any("BS" in m for m in es.da_verificare) and es.punteggio < 45

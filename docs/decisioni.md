@@ -495,3 +495,14 @@ PDF dei bandi restano sul disco finché l'elemento non lascia il cestino (30 gio
 `pulizia`). Se nel frattempo è nato un conflitto (stessa partita IVA, genitore eliminato) il
 ripristino si ferma e spiega il motivo, senza modificare nulla.
 
+## Le esigenze del cliente pesano più dei requisiti noti
+Prova del 21/11/2026 con quattro clienti tipo: il punteggio premiava i bandi con molti requisiti
+compilati (regione, dimensione, ATECO, settori: fino a +55) e i progetti del cliente contavano
+solo se il bando aveva le spese ammissibili, cioè quasi mai (0 bandi su 825: arrivano
+dall'estrazione AI dei PDF). Un'officina che voleva comprare macchinari riceveva la Nuova
+Sabatini al 76° posto, fuori dalle 30 opportunità tenute. Ora, se il cliente ha progetti attivi,
+il bando sale di 30 punti se li finanzia (spese ammissibili, oppure parole del titolo e della
+presentazione), di 5 se lo dice solo la finalità della fonte (generica: «Sostegno
+investimenti» è su un bando su tre), e scende di 20 se non c'entra. Non si esclude nulla: le
+fonti sono incomplete. Le misure di Invitalia prendono i requisiti mancanti dal doppione di
+Incentivi Italia (`completa_requisiti`), altrimenti sembravano bandi senza dati.

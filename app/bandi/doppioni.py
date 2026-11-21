@@ -98,6 +98,50 @@ def _scadenze_compatibili(a: Bando, b: Bando) -> bool:
     return abs((a.data_chiusura - b.data_chiusura).days) <= GIORNI_SCADENZA
 
 
+TERRITORIO = ("territorio", "regioni", "province", "comuni")
+
+
+def completa_requisiti(principale: Bando, doppio: Bando) -> int:
+    """La scheda di Invitalia dice stato e date, non i requisiti: quelli che mancano si
+    prendono dal doppione di Incentivi Italia (dimensioni, ATECO, settori, finalità…), così
+    l'abbinamento con i clienti e la scheda li hanno. Il 21/11/2026 la Nuova Sabatini, senza
+    requisiti, finiva in fondo alle opportunità di un'officina che voleva comprare macchinari.
+    Restituisce quanti campi ha completato."""
+    from app.extraction.risoluzione import COLONNE
+
+    r, d = principale.requisiti, doppio.requisiti
+    if r is None or d is None:
+        return 0
+    incerti = set(r.da_verificare or [])
+    provenienza = dict(r.provenienza or {})
+    completati: list[str] = []
+    # Il territorio della scheda Invitalia è certo solo se ricavato dal nome («al Sud»)
+    if "territorio" in incerti and not r.regioni and d.territorio not in (None, "sconosciuto"):
+        for col in TERRITORIO:
+            setattr(r, col, getattr(d, col))
+        completati.append("territorio")
+    for col in COLONNE:
+        if col in TERRITORIO or getattr(r, col) is not None:
+            continue
+        valore = getattr(d, col)
+        if valore is None or valore == []:
+            continue
+        setattr(r, col, valore)
+        completati.append(col)
+    if not completati:
+        return 0
+    alias = {"ateco_ammessi": "ateco", "importo_max": "importi", "importo_min": "importi"}
+    tolti = set(completati) | {alias[c] for c in completati if c in alias}
+    if "dotazione" in completati:
+        tolti.add("importi")
+    for col in completati:
+        provenienza[col] = "fonte"
+    r.provenienza = provenienza
+    restano = [c for c in r.da_verificare or [] if c not in tolti]
+    r.da_verificare = restano or None
+    return len(completati)
+
+
 def collega(db: Session) -> str:
     """Ricalcola i collegamenti tra i bandi aperti o in arrivo. Idempotente."""
     fonti = {f.id: f for f in db.scalars(select(Fonte))}
@@ -151,5 +195,9 @@ def collega(db: Session) -> str:
             tolti += 1
     for naz_id, reg_id in collegati.items():
         db.execute(update(Bando).where(Bando.id == naz_id).values(bando_canonico_id=reg_id))
+    per_id = {b.id: b for b in aperti}
+    for naz_id, reg_id in collegati.items():
+        if fonti[per_id[reg_id].fonte_id].codice == FONTE_INVITALIA:
+            completa_requisiti(per_id[reg_id], per_id[naz_id])
     db.commit()
     return f"Bandi doppi collegati: {len(collegati)}" + (f", scollegati {tolti}" if tolti else "")

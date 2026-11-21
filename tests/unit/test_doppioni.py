@@ -56,3 +56,33 @@ def test_invitalia_collegata_alle_misure_nazionali():
         somiglianza("Legge 181", "Legge 181/1989 - Riqualificazione dell'area di crisi di Gela")
         < 0.3
     )
+
+
+def test_requisiti_di_invitalia_completati_dal_doppione_nazionale():
+    """La scheda Invitalia ha solo stato e date: i requisiti arrivano da Incentivi Italia."""
+    from types import SimpleNamespace as N
+
+    from app.bandi.doppioni import completa_requisiti
+    from app.extraction.risoluzione import COLONNE
+
+    def req(**kw):
+        return N(**({c: None for c in COLONNE} | kw), provenienza={}, da_verificare=None)
+
+    invitalia = N(requisiti=req(territorio="nazionale"))
+    invitalia.requisiti.da_verificare = ["territorio", "dimensioni", "ateco", "importi", "regime"]
+    nazionale = N(requisiti=req(territorio="nazionale"))
+    nazionale.requisiti.dimensioni = ["micro", "piccola", "media"]
+    nazionale.requisiti.finalita = ["Sostegno investimenti"]
+    nazionale.requisiti.importo_max = 4000000
+    assert completa_requisiti(invitalia, nazionale) >= 3
+    r = invitalia.requisiti
+    assert r.dimensioni == ["micro", "piccola", "media"] and r.finalita == ["Sostegno investimenti"]
+    assert r.provenienza["dimensioni"] == "fonte"
+    assert "dimensioni" not in r.da_verificare and "importi" not in r.da_verificare
+    assert "regime" in r.da_verificare and "ateco" in r.da_verificare
+    # le regioni ricavate dal nome («Resto al Sud») restano quelle di Invitalia
+    sud = N(requisiti=req(territorio="regionale", regioni=["Campania"]))
+    sud.requisiti.da_verificare = ["territorio"]
+    tutta = N(requisiti=req(territorio="nazionale"))
+    completa_requisiti(sud, tutta)
+    assert sud.requisiti.regioni == ["Campania"]
