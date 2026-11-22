@@ -38,6 +38,39 @@ def test_estrazione_cig_e_soa():
     assert [c["codice"] for c in estrai_soa("OG99, OS 12-A e OS18B")] == ["OS12-A", "OS18-B"]
 
 
+def test_prevalente_solo_per_il_codice_vicino():
+    """Disciplinare reale (22/11/2026): «prevalente OG11 e per la categoria OS4» non rende
+    prevalente anche OS4; nelle tabelle la parola segue il codice sulla stessa riga."""
+    testo = (
+        "la categoria prevalente è, in ciascun lotto, la categoria OG11, di importo …\n"
+        "• per le lavorazioni della categoria prevalente OG11 e per la categoria OS4: CCNL"
+    )
+    tipi = {c["codice"]: c["tipo"] for c in estrai_soa(testo)}
+    assert tipi == {"OG11": "prevalente", "OS4": None}
+    tabella = (
+        "OG 3 Strade, autostrade III 1.000.000,00 Prevalente\n"
+        "OS 30 Impianti I 200.000,00 Scorporabile"
+    )
+    tipi = {c["codice"]: c["tipo"] for c in estrai_soa(tabella)}
+    assert tipi == {"OG3": "prevalente", "OS30": "scorporabile"}
+    assert estrai_soa("OG1 attività non prevalente")[0]["tipo"] is None
+    # quesiti pubblicati sulle pagine TuttoGare (22/11/2026)
+    quesito = "la categoria OS24 in quanto coperte dalla categoria prevalente OG1?"
+    tipi = {c["codice"]: c["tipo"] for c in estrai_soa(quesito)}
+    assert tipi == {"OS24": None, "OG1": "prevalente"}
+    risposta = (
+        "si chiede quale sia tra OG6 e OS21 la categoria prevalente.\n"
+        "si conferma che la cat. OS21 è prevalente."
+    )
+    assert {c["codice"]: c["tipo"] for c in estrai_soa(risposta)}["OS21"] == "prevalente"
+    # una sola prevalente: vince la prima fonte
+    anac = [{"codice": "OG1", "tipo": "prevalente", "provenienza": "anac"}]
+    testo = [{"codice": "OS30", "tipo": "prevalente", "provenienza": "testo"}]
+    cats = unisci_soa(anac, testo)
+    assert prevalente(cats)["codice"] == "OG1"
+    assert [c["tipo"] for c in cats] == ["prevalente", "scorporabile"]
+
+
 def test_unisci_soa_preferisce_anac():
     testo = [{"codice": "OG6", "tipo": None, "provenienza": "testo", "importo": "100"}]
     anac = [{"codice": "OG6", "tipo": "prevalente", "provenienza": "anac"}]

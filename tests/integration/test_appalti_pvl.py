@@ -8,7 +8,7 @@ from datetime import date
 
 import httpx
 import pytest
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 
 from app.appalti import pvl
 from app.models.appalti import Appalto
@@ -142,12 +142,40 @@ def test_raccolta_sotto_soglia_rettifiche_e_ted(db, monkeypatch):
     assert gare[0].fonte == "anac" and gare[0].scadenza == date(2027, 1, 15)
     db.refresh(gara_ted)
     assert gara_ted.cig == "BD72382000" and gara_ted.codici_soa == ["OG1", "OS18-B"]
-    # la notte dopo (3 giorni) lo stesso avviso non si richiede di nuovo
+    # la notte dopo lo stesso avviso non si richiede di nuovo
     dettagli_prima = sum("/avvisi/" in r for r in richieste)
     with httpx.Client(transport=httpx.MockTransport(gestore)) as c:
         esito = pvl.raccogli(db, c, oggi=OGGI)
     assert "0 gare nuove" in esito
     assert sum("/avvisi/" in r for r in richieste) == dettagli_prima
-    assert sum("dataPubblicazioneStart" in r for r in richieste) == pvl.GIORNI_PRIMA_VOLTA + 3
+    assert sum("dataPubblicazioneStart" in r for r in richieste) == pvl.GIORNI_ELENCO * 2
     db.execute(delete(Appalto).where(Appalto.id.in_([gara_ted.id, gare[0].id])))
+    db.commit()
+
+
+def test_gare_oltre_il_limite_arrivano_la_notte_dopo(db, monkeypatch):
+    """Ogni notte si rilegge l'elenco di 60 giorni: le gare rimaste fuori dal limite dei
+    dettagli (anche pubblicate settimane prima) arrivano le notti successive."""
+    from app.sources import http
+
+    monkeypatch.setattr(http, "INTERVALLO_MINIMO_SECONDI", 0)
+    monkeypatch.setattr(pvl, "MAX_DETTAGLI", 2)
+    db.execute(delete(Appalto).where(Appalto.id_esterno.like("pvl-%")))
+    db.commit()
+    vecchie = [_avviso(pubblicato="2026-10-01T07:00:00.000+00:00") for _ in range(3)]
+
+    def gestore(req: httpx.Request) -> httpx.Response:
+        if req.url.path == "/api/v0/avvisi":
+            contenuto = vecchie if req.url.params["dataPubblicazioneStart"] == "01/10/2026" else []
+            return httpx.Response(200, json={"content": contenuto, "last": True})
+        id_avviso = req.url.path.rsplit("/", 1)[-1]
+        return httpx.Response(200, json=next(a for a in vecchie if a["idAvviso"] == id_avviso))
+
+    with httpx.Client(transport=httpx.MockTransport(gestore)) as c:
+        prima = pvl.raccogli(db, c, oggi=OGGI)
+        seconda = pvl.raccogli(db, c, oggi=OGGI)
+    assert "2 gare nuove" in prima and "1 rimandate alla prossima notte" in prima
+    assert "1 gare nuove" in seconda and "rimandate" not in seconda
+    assert db.scalar(select(func.count()).where(Appalto.id_esterno.like("pvl-%"))) == 3
+    db.execute(delete(Appalto).where(Appalto.id_esterno.like("pvl-%")))
     db.commit()

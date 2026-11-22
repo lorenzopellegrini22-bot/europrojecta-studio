@@ -122,16 +122,29 @@ def estrai_soa(testo: str | None) -> list[dict[str, Any]]:
     if not testo:
         return []
     trovate: dict[str, dict[str, Any]] = {}
-    for m in _SOA.finditer(testo):
+    codici = list(_SOA.finditer(testo))
+    for i, m in enumerate(codici):
         codice = _codice_soa(m.group(1), m.group(2), m.group(3))
         if codice is None:
             continue
-        prima = testo[max(0, m.start() - 60) : m.start()].lower()
-        dopo = testo[m.end() : m.end() + 80]
+        # Il tipo vale per il codice più vicino: in «prevalente OG11 e per la categoria OS4»
+        # OS4 non è prevalente (disciplinare del 22/11/2026). Prima del codice: fino al codice
+        # precedente; dopo (tabelle «OG3 | Strade | III | prevalente»): fino al successivo
+        inizio = max(m.start() - 60, codici[i - 1].end() if i else 0)
+        prima = testo[inizio : m.start()].lower()
+        if i and inizio == codici[i - 1].end() and "\n" in prima:
+            # tabella: «prevalente» della riga sopra è del codice precedente
+            prima = prima.rsplit("\n", 1)[1]
+        fine = codici[i + 1].start() if i + 1 < len(codici) else len(testo)
+        dopo = testo[m.end() : min(fine, m.end() + 120)]
+        riga_dopo = dopo.split("\n")[0].lower()
         tipo = None
-        if "prevalent" in prima:
+        # dopo il codice conta solo se non parla di un'altra categoria: in «OS24 in quanto
+        # coperte dalla categoria prevalente OG1» (quesito su TuttoGare) la prevalente è OG1
+        dopo_ok = "categori" not in riga_dopo.split("prevalente")[0]
+        if "prevalent" in prima or (dopo_ok and re.search(r"(?<!non )\bprevalente\b", riga_dopo)):
             tipo = "prevalente"
-        elif "scorporabil" in prima or "secondari" in prima:
+        elif "scorporabil" in prima or "secondari" in prima or "scorporabil" in riga_dopo:
             tipo = "scorporabile"
         importo = None
         mi = _IMPORTO.search(dopo.split("\n")[0])
@@ -171,6 +184,10 @@ def unisci_soa(*liste: list[dict[str, Any]] | None) -> list[dict[str, Any]] | No
                         esistente[k] = v
     if not out:
         return None
+    # una sola prevalente: la prima trovata (le fonti si passano dalla più affidabile)
+    prevalenti = [c for c in out.values() if c.get("tipo") == "prevalente"]
+    for c in prevalenti[1:]:
+        c["tipo"] = "scorporabile"
     return sorted(
         out.values(),
         key=lambda c: (c.get("tipo") != "prevalente", c["codice"][:2], c["codice"]),

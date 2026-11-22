@@ -56,13 +56,68 @@ def test_legge_la_pagina_rispettando_robots():
 
     client = httpx.Client(transport=httpx.MockTransport(risposta))
     gara = N(
-        fonte="ted", id_esterno="1-2026", link_partecipazione=None, documenti_letti_il=None,
+        fonte="ted", id_esterno="1-2026", link_partecipazione=None, documenti_letti_il=None, categorie_soa=None,
         documenti=[{"titolo": "Documenti di gara", "url": "https://p.example/gare/dettaglio.php?codice=9"}],
     )  # fmt: skip
     assert d.leggi_gara(gara, client, Robots(client)) == "2 documenti"
     assert gara.documenti[-1]["tipo"] == "Pagina della gara" and gara.documenti_letti_il
     vietata = N(
-        fonte="ted", id_esterno="2-2026", link_partecipazione=None, documenti_letti_il=None,
+        fonte="ted", id_esterno="2-2026", link_partecipazione=None, documenti_letti_il=None, categorie_soa=None,
         documenti=[{"titolo": "Documenti di gara", "url": "https://p.example/vietato/gara?id=1"}],
     )  # fmt: skip
     assert "robots" in d.leggi_gara(vietata, client, Robots(client))
+
+
+PAGINA_CON_DISCIPLINARE = """<html><body><h1>Lavori di efficientamento</h1>
+<p>Categorie: OG 1, OS 30</p>
+<a href="/vietato/bando.pdf">Bando di gara.pdf</a>
+<a href="/files/disciplinare.pdf">Disciplinare di gara.pdf</a>
+</body></html>"""
+
+
+def test_prevalente_dal_disciplinare_rispettando_robots(monkeypatch):
+    """La pubblicità legale ANAC elenca OG1 e OS30 senza dire qual è la prevalente: la si
+    legge nel disciplinare in PDF (il bando, vietato dal robots.txt, non si apre)."""
+    from app.documenti import servizio
+    from app.documenti.servizio import Robots
+
+    letti: list[str] = []
+
+    def risposta(req: httpx.Request) -> httpx.Response:
+        if req.url.path == "/robots.txt":
+            return httpx.Response(200, text="User-agent: *\nDisallow: /vietato/")
+        if req.url.path.endswith(".pdf"):
+            letti.append(req.url.path)
+            return httpx.Response(200, content=b"%PDF-1.7 disciplinare",
+                                  headers={"content-type": "application/pdf"})  # fmt: skip
+        return httpx.Response(200, html=PAGINA_CON_DISCIPLINARE)
+
+    testo = (
+        "3. CATEGORIE DEI LAVORI\nLa categoria prevalente è la OS 30 (impianti elettrici), "
+        "classifica III, € 900.000,00; per la categoria OG 1 € 300.000,00 (scorporabile).\n"
+        "Esempio: le categorie OS 4 e OG 11 non sono richieste."
+    )
+    monkeypatch.setattr(servizio, "testo_pdf", lambda dati, *a, **k: (testo, 3))
+    client = httpx.Client(transport=httpx.MockTransport(risposta))
+    gara = N(
+        fonte="anac", id_esterno="pvl-1", link_partecipazione=None, documenti_letti_il=None,
+        documenti=[{"titolo": "Documenti di gara", "url": "https://p.example/gare/dettaglio.php?codice=9"}],
+        categorie_soa=[{"codice": "OG1", "tipo": None, "provenienza": "anac"},
+                       {"codice": "OS30", "tipo": None, "provenienza": "anac"}],
+        codici_soa=["OG1", "OS30"],
+    )  # fmt: skip
+    assert d.manca_prevalente(gara)
+    assert d.leggi_gara(gara, client, Robots(client)) == "2 documenti, prevalente dal disciplinare"
+    assert letti == ["/files/disciplinare.pdf"]
+    tipi = {c["codice"]: c["tipo"] for c in gara.categorie_soa}
+    assert tipi == {"OS30": "prevalente", "OG1": "scorporabile"}  # niente OS4/OG11 di esempio
+    assert gara.codici_soa == ["OG1", "OS30"] and not d.manca_prevalente(gara)
+
+
+def test_prevalente_nel_testo_della_pagina():
+    gara = N(categorie_soa=[{"codice": "OG3", "tipo": None, "provenienza": "anac"},
+                            {"codice": "OS12-A", "tipo": None, "provenienza": "anac"}],
+             codici_soa=["OG3", "OS12-A"])  # fmt: skip
+    assert not d.categorie_dal_testo(gara, "Categorie: OG3 e OS12-A. Importo € 500.000")
+    assert d.categorie_dal_testo(gara, "Categoria prevalente: OG 3 classifica II")
+    assert d.manca_prevalente(gara) is False

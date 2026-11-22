@@ -4,7 +4,7 @@
 <nav aria-label="breadcrumb"><ul><li><a href="/appalti">Appalti</a></li><li>Importa da ANAC</li></ul></nav>
 <hgroup>
   <h1>Importa gli appalti da ANAC</h1>
-  <p>I bandi sotto soglia arrivano già da soli ogni notte dalla pubblicità legale ANAC, con le categorie SOA. Il file ANAC serve per sapere quale categoria è la prevalente e quali le scorporabili, che la pubblicità legale non indica.</p>
+  <p>I bandi sotto soglia arrivano già da soli ogni notte dalla pubblicità legale ANAC, con le categorie SOA. La pubblicità legale non indica quale categoria è la prevalente: l'app la cerca ogni notte nel disciplinare, quando il sito dell'ente ne consente la lettura. Il file ANAC serve per averla sempre, con le scorporabili.</p>
 </hgroup>
 
 {% for e in esiti %}<div class="messaggio ok" role="status">{{ e }}</div>{% endfor %}

@@ -20,8 +20,11 @@ Scelte:
   CIG e categorie SOA, che TED non ha; gli altri (sotto soglia) diventano gare «anac»;
 - una gara per avviso (idAppalto), con tutti i lotti: le rettifiche aggiornano la stessa;
 - si tengono solo le gare con la scadenza non ancora passata;
-- prima esecuzione: ultimi 60 giorni di pubblicazioni; poi ogni notte gli ultimi 3 giorni
-  (la piattaforma completa a volte la pubblicazione del giorno dopo);
+- ogni notte si rilegge l'elenco degli ultimi 60 giorni di pubblicazioni (circa 5.000 avvisi,
+  due pagine al giorno: un paio di minuti) e si chiede il dettaglio solo degli avvisi non
+  ancora salvati, al massimo MAX_DETTAGLI per notte: quelli rimasti si prendono la notte dopo.
+  Fino al 22/11/2026 si rileggevano solo gli ultimi 3 giorni e le gare oltre il limite della
+  prima notte non sarebbero più arrivate;
 - pause di almeno un secondo tra le richieste (app/sources/http.py).
 Dati: ANAC, Banca Dati Nazionale dei Contratti Pubblici (licenza CC BY-SA 4.0 degli open data
 ANAC); fa fede l'avviso pubblicato sulla piattaforma.
@@ -50,9 +53,8 @@ ELENCO = f"{BASE}/api/v0/avvisi"
 SCHEDE_BANDI = "2,4"
 PER_PAGINA = 100
 MAX_PAGINE_PER_GIORNO = 20
-GIORNI_PRIMA_VOLTA = 60
-GIORNI_OGNI_NOTTE = 3
-MAX_DETTAGLI = 1500  # per notte: il resto la notte dopo
+GIORNI_ELENCO = 60
+MAX_DETTAGLI = 2500  # per notte (una richiesta al secondo): il resto la notte dopo
 PREFISSO = "pvl-"
 FUSO = ZoneInfo("Europe/Rome")
 NATURA = {"lavori": "lavori", "servizi": "servizi", "forniture": "forniture"}
@@ -313,11 +315,7 @@ def raccogli(db: Session, client: httpx.Client | None = None, oggi: date | None 
     from app.sources import http
 
     oggi = oggi or datetime.now(FUSO).date()
-    prima_volta = (
-        db.scalar(select(Appalto.id).where(Appalto.id_esterno.startswith(PREFISSO)).limit(1))
-        is None
-    )
-    giorni = GIORNI_PRIMA_VOLTA if prima_volta else GIORNI_OGNI_NOTTE
+    giorni = GIORNI_ELENCO
     from app.riferimenti import territorio as rif_territorio
 
     territorio = rif_territorio.in_memoria(db)
@@ -332,7 +330,7 @@ def raccogli(db: Session, client: httpx.Client | None = None, oggi: date | None 
         esistenti = {a.id_esterno: a for a in db.scalars(select(Appalto))}
         per_cig = {a.cig: a for a in esistenti.values() if a.cig}
         visti: set[str] = set()
-        nuovi = aggiornati = arricchiti = dettagli = 0
+        nuovi = aggiornati = arricchiti = dettagli = rimandati = 0
         ora = datetime.now(UTC)
         for avviso in avvisi:
             chiave = _id(avviso)
@@ -357,6 +355,7 @@ def raccogli(db: Session, client: httpx.Client | None = None, oggi: date | None 
             if gia is not None and (gia.raw or {}).get("idAvviso") == avviso.get("idAvviso"):
                 continue  # stesso avviso già salvato: niente di nuovo
             if dettagli >= MAX_DETTAGLI:
+                rimandati += 1
                 continue
             completo = dettaglio(client, avviso["idAvviso"])
             dettagli += 1
@@ -385,5 +384,6 @@ def raccogli(db: Session, client: httpx.Client | None = None, oggi: date | None 
             client.close()
     return (
         f"ANAC (pubblicità legale): {len(avvisi)} avvisi letti in {giorni} giorni, {nuovi} gare "
-        f"nuove, {aggiornati} aggiornate, {arricchiti} gare TED completate con CIG e SOA."
+        f"nuove, {aggiornati} aggiornate, {arricchiti} gare TED completate con CIG e SOA"
+        + (f", {rimandati} rimandate alla prossima notte." if rimandati else ".")
     )

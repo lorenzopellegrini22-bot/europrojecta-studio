@@ -37,9 +37,15 @@ Campi usati: committente (`soggetti_sa`), oggetto (`metadata.titolo`/`descrizion
 - Solo gare con la scadenza non ancora passata.
 - Provincia e regione da `luogo_nuts`; se manca (circa 4 avvisi su 10), dal comune con la
   tabella ISTAT dell'app.
-- La piattaforma non dice quale categoria SOA è la prevalente: l'abbinamento la tratta come
-  «categoria prevalente non indicata». L'import dei file ANAC resta utile per saperlo.
-- Prima esecuzione: 60 giorni di pubblicazioni (al massimo 1.500 dettagli per notte, il resto
-  le notti dopo); poi ogni notte gli ultimi 3 giorni.
+- La piattaforma non dice quale categoria SOA è la prevalente (e le elenca in ordine sparso).
+  Per le gare con più categorie la documentazione notturna la cerca nella pagina della gara e
+  nel disciplinare o bando in PDF, se il robots.txt del sito lo consente (prova del 22/11/2026
+  su 70 gare: trovata e corretta in 5; TuttoGare, Asmecomm e altre piattaforme vietano la
+  lettura automatica dei file). Se il testo ne indica più d'una non si sceglie. Altrimenti
+  l'abbinamento la tratta come «categoria prevalente non indicata»; l'import dei file ANAC
+  resta il modo per averla sempre.
+- Ogni notte si rilegge l'elenco degli ultimi 60 giorni (circa 5.000 avvisi, un paio di
+  minuti) e si chiede il dettaglio solo delle gare non ancora salvate, al massimo 2.500 per
+  notte: le altre arrivano la notte dopo, anche se pubblicate settimane prima.
 
 Dati: ANAC, BDNCP (licenza CC BY-SA 4.0 degli open data ANAC). Fa fede l'avviso pubblicato.

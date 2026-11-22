@@ -11,8 +11,16 @@ Da dove arriva (verificato il 18/11/2026 sulle gare aperte):
   Giada). Le piattaforme fatte solo in JavaScript (es. START Toscana) o i link alla sola home
   (es. Sintel, MEPA) non hanno documenti leggibili: resta il link alla pagina della gara.
 
-Regole: si rispetta il robots.txt di ogni sito, una richiesta alla volta per dominio, si
-leggono solo le pagine (i file non si scaricano: li apre chi clicca, dal sito dell'ente).
+Categoria SOA prevalente: la pubblicità legale ANAC elenca le categorie dei lavori ma non dice
+qual è la prevalente (e le elenca in ordine sparso). Per le gare con più categorie e senza
+prevalente la si cerca nel testo della pagina della gara e, se il sito lo consente, nel
+disciplinare o nel bando in PDF (al massimo due file per gara, letti e non conservati).
+Verifica del 22/11/2026 su 45 gare di lavori: la indicano 1 pagina e 4 PDF su 5 leggibili;
+molte piattaforme (es. TuttoGare, Asmecomm) vietano la lettura automatica dei file nel
+robots.txt e lì la prevalente resta «da verificare».
+
+Regole: si rispetta il robots.txt di ogni sito, una richiesta alla volta per dominio; gli
+altri file non si scaricano: li apre chi clicca, dal sito dell'ente.
 """
 
 import html
@@ -152,6 +160,61 @@ def documentazione(a: Appalto) -> list[dict[str, str]]:
     return elenco
 
 
+MAX_PDF_PER_GARA = 2
+
+
+def manca_prevalente(a: Appalto) -> bool:
+    """Lavori con più categorie SOA e nessuna indicata come prevalente."""
+    from app.appalti.scheda import prevalente
+
+    return len(a.categorie_soa or []) >= 2 and prevalente(a.categorie_soa) is None
+
+
+def categorie_dal_testo(a: Appalto, testo: str) -> bool:
+    """Completa le categorie della gara con prevalente e scorporabili lette nel testo. Se la
+    fonte ha già l'elenco (ANAC) si tengono solo quelle categorie: un disciplinare cita anche
+    categorie di esempio o di altri lotti. True se ora la prevalente è nota."""
+    from app.appalti.scheda import estrai_soa, prevalente, unisci_soa
+
+    trovate = [c for c in estrai_soa(testo) if c.get("tipo")]
+    note = {c["codice"] for c in a.categorie_soa or [] if c.get("provenienza") == "anac"}
+    if note:
+        trovate = [c for c in trovate if c["codice"] in note]
+    if len({c["codice"] for c in trovate if c["tipo"] == "prevalente"}) != 1:
+        return False  # nessuna o più d'una (es. un quesito che le confronta): non si sceglie
+    categorie = unisci_soa(a.categorie_soa, trovate)
+    a.categorie_soa = categorie
+    a.codici_soa = sorted({c["codice"] for c in categorie or []}) or None
+    return prevalente(categorie) is not None
+
+
+def _pdf_da_leggere(documenti: list[dict[str, str]]) -> list[str]:
+    """Disciplinare prima del bando (è il documento che riporta la tabella delle categorie)."""
+    ordine = {"Disciplinare": 0, "Bando di gara": 1}
+    scelti = [
+        d for d in documenti
+        if tipo_documento(d.get("titolo") or "") in ordine
+        and not re.search(r"\.(p7m|zip|rar|7z|docx?|xlsx?|odt|rtf)\b", d["url"] + d.get("titolo", ""), re.I)
+    ]  # fmt: skip
+    scelti.sort(key=lambda d: ordine[tipo_documento(d.get("titolo") or "")])
+    return list(dict.fromkeys(d["url"] for d in scelti))[:MAX_PDF_PER_GARA]
+
+
+def prevalente_dai_pdf(a: Appalto, client: httpx.Client, robots) -> bool:  # noqa: ANN001
+    from app.documenti.servizio import ErroreDocumento, scarica_pdf, testo_pdf
+
+    for url in _pdf_da_leggere(a.documenti or []):
+        if not robots.permesso(url):
+            continue
+        try:
+            testo, _pagine = testo_pdf(scarica_pdf(client, url))
+        except (ErroreDocumento, httpx.HTTPError, httpx.InvalidURL, ValueError):
+            continue
+        if categorie_dal_testo(a, testo):
+            return True
+    return False
+
+
 def leggi_gara(a: Appalto, client: httpx.Client, robots) -> str:  # noqa: ANN001
     """Legge la pagina della gara e aggiorna a.documenti. Restituisce l'esito in breve."""
     from app.sources import http
@@ -182,6 +245,8 @@ def leggi_gara(a: Appalto, client: httpx.Client, robots) -> str:  # noqa: ANN001
             continue
         trovati = estrai(*letta)
         nuovi += [d for d in trovati if d["url"] not in {x["url"] for x in nuovi}]
+        if manca_prevalente(a):
+            categorie_dal_testo(a, BeautifulSoup(letta[0], "html.parser").get_text("\n"))
     pagina_gara = [
         {"titolo": "Pagina della gara sulla piattaforma", "url": u, "tipo": "Pagina della gara"}
         for u in pagine[:1]
@@ -189,12 +254,15 @@ def leggi_gara(a: Appalto, client: httpx.Client, robots) -> str:  # noqa: ANN001
     if nuovi:
         a.documenti = (nuovi + pagina_gara)[:MAX_DOCUMENTI]
         esito = f"{len(nuovi)} documenti"
+    if manca_prevalente(a) and prevalente_dai_pdf(a, client, robots):
+        esito += ", prevalente dal disciplinare"
     a.documenti_letti_il = datetime.now(UTC)
     return esito
 
 
-def aggiorna(db: Session, limite: int = 150, client: httpx.Client | None = None) -> str:
-    """Ogni notte: documentazione delle gare aperte non lette negli ultimi 7 giorni."""
+def aggiorna(db: Session, limite: int = 300, client: httpx.Client | None = None) -> str:
+    """Ogni notte: documentazione delle gare aperte non lette negli ultimi 7 giorni, prima
+    quelle mai lette (le nuove gare ANAC sono centinaia a notte)."""
     from app.documenti.servizio import Robots
     from app.sources import http
 
@@ -206,19 +274,20 @@ def aggiorna(db: Session, limite: int = 150, client: httpx.Client | None = None)
                 Appalto.scadenza >= date.today(),
                 or_(Appalto.documenti_letti_il.is_(None), Appalto.documenti_letti_il < soglia),
             )
-            .order_by(Appalto.scadenza)
+            .order_by(Appalto.documenti_letti_il.is_not(None), Appalto.scadenza)
             .limit(limite)
         )
     )
     proprio = client is None
     client = client or http.client()
     robots = Robots(client)
-    con_documenti = 0
+    con_documenti = con_prevalente = 0
     try:
         for a in gare:
             try:
-                if leggi_gara(a, client, robots).endswith("documenti"):
-                    con_documenti += 1
+                esito = leggi_gara(a, client, robots)
+                con_documenti += "documenti" in esito
+                con_prevalente += "prevalente" in esito
             except Exception:  # un link strano non deve fermare la notte
                 log.exception("Documentazione della gara %s non letta", a.id)
                 db.rollback()
@@ -227,4 +296,7 @@ def aggiorna(db: Session, limite: int = 150, client: httpx.Client | None = None)
     finally:
         if proprio:
             client.close()
-    return f"Documentazione delle gare: {len(gare)} lette, {con_documenti} con documenti."
+    return (
+        f"Documentazione delle gare: {len(gare)} lette, {con_documenti} con documenti, "
+        f"{con_prevalente} con la categoria prevalente trovata nel disciplinare."
+    )
