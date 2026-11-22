@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% from "_parziali/documentazione.html" import documentazione as elenco_documenti %}
 {% block titolo %}Opportunità · {{ NOME_APP }}{% endblock %}
 {% block contenuto %}
 <div class="intestazione">
@@ -42,6 +41,7 @@
 <article><p>Nessuna opportunità con questi filtri. Le opportunità si calcolano ogni mattina per i clienti con gli avvisi attivi; puoi anche premere «Aggiorna adesso».</p></article>
 {% endif %}
 
+{% set torna = request.url.path ~ ("?" ~ request.url.query if request.url.query else "") %}
 {% for azienda_id, lista in per_cliente.items() %}
 <article>
   <header><strong><a href="/clienti/{{ azienda_id }}">{{ lista[0].azienda.ragione_sociale }}</a></strong> <small>{{ lista | length }} opportunità</small></header>
@@ -61,9 +61,9 @@
         </small>
         <a href="/opportunita/{{ o.id }}#note" class="piccolo link-note">Note{% if note_per.get(o.id) %} ({{ note_per[o.id] }}){% endif %}</a>
         {% set docs = documentazione.get(o.id, []) %}
-        <details class="doc-opportunita">
+        <details class="doc-opportunita" hx-get="/opportunita/{{ o.id }}/documentazione" hx-trigger="toggle once" hx-target="find .doc-voci">
           <summary>Documentazione{% if docs %} ({{ docs | length }}){% endif %}</summary>
-          {{ elenco_documenti(docs, "Nessun documento trovato: apri la scheda.") }}
+          <div class="doc-voci"><small>Caricamento…</small></div>
         </details>
         {% if o.motivazione_ai %}
         <details>
@@ -78,23 +78,28 @@
         </details>
         {% endif %}
       </div>
-      <div class="gruppo-pulsanti">
-        <form method="post" action="/opportunita/{{ o.id }}/pratica"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="piccolo">Apri pratica</button></form>
-        {% if o.bando_id %}<form method="post" action="/clienti/{{ o.azienda_id }}/report/{{ o.bando_id }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Report PDF</button></form>{% endif %}
-        {% if email_disponibile %}
-        <form method="post" action="/opportunita/{{ o.id }}/segnala"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Segnala al cliente</button></form>
-        {% endif %}
-        {% if o.stato != "interessante" %}
-        <form method="post" action="/opportunita/{{ o.id }}/stato"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="stato" value="interessante"><input type="hidden" name="torna" value="{{ request.url.path }}?{{ request.url.query }}"><button class="secondary outline piccolo">Interessante</button></form>
-        {% endif %}
-        {% if o.stato != "scartata" %}
-        <form method="post" action="/opportunita/{{ o.id }}/stato"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="stato" value="scartata"><input type="hidden" name="torna" value="{{ request.url.path }}?{{ request.url.query }}"><button class="secondary outline piccolo">Scarta</button></form>
-        {% endif %}
-        {% include "opportunita/_feedback.html" %}
-      </div>
+      {#- Un solo modulo per opportunità: ogni pulsante va al suo indirizzo (formaction). Prima
+          erano sei moduli con il token ripetuto: 1,7 KB per opportunità. -#}
+      <form method="post" action="/opportunita/{{ o.id }}/stato" class="gruppo-pulsanti">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="torna" value="{{ torna }}">
+        <button formaction="/opportunita/{{ o.id }}/pratica" class="piccolo">Apri pratica</button>
+        {% if o.bando_id %}<button formaction="/clienti/{{ o.azienda_id }}/report/{{ o.bando_id }}" class="secondary outline piccolo">Report PDF</button>{% endif %}
+        {% if email_disponibile %}<button formaction="/opportunita/{{ o.id }}/segnala" class="secondary outline piccolo">Segnala al cliente</button>{% endif %}
+        {% if o.stato != "interessante" %}<button name="stato" value="interessante" class="secondary outline piccolo">Interessante</button>{% endif %}
+        {% if o.stato != "scartata" %}<button name="stato" value="scartata" class="secondary outline piccolo">Scarta</button>{% endif %}
+        {% if o.feedback %}<small class="etichetta">{{ {"utile": "utile", "non_pertinente": "non pertinente", "gia_noto": "già noto"}[o.feedback] }}</small>
+        {% else %}{% for v, e in (("utile", "Utile"), ("non_pertinente", "Non pertinente"), ("gia_noto", "Già noto")) %}<button formaction="/opportunita/{{ o.id }}/feedback" name="feedback" value="{{ v }}" class="secondary outline piccolo">{{ e }}</button>{% endfor %}{% endif %}
+      </form>
     </div>
   </div>
   {% endfor %}
 </article>
 {% endfor %}
+{% if pagine > 1 %}
+<nav class="paginazione">
+  {% if pagina > 1 %}<a href="/opportunita?{{ filtri_url }}&pagina={{ pagina - 1 }}">← Precedente</a>{% endif %}
+  <span>Pagina {{ pagina }} di {{ pagine }}</span>
+  {% if pagina < pagine %}<a href="/opportunita?{{ filtri_url }}&pagina={{ pagina + 1 }}">Successiva →</a>{% endif %}
+</nav>
+{% endif %}
 {% endblock %}

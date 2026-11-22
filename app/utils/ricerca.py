@@ -89,7 +89,38 @@ def termini(q: str) -> list[list[str]]:
 
 
 def _colonna(col: Any) -> Any:
-    return func.translate(func.lower(func.coalesce(col, "")), CON_ACCENTI, SENZA_ACCENTI)
+    """Testo minuscolo e senza accenti. Le costanti vanno scritte nella query (non come
+    parametri): solo così PostgreSQL usa gli indici a trigrammi della migrazione 0025, che
+    hanno esattamente questa espressione (ricerca bandi da 0,5 s a pochi millisecondi)."""
+    return func.translate(
+        func.lower(func.coalesce(col, literal("", literal_execute=True))),
+        literal(CON_ACCENTI, literal_execute=True),
+        literal(SENZA_ACCENTI, literal_execute=True),
+    )
+
+
+# Colonne con indice a trigrammi (migrazione 0025): (tabella, colonna)
+COLONNE_INDICIZZATE = (
+    ("bando", "titolo"), ("bando", "ente"),
+    ("appalto", "titolo"), ("appalto", "stazione_appaltante"),
+)  # fmt: skip
+
+
+def espressione_indice(colonna: str) -> str:
+    """SQL dell'espressione indicizzata, identica a quella delle query (_colonna)."""
+    from sqlalchemy import column
+    from sqlalchemy.dialects import postgresql
+
+    return str(
+        _colonna(column(colonna)).compile(
+            dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True}
+        )
+    )
+
+
+def oggetto_gestito_da_alembic(oggetto: Any, nome: str | None, tipo: str, *_: Any) -> bool:
+    """Gli indici a trigrammi esistono solo dove c'è pg_trgm: alembic non li confronta."""
+    return not (tipo == "index" and (nome or "").endswith("_trgm"))
 
 
 def condizione(q: str, *colonne: Any) -> Any:

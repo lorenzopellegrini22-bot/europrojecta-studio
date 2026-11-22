@@ -1422,3 +1422,99 @@ td.cella-carica { min-width: 19rem; }
 td.cella-carica input[type="file"] { width: 100%; margin-bottom: 0.5rem; font-size: 0.85rem; }
 
 small.nota-ok { color: var(--ok); }
+
+/* ---------- Telefono (verifica del 22/11/2026 a 375px) ----------
+ * Le tabelle degli elenchi diventano schede: la prima colonna fa da titolo, le altre hanno
+ * l'etichetta presa dall'intestazione (app.js mette data-label e la classe a-schede).
+ * I filtri restano chiusi dietro «Filtri» (app.js), tranne il primo campo. */
+.apri-filtri { display: none; }
+@media (max-width: 700px) {
+  .filtri.compatti > :not(:first-child):not(.azioni-filtri) { display: none; }
+  .filtri.compatti > .grid:first-child > :not(:first-child) { display: none; }
+  .filtri .apri-filtri { display: inline-flex; }
+  .azioni-filtri { flex-wrap: wrap; }
+  .intestazione { margin-bottom: 1rem; }
+  h1 { font-size: 1.5rem; }
+  .gruppo-pulsanti button, .gruppo-pulsanti [role="button"] { min-height: 2.5rem; }
+}
+@media (max-width: 640px) {
+  .overflow-auto:has(> table.a-schede) { overflow: visible; }
+  table.a-schede, table.a-schede tbody, table.a-schede tr { display: block; width: 100%; }
+  table.a-schede thead { display: none; }
+  table.a-schede tr { padding: 0.75rem 1rem; border-bottom: 1px solid var(--linea); }
+  table.a-schede tr:last-child { border-bottom: 0; }
+  /* etichetta a sinistra in posizione assoluta: il contenuto della cella (testo, <br>,
+     <small>) scorre normale nella colonna di destra */
+  .overflow-auto > table.a-schede td,
+  table.a-schede td {
+    display: block;
+    position: relative;
+    min-height: 1.5rem;
+    padding: 0.125rem 0 0.125rem 7rem;
+    border: 0;
+    background: none;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+  table.a-schede td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 0;
+    top: 0.2rem;
+    width: 6.5rem;
+    color: var(--testo-3);
+    font-size: 0.8125rem;
+    line-height: 1.3;
+  }
+  .overflow-auto > table.a-schede td:first-child,
+  table.a-schede td:first-child,
+  table.a-schede td.senza-etichetta { padding: 0 0 0.25rem; }
+  table.a-schede td:first-child { font-weight: 500; }
+  table.a-schede td:first-child::before, table.a-schede td.senza-etichetta::before { content: none; }
+  table.a-schede td.vuota { display: none; }
+  article table.a-schede tr { padding-left: 0; padding-right: 0; }
+  /* scheda gara: etichetta sopra il valore */
+  table.scheda-gara, table.scheda-gara tbody, table.scheda-gara tr,
+  table.scheda-gara th, table.scheda-gara td { display: block; width: 100%; }
+  table.scheda-gara th { padding-bottom: 0; border: 0; }
+  table.scheda-gara td { padding-top: 0.125rem; overflow-wrap: anywhere; }
+  .contenuto { padding: 1rem 1rem 3rem; }
+}
+/* Web app installata: rispetta la barra di stato e il bordo dei telefoni con la tacca */
+@supports (padding: env(safe-area-inset-top)) {
+  .laterale { padding-top: env(safe-area-inset-top); }
+  .contenuto { padding-bottom: max(3rem, env(safe-area-inset-bottom)); }
+}
+
+/* Barra in basso (telefono): Oggi, Clienti, Opportunità, Scadenze, Cerca */
+.barra-basso { display: none; }
+@media (max-width: 900px) {
+  .barra-basso {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    display: flex;
+    background: var(--superficie);
+    border-top: 1px solid var(--linea-forte);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .barra-basso a {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0.875rem 0.25rem;
+    text-align: center;
+    font-size: 0.75rem;
+    letter-spacing: -0.01em;
+    font-weight: 500;
+    color: var(--testo-2);
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .barra-basso a[aria-current="page"] { color: var(--accento-testo); box-shadow: inset 0 2px 0 var(--accento); }
+  .contenuto { padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); }
+}
+@media print { .barra-basso { display: none !important; } }

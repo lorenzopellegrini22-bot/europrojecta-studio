@@ -106,7 +106,15 @@ async def sicurezza(request: Request, call_next):  # type: ignore[no-untyped-def
     risposta.headers["Referrer-Policy"] = "same-origin"
     risposta.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     if not request.url.path.startswith("/static"):
-        risposta.headers["Cache-Control"] = "no-store"
+        risposta.headers.setdefault("Cache-Control", "no-store")
+    elif risposta.status_code == 200:
+        # CSS e JS hanno ?v=<impronta> e cambiano indirizzo a ogni modifica: il telefono li
+        # tiene un anno senza richiederli; font e immagini senza versione un giorno
+        risposta.headers["Cache-Control"] = (
+            "public, max-age=31536000, immutable"
+            if "v" in request.query_params
+            else "public, max-age=86400"
+        )
     return risposta
 
 

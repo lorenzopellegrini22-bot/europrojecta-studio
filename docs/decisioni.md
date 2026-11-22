@@ -409,8 +409,13 @@ Nuova impostazione `VERIFICA_DUE_PASSAGGI` (predefinita `true`). Con `false` il 
   dell'utente che scarica il file (vedi `docs/dati-in-uscita.md`).
 - **Ricerca unica**: una query per gruppo (clienti, pratiche, bandi, gare), ognuno mostrato solo
   a chi ha la sezione; P.IVA, codice fiscale, codice pratica e CIG cercati anche esatti.
-- **App sul telefono**: manifest web (installazione dalla schermata Home), senza service worker
-  né funzionamento offline: i dati restano sul server.
+- **App sul telefono**: manifest web (installazione dalla schermata Home) e service worker
+  (/sw.js) che tiene in memoria solo i file statici e mostra «Sei offline» senza rete: le
+  pagine con i dati non si salvano mai sul telefono (Cache-Control: no-store). Sotto i 640px
+  le tabelle degli elenchi diventano schede, sotto i 700px i filtri stanno dietro «Filtri»,
+  sotto i 900px c'è la barra in basso (Oggi, Clienti, Opportunità, Scadenze, Cerca).
+  Opportunità a pagine da 100 (prima fino a 500 in una pagina da 1 MB). CSS e JS con ?v= si
+  tengono un anno. Ricerca su bandi e appalti con indici a trigrammi (migrazione 0025).
 - **Note**: menzioni con @nome di battesimo o @parte dell'email; ognuno elimina le proprie, il
   titolare tutte. Chi è in sola lettura legge le note ma non scrive.
 - **Segui**: istantanea di scadenza, apertura, stato, documenti (link) e impronta del testo,

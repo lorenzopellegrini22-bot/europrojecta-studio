@@ -79,3 +79,66 @@ document.addEventListener("click", async (evento) => {
     }
   }, 15000);
 })();
+
+// Telefono: le tabelle degli elenchi diventano schede (CSS sotto i 640px). Ogni cella riceve
+// come etichetta il titolo della sua colonna; le celle vuote («—») si nascondono.
+const preparaTabelle = (radice) => {
+  for (const tabella of radice.querySelectorAll(".overflow-auto > table, table.a-schede-sempre")) {
+    if (tabella.classList.contains("a-schede") || tabella.matches(".checklist, .barre, .scheda-gara")) continue;
+    const titoli = [...tabella.querySelectorAll("thead tr:last-child > *")].map((c) => c.textContent.trim());
+    if (titoli.length < 2) continue;
+    for (const riga of tabella.querySelectorAll("tbody tr")) {
+      let colonna = 0;
+      for (const cella of riga.children) {
+        const etichetta = titoli[colonna] || "";
+        if (etichetta) cella.dataset.label = etichetta;
+        else cella.classList.add("senza-etichetta");
+        const testo = cella.textContent.trim();
+        if ((testo === "" || testo === "—") && !cella.querySelector("input, button, select, a, img")) {
+          cella.classList.add("vuota");
+        }
+        colonna += Number(cella.getAttribute("colspan") || 1);
+      }
+    }
+    tabella.classList.add("a-schede");
+  }
+};
+preparaTabelle(document);
+document.body.addEventListener("htmx:afterSwap", (e) => preparaTabelle(e.target));
+
+// Telefono: i filtri occupavano tutto il primo schermo. Restano visibili il primo campo e
+// i pulsanti; «Filtri» apre gli altri e dice quanti sono già impostati.
+(() => {
+  if (!window.matchMedia("(max-width: 700px)").matches) return;
+  for (const form of document.querySelectorAll("form.filtri")) {
+    const campi = [...form.querySelectorAll("input:not([type=hidden]), select")];
+    if (campi.length < 3) continue;
+    const primo = form.querySelector(":scope > :first-child");
+    const nascosti = campi.filter((c) => !(c === primo || (primo && primo.firstElementChild === c)));
+    // attivi = impostati nell'indirizzo (un menu può avere già scelta una voce predefinita)
+    const parametri = new URLSearchParams(window.location.search);
+    const attivi = nascosti.filter((c) => c.name && (parametri.get(c.name) || "").trim() !== "").length;
+    const azioni = form.querySelector(".azioni-filtri");
+    if (!azioni) continue;
+    const pulsante = document.createElement("button");
+    pulsante.type = "button";
+    pulsante.className = "secondary outline apri-filtri";
+    pulsante.setAttribute("aria-expanded", "false");
+    pulsante.textContent = attivi ? `Filtri (${attivi})` : "Filtri";
+    pulsante.addEventListener("click", () => {
+      const chiusi = form.classList.toggle("compatti");
+      pulsante.setAttribute("aria-expanded", String(!chiusi));
+      pulsante.textContent = chiusi ? (attivi ? `Filtri (${attivi})` : "Filtri") : "Meno filtri";
+    });
+    azioni.prepend(pulsante);
+    form.classList.add("compatti");
+  }
+})();
+
+// Web app: il service worker tiene in memoria solo i file statici (CSS, JS, font, icone) e
+// mostra una pagina «Sei offline» senza rete. Le pagine con i dati non si salvano mai.
+if ("serviceWorker" in navigator && window.isSecureContext) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => { /* senza: l'app funziona uguale */ });
+  });
+}

@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime
 from typing import Annotated, Any
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
@@ -32,6 +32,7 @@ ETICHETTE_STATO = {
     "scartata": "Scartata",
     "in_pratica": "Pratica aperta",
 }
+PER_PAGINA = 100
 FILTRI_STATO = {
     "da_valutare": ("nuova", "vista", "interessante"),
     "nuova": ("nuova",),
@@ -113,7 +114,12 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
         query = query.where(Opportunita.appalto_id.is_not(None))
     if cliente:
         query = query.where(Opportunita.azienda_id == cliente)
-    elenco = list(db.scalars(query.limit(500)))
+    # Pagine da PER_PAGINA: con 355 opportunità la pagina pesava 1 MB (22/11/2026), troppo
+    # per il telefono. La documentazione si carica solo quando si apre la tendina.
+    totale = db.scalar(select(func.count()).select_from(query.order_by(None).subquery())) or 0
+    pagine = max(1, -(-totale // PER_PAGINA))
+    pagina = min(max(1, int(p["pagina"]) if (p.get("pagina") or "").isdigit() else 1), pagine)
+    elenco = list(db.scalars(query.offset((pagina - 1) * PER_PAGINA).limit(PER_PAGINA)))
     per_cliente: dict[int, list[Opportunita]] = {}
     for o in elenco:
         per_cliente.setdefault(o.azienda_id, []).append(o)
@@ -134,8 +140,13 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
             "per_cliente": per_cliente,
             "documentazione": documentazione,
             "note_per": conteggi_note(db, "opportunita", [o.id for o in elenco]),
-            "totale": len(elenco),
+            "totale": totale,
+            "pagina": pagina,
+            "pagine": pagine,
             "filtri": {"stato": stato, "tipo": tipo, "cliente": cliente},
+            "filtri_url": urlencode(
+                {k: v for k, v in (("stato", stato), ("tipo", tipo), ("cliente", cliente)) if v}
+            ),
             "clienti": list(db.scalars(select(Azienda).order_by(Azienda.ragione_sociale))),
             "etichette": ETICHETTE_STATO,
             "senza_profilo": senza_profilo,
@@ -143,6 +154,17 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
             "messaggio": p.get("msg"),
             "esito": p.get("esito"),
         },
+    )
+
+
+@router.get("/opportunita/{oid}/documentazione")
+def documentazione_opportunita(oid: int, request: Request, db: Db, _: Autenticato) -> Response:
+    """Frammento HTMX: la documentazione di un'opportunità, caricata all'apertura."""
+    o = _opportunita(db, oid)
+    return render(
+        request,
+        "opportunita/_documentazione.html",
+        {"docs": _documentazione(db, [o]).get(o.id, [])},
     )
 
 

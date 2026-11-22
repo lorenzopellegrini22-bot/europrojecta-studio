@@ -40,7 +40,9 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
   funzionare.
 - **App sul telefono**: apri l'app dal browser del telefono e scegli «Aggiungi a schermata
   Home» (Safari: pulsante Condividi; Chrome: menu ⋮ → «Installa app»). Si apre a schermo intero
-  sulla pagina «Oggi».
+  sulla pagina «Oggi», con la barra in basso per Oggi, Clienti, Opportunità, Scadenze e Cerca;
+  il resto è nel «Menu» in alto. Gli elenchi si leggono come schede e i filtri si aprono con
+  «Filtri». Senza connessione compare «Sei offline»: sul telefono non resta nessun dato.
 - **Note**: in fondo a ogni pratica e nel dettaglio di ogni opportunità (link «Note» nella
   lista). Scrivi @ e il nome del collega (es. @giulia) per avvisarlo: lo vede in «Oggi» e gli
   arriva un'email. Si possono citare solo i colleghi che vedono quella sezione (pratiche o

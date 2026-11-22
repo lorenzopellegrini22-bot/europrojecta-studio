@@ -25,6 +25,7 @@ ROUTE_PUBBLICHE = {
     "/invito/{token}",
     "/calendario/{nome}",
     "/manifest.webmanifest",
+    "/sw.js",
 }
 
 

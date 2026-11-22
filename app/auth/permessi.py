@@ -53,7 +53,7 @@ SEZIONI_PER_MODELLO: tuple[tuple[re.Pattern[str], str], ...] = (
 SEMPRE_AMMESSI = (
     "/account", "/logout", "/2fa", "/sessione", "/health", "/login", "/disiscrizione",
     "/invito", "/primo-accesso", "/cron", "/oggi", "/cerca", "/seguiti", "/calendario",
-    "/manifest.webmanifest", "/static",
+    "/manifest.webmanifest", "/sw.js", "/static",
 )  # fmt: skip
 PREDEFINITE_COLLABORATORE = tuple(k for k in SEZIONI if k not in ("importazione", "esportazione"))
 SOLO_TITOLARE = ("/impostazioni",)

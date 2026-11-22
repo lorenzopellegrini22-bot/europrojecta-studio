@@ -11,6 +11,7 @@ from sqlalchemy import create_engine, pool
 
 import app.models  # noqa: F401  (registra i modelli su Base.metadata)
 from app.db import Base
+from app.utils.ricerca import oggetto_gestito_da_alembic
 
 config = context.config
 if config.config_file_name is not None:
@@ -37,7 +38,11 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     engine = create_engine(_url(), poolclass=pool.NullPool)
     with engine.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            include_object=oggetto_gestito_da_alembic,
+        )
         with context.begin_transaction():
             context.run_migrations()
     engine.dispose()

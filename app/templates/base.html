@@ -121,6 +121,12 @@
       {% block contenuto %}{% endblock %}
     </main>
   </div>
+  {#- Telefono: le sezioni di tutti i giorni a portata di pollice (CSS: solo sotto i 900px) -#}
+  <nav class="barra-basso" aria-label="Sezioni principali">
+    {%- for href, etichetta in [("/oggi", "Oggi"), ("/clienti", "Clienti"), ("/opportunita", "Opportunità"), ("/scadenzario", "Scadenze"), ("/cerca", "Cerca")] if href in ("/oggi", "/cerca") or puo_vedere(utente, href) %}
+    <a href="{{ href }}"{% if percorso == href or percorso.startswith(href ~ "/") %} aria-current="page"{% endif %}>{{ etichetta }}</a>
+    {%- endfor %}
+  </nav>
   {% else %}
   <main class="pubblica container">
     {{ self.contenuto() }}

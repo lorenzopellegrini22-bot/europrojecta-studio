@@ -309,6 +309,19 @@ def contesto_seguito(
 # --- App sul telefono (manifest per «Aggiungi a schermata Home») ------------------------------
 
 
+@router.get("/sw.js")
+def service_worker() -> Response:
+    """Service worker della web app: dalla radice vale per tutte le pagine (vedi static/sw.js)."""
+    from pathlib import Path
+
+    testo = (Path(__file__).parent.parent / "static" / "sw.js").read_text(encoding="utf-8")
+    return Response(
+        testo,
+        media_type="text/javascript",
+        headers={"Cache-Control": "no-cache"},
+    )
+
+
 @router.get("/manifest.webmanifest")
 def manifest() -> Response:
     import json
@@ -316,6 +329,7 @@ def manifest() -> Response:
     from app import NOME_APP
 
     dati = {
+        "id": "/oggi",
         "name": NOME_APP,
         "short_name": "Europrojecta",
         "description": "Bandi, gare, clienti e pratiche dello studio",
