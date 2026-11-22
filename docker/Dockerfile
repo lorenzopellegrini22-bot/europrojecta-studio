@@ -7,16 +7,18 @@ ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PROJECT_ENVIRONMENT=/opt/venv \
     PATH="/opt/venv/bin:$PATH" \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    TZ=Europe/Rome
 
 WORKDIR /srv
 
 # Librerie per i PDF con WeasyPrint (documentazione ufficiale, Debian >= 11), un font e
-# Tesseract con l'italiano per l'OCR dei PDF scansionati
+# Tesseract con l'italiano per l'OCR dei PDF scansionati. tzdata e TZ: «oggi» in ora italiana
+# (in UTC, tra mezzanotte e l'una le gare scadute ieri risultavano «scadono oggi»)
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core \
-        tesseract-ocr tesseract-ocr-ita \
+        tesseract-ocr tesseract-ocr-ita tzdata \
     && rm -rf /var/lib/apt/lists/*
 
 # Prima le dipendenze (strato in cache), poi il codice.

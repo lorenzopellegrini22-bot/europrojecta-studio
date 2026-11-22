@@ -212,9 +212,10 @@ def promemoria_scadenze(oggi=None) -> str:  # type: ignore[no-untyped-def]
 
 
 def raccolta_appalti() -> str:
-    """Bandi di gara aperti da TED e iniziative aperte Consip (MEPA, SDAPA, convenzioni).
-    Una fonte che fallisce non ferma l'altra; il job risulta in errore se ne fallisce una."""
-    from app.appalti import consip, ted
+    """Bandi di gara aperti da TED, dalla pubblicità legale ANAC (anche sotto soglia, dopo TED
+    per completarne CIG e categorie SOA) e iniziative aperte Consip (MEPA, SDAPA, convenzioni).
+    Una fonte che fallisce non ferma le altre; il job risulta in errore se ne fallisce una."""
+    from app.appalti import consip, pvl, ted
 
     righe, errori = [], []
     with get_sessionmaker()() as db:
@@ -222,6 +223,7 @@ def raccolta_appalti() -> str:
 
         for nome, funzione in (
             ("TED", ted.raccogli),
+            ("ANAC pubblicità legale", pvl.raccogli),
             ("Consip", consip.raccogli),
             ("Documentazione delle gare", documenti.aggiorna),
         ):

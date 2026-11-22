@@ -541,3 +541,15 @@ casuali della Regione Marche) e ogni testo diverso rimandava il bando all'AI. Or
 sospensioni, date, importi o requisiti, o più del 10% del testo; le pagine dei bandi che
 hanno già PDF letti si rileggono ogni 30 giorni. Misura su 22 pagine vere rilette (22/11/2026):
 12 identiche, 10 diverse, nessuna con un cambiamento sostanziale.
+
+## Appalti: pubblicità legale ANAC automatica e collaudo (22/11/2026)
+Controllo della parte appalti: sul sito c'erano 2.072 gare (TED e Consip) e nessuna ANAC, quindi
+nessun affidamento sotto soglia e il filtro SOA sempre a 0. Dal 2024 tutti i bandi passano dalla
+Piattaforma di Pubblicità a Valore Legale di ANAC, pubblica e leggibile da un programma: nuova
+fonte notturna (`app/appalti/pvl.py`, docs/fonti/anac-pubblicita-legale.md). Prova su 12 giorni:
+349 gare sotto soglia e 432 gare TED completate con CIG e categorie SOA.
+Corretti anche: 144 gare TED su 1.618 senza luogo («ovunque») trattate come nazionali anche se
+di province, comuni e ASL (ora il luogo si ricava dal comune, salvo enti nazionali ed europei);
+85 titoli TED con entità HTML; interessi CPV solo per divisione, troppo ampi (ora anche codici
+precisi, che sostituiscono la divisione); ricerca senza sinonimi del settore («scuola» non
+trovava «scolastico»); «oggi» calcolato in UTC nei container (TZ=Europe/Rome nell'immagine).

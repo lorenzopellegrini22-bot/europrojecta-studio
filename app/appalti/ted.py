@@ -13,6 +13,7 @@ appaltanti scelgono di pubblicare). Gli appalti sotto soglia sono nella Banca Da
 dei Contratti Pubblici di ANAC, il cui portale non consente l'accesso automatico dal server.
 """
 
+import html
 import logging
 import time
 from datetime import UTC, date, datetime
@@ -87,7 +88,8 @@ def _primo(valore: Any) -> str | None:
     v = _lingua(valore)
     if isinstance(v, list):
         v = v[0] if v else None
-    return str(v).strip() if v else None
+    # alcuni enti scrivono entità HTML («l&#8217;affidamento»: 85 gare su 1.618 il 22/11/2026)
+    return html.unescape(str(v)).strip() if v else None
 
 
 def _lista(valore: Any) -> list[str]:
@@ -255,10 +257,22 @@ def raccogli(db: Session, client: httpx.Client | None = None, pausa: float = 1.0
     esistenti = {a.id_esterno: a for a in db.scalars(select(Appalto))}
     nuovi = aggiornati = 0
     ora = datetime.now(UTC)
+    from app.appalti.scheda import luogo_dal_comune
+    from app.riferimenti import territorio as rif_territorio
+
+    territorio = rif_territorio.in_memoria(db)
     for n in grezzi:
         dati = interpreta(n)
         if dati is None:
             continue
+        if not dati["regioni"]:
+            province, regioni = luogo_dal_comune(
+                territorio,
+                dati["stazione_appaltante"],
+                *_lista(n.get("place-of-performance-city-lot")),
+                _primo(n.get("organisation-city-buyer")) or _primo(n.get("buyer-city")),
+            )
+            dati["province"], dati["regioni"] = province, regioni
         a = esistenti.get(dati["id_esterno"])
         if a is None:
             a = Appalto(fonte="ted", visto_il=ora, **dati)

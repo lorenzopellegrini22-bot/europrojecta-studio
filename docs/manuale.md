@@ -69,14 +69,18 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
 - **Sedi operative** (nel modulo del cliente, un comune per riga, es. «Prato (PO)»): per i bandi
   di regioni, province, comuni e Camere di commercio conta ogni sede, legale o operativa. Senza
   la sede operativa un'azienda di Roma con lo stabilimento a Prato non riceve i bandi toscani.
-  Le «Regioni in cui partecipa agli appalti» valgono solo per le gare. Con sedi in più regioni
+  Le «Regioni in cui partecipa agli appalti» valgono solo per le gare. Le categorie CPV di
+  interesse sono ampie (la 79 comprende vigilanza, pubblicità ed eventi): in «Codici CPV più
+  precisi» scrivi quelli dell'attività del cliente (es. 79710000 vigilanza, 909 pulizie) e
+  l'app propone solo quelle gare. Con sedi in più regioni
   il numero massimo di opportunità per cliente sale (fino al doppio).
 - Per cercare a mano in altri territori: filtro per regione in **Bandi**, per regione e
   provincia in **Appalti**.
 
 ## 4. Bandi e appalti
 - Ogni notte l'app raccoglie i bandi nazionali (Incentivi Italia e Invitalia) e regionali e le
-  gare (TED, Consip); l'AI
+  gare: TED (sopra soglia), la **pubblicità legale ANAC** (tutte le gare, anche gli affidamenti
+  sotto soglia, con le categorie SOA) e Consip; l'AI
   legge i bandi nuovi o cambiati e ne ricava i requisiti, segnando «da verificare» quello
   che il testo non dice.
 - **Documentazione** (in ogni bando, gara e opportunità): i PDF del bando, presi dai dati della

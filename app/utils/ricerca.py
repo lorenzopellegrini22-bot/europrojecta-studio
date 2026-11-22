@@ -40,6 +40,14 @@ SINONIMI = (
     ("efficientamento energetico", "efficienza energetica", "risparmio energetico"),
     ("internazionalizz", "export"),
     ("assunzion", "occupazion", "nuova occupazione"),
+    # appalti (prova del 22/11/2026: «ristrutturazione scuola» trovava 1 gara, «asfalto» 0)
+    ("scuol", "scolast", "istituto comprensivo"),
+    ("asfalt", "bitum", "pavimentazione stradale", "pavimentazioni stradali", "conglomerat"),
+    ("mensa", "mense", "refezion", "ristorazione scolastica"),
+    ("ristrutturazion", "riqualificazion", "manutenzione straordinaria"),
+    ("verde pubblico", "manutenzione del verde", "aree verdi", "verde urbano"),
+    ("pulizi", "sanificazion"),
+    ("computer", "personal computer", "notebook", "postazioni di lavoro"),
 )
 MAX_PAROLE = 8
 

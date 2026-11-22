@@ -502,6 +502,10 @@ def test_opportunita_completo(client, crea_utente, accedi, db, monkeypatch):
         {"codice": "OG6", "classifica": "III"},
         {"codice": "OS22", "classifica": "II"},
     ]
+    # codici CPV più precisi delle divisioni: salvati e mostrati di nuovo nel modulo
+    precisa = _cliente(client, db, cpv_interesse="79", cpv_precisi="79710000 909")
+    assert sorted(precisa.cpv_interesse) == ["79", "7971", "909"]
+    assert 'value="7971 909"' in client.get(f"/clienti/{precisa.id}/modifica").text
     token = csrf(client, "/clienti/nuovo")
     r = client.post(
         "/clienti/nuovo",

@@ -45,3 +45,12 @@ def test_apostrofi_e_sigle():
     assert termini("R&S") == termini("r & s") == termini("ricerca e sviluppo")
     assert termini("Smart&Start") == [["smart"], ["start"]]
     assert normalizza("d’imposta") == "d'imposta"
+
+
+def test_sinonimi_degli_appalti():
+    from app.utils.ricerca import termini
+
+    gruppi = termini("ristrutturazione scuola")
+    assert any("scolast" in g for g in gruppi) and any("riqualificazion" in g for g in gruppi)
+    assert any("bitum" in g for g in termini("asfalto"))
+    assert any("refezion" in g for g in termini("mensa"))

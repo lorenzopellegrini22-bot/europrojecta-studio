@@ -143,7 +143,9 @@ def _valida(db: Session, valori: dict[str, Any], azienda_id: int | None) -> dict
     valori["sedi_operative"] = sedi_op
     if any(r not in REGIONI for r in valori.get("regioni_interesse") or []):
         errori["regioni_interesse"] = "Regione non valida."
-    if any(c not in DIVISIONI_CPV for c in valori.get("cpv_interesse") or []):
+    if any(
+        not c.isdigit() or c[:2] not in DIVISIONI_CPV for c in valori.get("cpv_interesse") or []
+    ):
         errori["cpv_interesse"] = "Categoria non valida."
     if valori.get("data_costituzione") == "non valida" or (
         isinstance(valori.get("data_costituzione"), date)
@@ -188,6 +190,13 @@ def _valori(form: dict[str, Any]) -> dict[str, Any]:
     v["regioni_interesse"] = [regioni] if isinstance(regioni, str) else regioni
     cpv = form.get("cpv_interesse") or []
     v["cpv_interesse"] = [cpv] if isinstance(cpv, str) else cpv
+    # codici più precisi delle divisioni (es. 79710000 vigilanza dentro la 79)
+    from app.utils.cpv import codici_precisi
+
+    v["cpv_precisi"] = testo(form, "cpv_precisi") or ""
+    for codice in codici_precisi(v["cpv_precisi"]):
+        if codice not in v["cpv_interesse"]:
+            v["cpv_interesse"].append(codice)
     return v
 
 
@@ -306,6 +315,7 @@ def _valori_da_azienda(a: Azienda) -> dict[str, Any]:
     )
     v["regioni_interesse"] = a.regioni_interesse or []
     v["cpv_interesse"] = a.cpv_interesse or []
+    v["cpv_precisi"] = " ".join(c for c in a.cpv_interesse or [] if len(c) > 2)
     v["sedi_operative_testo"] = _testo_sedi_operative(a)
     if a.ateco_primario:
         v["ateco_codice"] = a.ateco_primario.codice

@@ -179,3 +179,27 @@ def test_riassunto_usa_modello_delle_impostazioni(monkeypatch):
     assert testo.startswith("1. In breve") and a.riassunto_modello == "modello-scelto"
     assert chiamate[0]["model"] == "modello-scelto"
     assert "Depuratore" in chiamate[0]["input"] and "non inventare" in chiamate[0]["instructions"]
+
+
+def test_ted_luogo_dal_comune_ed_entita_html():
+    """TED segna «ovunque» anche gare di province e comuni (144 su 1.618 il 22/11/2026)."""
+    from app.appalti.scheda import luogo_dal_comune
+    from app.appalti.ted import _primo
+    from app.riferimenti.territorio import Territorio, VoceComune
+
+    t = Territorio()
+    t.per_nome["siena"].append(VoceComune("052032", "Siena", "SI", "Siena", "Toscana"))
+    t.per_nome["ispra"].append(VoceComune("012084", "Ispra", "VA", "Varese", "Lombardia"))
+    assert luogo_dal_comune(t, "Amministrazione provinciale di Siena", "Siena") == (
+        ["Siena"],
+        ["Toscana"],
+    )
+    assert luogo_dal_comune(t, "Comune di Ispra", None, "Ispra (VA)") == (["Varese"], ["Lombardia"])
+    assert luogo_dal_comune(t, "GOM Reggio", "Reggio Calabria") == (
+        ["Reggio di Calabria"],
+        ["Calabria"],
+    )
+    # enti nazionali ed europei: la gara vale per tutta Italia
+    assert luogo_dal_comune(t, "Consip S.p.A.", "Roma") == (None, None)
+    assert luogo_dal_comune(t, "European Commission, DG JRC", "Ispra") == (None, None)
+    assert _primo({"ita": ["Fornitura per l&#8217;ospedale"]}) == "Fornitura per l’ospedale"

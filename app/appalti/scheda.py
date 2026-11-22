@@ -89,7 +89,7 @@ BASI_GIURIDICHE = {
 
 FONTI = {
     "ted": "TED – Tenders Electronic Daily (UE)",
-    "anac": "ANAC – Banca Dati Nazionale dei Contratti Pubblici (file importato)",
+    "anac": "ANAC – Banca Dati Nazionale dei Contratti Pubblici (pubblicità legale)",
     "consip": "Consip – open data «Bandi e gare» (MEPA, SDAPA, convenzioni)",
 }
 
@@ -262,3 +262,34 @@ def righe_scheda(a: Any) -> list[tuple[str, str]]:
 
 def testo_scheda(a: Any) -> str:
     return "\n".join(f"{etichetta}\t{valore}" for etichetta, valore in righe_scheda(a))
+
+
+# Enti nazionali (o esteri): una loro gara senza luogo di esecuzione vale davvero per tutta Italia
+ENTI_NAZIONALI = re.compile(
+    r"\b(consip|ministero|ministry|anas|rete ferroviaria|ferrovie dello stato|invitalia|inps"
+    r"|inail|agenzia delle (?:entrate|dogane)|agenzia del demanio|direzione centrale"
+    r"|presidenza del consiglio|poste italiane|sogei|difesa|esercito|marina militare"
+    r"|aeronautica|carabinieri|guardia di finanza|polizia di stato|vigili del fuoco|enav|terna"
+    r"|sport e salute|european|commission|authority|agency)\b",
+    re.IGNORECASE,
+)
+
+
+def luogo_dal_comune(territorio: Any, ente: str | None, *comuni: str | None) -> tuple:
+    """(province, regioni) dal comune di esecuzione o dell'ente, per le gare senza luogo.
+    TED segna «ovunque» (anyw, 00) anche gare di province, comuni e ASL: il 22/11/2026 erano
+    144 su 1.618 e arrivavano ai clienti di tutta Italia. Gli enti nazionali restano senza."""
+    if territorio is None or ENTI_NAZIONALI.search(ente or ""):
+        return None, None
+    from app.appalti.pvl import provincia_e_regione
+
+    for nome in comuni:
+        nome = re.sub(r"\s*\(.*?\)", "", nome or "").strip()  # «Ispra (VA)» → «Ispra»
+        voce = territorio.comune(nome) if nome else None
+        if voce is not None:
+            provincia, regione = provincia_e_regione(voce.provincia)
+            return ([provincia] if provincia else None), [regione or voce.regione]
+        provincia, regione = provincia_e_regione(nome)  # «Reggio Calabria» (capoluogo)
+        if provincia:
+            return [provincia], [regione]
+    return None, None

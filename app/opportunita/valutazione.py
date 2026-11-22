@@ -27,7 +27,7 @@ from app.integrazioni import servizio as integrazioni
 from app.models import Azienda
 from app.models.ai import Embedding
 from app.models.opportunita import Opportunita
-from app.utils.cpv import DIVISIONI_CPV
+from app.utils.cpv import etichetta
 
 log = logging.getLogger(__name__)
 
@@ -105,7 +105,7 @@ def profilo_anonimo(a: Azienda, progetti: list[Any] | None = None) -> str:
     if a.cpv_interesse:
         righe.append(
             "- servizi e forniture di interesse: "
-            + ", ".join(DIVISIONI_CPV.get(c, c) for c in a.cpv_interesse)
+            + ", ".join(etichetta(c) for c in a.cpv_interesse)
         )
     for i, pr in enumerate([p for p in progetti or [] if p.attivo][:3], start=1):
         parti = []

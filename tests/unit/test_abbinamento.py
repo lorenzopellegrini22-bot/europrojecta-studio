@@ -378,3 +378,30 @@ def test_collaudo_su_50_aziende():
     gruppo = [("bando", 1, Esito(90)), ("bando", 2, Esito(80)), ("bando", 3, Esito(70))]
     titoli = {1: "Servizi di vicinato - Bolzano", 2: "Servizi di vicinato – Bolzano", 3: "Altro"}
     assert [g[1] for g in senza_titoli_ripetuti(gruppo, titoli)] == [1, 3]
+
+
+def test_codici_cpv_piu_precisi_delle_divisioni():
+    """Collaudo del 22/11/2026: con la sola divisione 79 un istituto di vigilanza riceveva
+    gare di grafica ed eventi; con la 90 un'impresa di pulizie riceveva gare sui rifiuti."""
+    from app.utils.cpv import codici_precisi, corrisponde, etichetta, interessi_effettivi
+
+    assert codici_precisi("79710000, 909;  90000000 12345 abc") == ["7971", "909", "90"]
+    assert codici_precisi("30000000 80100000") == ["30", "801"]  # divisioni che finiscono per 0
+    assert interessi_effettivi(["79", "7971", "90"]) == {"7971", "90"}
+    assert corrisponde("79713000", {"79", "7971"}) == "7971"
+    assert corrisponde("79342000", {"7971"}) is None
+    assert etichetta("7971").endswith("(CPV 7971…)")
+
+    vigilanza = _cliente(soa_possedute=None, cpv_interesse=["79", "7971"],
+                         sede_legale=N(regione="Lazio", comune_testo="Roma"))  # fmt: skip
+    reg = regioni_cliente(vigilanza)
+    guardia = _appalto(categorie_soa=None, natura=["servizi"], cpv=["79713000"],
+                       divisioni_cpv=["79"])  # fmt: skip
+    grafica = _appalto(categorie_soa=None, natura=["servizi"], cpv=["79822500"],
+                       divisioni_cpv=["79"])  # fmt: skip
+    es = valuta_appalto(vigilanza, guardia, reg)
+    assert es and any("CPV 7971" in m for m in es.soddisfatti)
+    assert valuta_appalto(vigilanza, grafica, reg) is None
+    # solo la divisione: come prima
+    generico = _cliente(soa_possedute=None, cpv_interesse=["79"])
+    assert valuta_appalto(generico, grafica, regioni_cliente(generico)) is not None

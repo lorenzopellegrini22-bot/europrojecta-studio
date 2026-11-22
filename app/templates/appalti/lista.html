@@ -6,7 +6,7 @@
     <h1>Appalti pubblici</h1>
     <p>{{ totale }} bandi di gara aperti trovati.
       {% if ultima %}Aggiornati il {{ ultima.fine | data_ora }}.{% else %}La raccolta non è ancora stata eseguita.{% endif %}
-      Ogni notte da TED (UE) e Consip; gli appalti sotto soglia si importano da ANAC.</p>
+      Ogni notte da TED (UE), dalla pubblicità legale ANAC (anche sotto soglia, con le categorie SOA) e da Consip.</p>
   </hgroup>
   {% if utente.is_titolare %}
   <div class="gruppo-pulsanti">
@@ -106,7 +106,7 @@
 {% endif %}
 {% endif %}
 
-<p><small>{{ attribuzione }} Dati Consip: licenza CC BY 4.0. TED contiene gli appalti sopra le soglie europee; quelli sotto soglia arrivano dai file ANAC importati.</small></p>
+<p><small>{{ attribuzione }} Dati Consip: licenza CC BY 4.0. TED contiene gli appalti sopra le soglie europee; quelli sotto soglia arrivano ogni notte dalla Piattaforma di Pubblicità a Valore Legale di ANAC (fa fede l'avviso pubblicato). L'import dei file ANAC resta per aggiungere le categorie prevalente e scorporabili.</small></p>
 
 <details>
   <summary>Altre fonti di appalti pubblici</summary>

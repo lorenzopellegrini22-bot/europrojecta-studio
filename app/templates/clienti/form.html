@@ -95,6 +95,10 @@
       <div class="griglia-caselle">
         {% for k, e in divisioni_cpv.items() %}<label class="casella"><input type="checkbox" name="cpv_interesse" value="{{ k }}" {% if k in (v.get("cpv_interesse") or []) %}checked{% endif %}> {{ k }} · {{ e }}</label>{% endfor %}
       </div>
+      <label>Codici CPV più precisi (facoltativo)
+        <input name="cpv_precisi" value="{{ v.get('cpv_precisi') or '' }}" placeholder="es. 79710000 909" aria-describedby="aiuto-cpv-precisi">
+        <small id="aiuto-cpv-precisi">Le divisioni sono ampie: la 79 comprende vigilanza, pubblicità e organizzazione di eventi, la 90 pulizie e rifiuti. Scrivi qui i codici dell'attività del cliente (es. 79710000 vigilanza, 909 pulizie), separati da spazi: valgono anche tutti i loro sottocodici e sostituiscono la divisione corrispondente.</small>
+      </label>
     </details>
   </article>
 

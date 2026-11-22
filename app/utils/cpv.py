@@ -1,6 +1,8 @@
 """Divisioni del vocabolario comune per gli appalti (CPV, Regolamento (CE) n. 213/2008):
 le prime due cifre del codice. Servono come "categorie" per filtrare gli appalti."""
 
+import re
+
 DIVISIONI_CPV: dict[str, str] = {
     "03": "Agricoltura, allevamento, pesca, silvicoltura",
     "09": "Prodotti petroliferi, combustibili, elettricità e altre fonti di energia",
@@ -48,3 +50,35 @@ DIVISIONI_CPV: dict[str, str] = {
     "92": "Servizi ricreativi, culturali e sportivi",
     "98": "Altri servizi di comunità, sociali e personali",
 }
+
+
+def codici_precisi(testo: str | None) -> list[str]:
+    """«79710000, 909» → ["7971", "909"]: il codice CPV senza gli zeri finali è il prefisso
+    di tutti i suoi sottocodici (le prime due cifre, la divisione, restano: «90000000» → «90»).
+    Si tengono i codici di una divisione esistente."""
+    out = []
+    for pezzo in re.split(r"[\s,;]+", testo or ""):
+        cifre = re.sub(r"\D", "", pezzo.split("-")[0])[:8]
+        while len(cifre) > 2 and cifre.endswith("0"):
+            cifre = cifre[:-1]
+        if len(cifre) >= 2 and cifre[:2] in DIVISIONI_CPV and cifre not in out:
+            out.append(cifre)
+    return out
+
+
+def interessi_effettivi(codici: list[str] | None) -> set[str]:
+    """Una divisione (79) scelta insieme a un codice più preciso (7971) non conta: vince il
+    codice preciso, altrimenti la divisione riporterebbe tutte le gare che si volevano evitare."""
+    tutti = set(codici or [])
+    return {c for c in tutti if not any(x != c and x.startswith(c) for x in tutti)}
+
+
+def corrisponde(codice: str, interessi: set[str]) -> str | None:
+    """L'interesse più preciso che contiene il codice CPV della gara, se c'è."""
+    trovati = [i for i in interessi if codice.startswith(i)]
+    return max(trovati, key=len) if trovati else None
+
+
+def etichetta(codice: str) -> str:
+    nome = DIVISIONI_CPV.get(codice[:2], codice[:2])
+    return nome if len(codice) == 2 else f"{nome} (CPV {codice}…)"

@@ -824,21 +824,24 @@ def valuta_appalto(a: Azienda, ap: Appalto, regioni: set[str]) -> Esito | None:
             e.punteggio += 10
     elif possedute and ap.natura == ["lavori"] and not ap.categorie_soa:
         e.da_verificare.append("Lavori: categorie SOA non indicate nella fonte")
-    # CPV: conta soprattutto la categoria principale (il primo codice dell'avviso)
-    interesse = set(a.cpv_interesse or [])
-    principale = (ap.cpv or [""])[0][:2]
-    secondarie = interesse & set(ap.divisioni_cpv or []) - {principale}
-    from app.utils.cpv import DIVISIONI_CPV
+    # CPV: conta soprattutto la categoria principale (il primo codice dell'avviso). Gli
+    # interessi possono essere divisioni (79) o codici più precisi (7971 = vigilanza): il
+    # 22/11/2026 un istituto di vigilanza con la sola divisione 79 riceveva gare di grafica
+    from app.utils.cpv import corrisponde, etichetta, interessi_effettivi
 
-    if principale in interesse:
+    interesse = interessi_effettivi(a.cpv_interesse)
+    codici = list(ap.cpv or []) or list(ap.divisioni_cpv or [])
+    principale = corrisponde(codici[0], interesse) if codici else None
+    secondarie = {i for c in codici[1:] if (i := corrisponde(c, interesse))} - {principale}
+    if principale:
         pertinente = True
-        e.soddisfatti.append(f"Categoria principale di interesse: {DIVISIONI_CPV[principale]}")
-        e.punteggio += 25
+        e.soddisfatti.append(f"Categoria principale di interesse: {etichetta(principale)}")
+        e.punteggio += 25 + (5 if len(principale) > 2 else 0)
     elif secondarie and not pertinente:
         pertinente = True
         e.da_verificare.append(
             "Categoria di interesse solo secondaria: "
-            + ", ".join(DIVISIONI_CPV.get(c, c) for c in sorted(secondarie))
+            + ", ".join(etichetta(c) for c in sorted(secondarie))
         )
         e.punteggio += 5
     if not pertinente:
