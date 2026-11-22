@@ -52,7 +52,8 @@ SEZIONI_PER_MODELLO: tuple[tuple[re.Pattern[str], str], ...] = (
 # non mappato è del solo titolare (negato per difetto: una pagina nuova non resta aperta)
 SEMPRE_AMMESSI = (
     "/account", "/logout", "/2fa", "/sessione", "/health", "/login", "/disiscrizione",
-    "/invito", "/primo-accesso", "/cron", "/oggi", "/cerca", "/seguiti", "/calendario",
+    "/invito", "/password-dimenticata", "/primo-accesso", "/cron", "/oggi", "/cerca",
+    "/seguiti", "/calendario",
     "/manifest.webmanifest", "/sw.js", "/static",
 )  # fmt: skip
 PREDEFINITE_COLLABORATORE = tuple(k for k in SEZIONI if k not in ("importazione", "esportazione"))

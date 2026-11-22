@@ -3,6 +3,7 @@
     uv run python -m app.cli crea-utente --email nome@studio.it --nome "Nome Cognome"
     uv run python -m app.cli crea-utente --email collab@studio.it --nome "..." --ruolo collaboratore
     uv run python -m app.cli reimposta-2fa --email nome@studio.it
+    uv run python -m app.cli reimposta-password --email nome@studio.it
     uv run python -m app.cli raccogli-bandi [--forza] [--fonte incentivi_italia]
     uv run python -m app.cli pulizia
 
@@ -70,6 +71,25 @@ def reimposta_2fa(email: str) -> int:
     return 0
 
 
+def reimposta_password(email: str) -> int:
+    """Senza email configurata il link di «Password dimenticata» non può partire: dal server
+    il titolare sceglie una nuova password (chiesta a schermo, mai come argomento)."""
+    email = email.strip().lower()
+    with get_sessionmaker()() as db:
+        utente = db.scalar(select(Utente).where(Utente.email == email))
+        if utente is None:
+            print(f"Nessun utente con email {email}.")
+            return 1
+        utente.password_hash = hash_password(_chiedi_password())
+        utente.tentativi_falliti = 0
+        utente.bloccato_fino_al = None
+        utente.recupero_hash = utente.recupero_scade_il = None
+        elimina_sessioni_utente(db, utente.id)
+        db.commit()
+    print(f"Password cambiata per {email}: tutte le sue sessioni sono state chiuse.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     sub = parser.add_subparsers(dest="comando", required=True)
@@ -79,6 +99,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--nome", required=True)
     p.add_argument("--ruolo", choices=["titolare", "collaboratore", "lettura"], default="titolare")
 
+    p = sub.add_parser("reimposta-password", help="nuova password (viene chiesta)")
+    p.add_argument("--email", required=True)
     p = sub.add_parser("reimposta-2fa", help="azzera la 2FA di un utente")
     p.add_argument("--email", required=True)
 
@@ -182,6 +204,8 @@ def main(argv: list[str] | None = None) -> int:
         return crea_utente(args.email, args.nome, args.ruolo)
     if args.comando == "reimposta-2fa":
         return reimposta_2fa(args.email)
+    if args.comando == "reimposta-password":
+        return reimposta_password(args.email)
     if args.comando == "modelli-esempio":
         from app.db import get_sessionmaker
         from app.pratiche.modelli_esempio import crea_modelli_esempio

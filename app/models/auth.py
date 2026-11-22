@@ -21,7 +21,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base, ConTimestamp
 
 RUOLI = ("titolare", "collaboratore", "lettura")
-ESITI_ACCESSO = ("ok", "password_errata", "totp_errato", "bloccato", "utente_inesistente")
+ESITI_ACCESSO = (
+    "ok", "password_errata", "totp_errato", "bloccato", "utente_inesistente",
+    "recupero_password",
+)  # fmt: skip
 AZIONI_AUDIT = ("crea", "modifica", "elimina", "esporta", "invia")
 
 
@@ -50,6 +53,9 @@ class Utente(ConTimestamp, Base):
     # Invito via email: impronta del token del link (mai il token in chiaro) e scadenza
     invito_hash: Mapped[str | None] = mapped_column(String(64))
     invito_scade_il: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # «Password dimenticata»: impronta del token del link inviato per email e scadenza
+    recupero_hash: Mapped[str | None] = mapped_column(String(64))
+    recupero_scade_il: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # Impronta del token del link al calendario personale (.ics); None = link non creato
     calendario_hash: Mapped[str | None] = mapped_column(String(64))
     attivo: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")

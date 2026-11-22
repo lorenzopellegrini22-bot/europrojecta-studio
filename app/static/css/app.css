@@ -799,6 +799,7 @@ nav[aria-label="breadcrumb"] a:hover { color: var(--testo); text-decoration: und
 .accesso .marchio { font-size: 1.25rem; margin-bottom: 0; }
 .accesso hgroup p { font-size: 0.875rem; }
 .accesso button[type="submit"], .accesso form > button { width: 100%; min-height: 2.5rem; margin-top: 0.5rem; }
+.accesso .password-dimenticata { text-align: center; margin: 1rem 0 0; font-size: 0.875rem; }
 .pubblica .accesso { box-shadow: var(--ombra-fluttua); border-color: transparent; }
 :root[data-tema="scuro"] .pubblica .accesso { border-color: var(--linea); }
 

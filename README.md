@@ -100,6 +100,7 @@ uv run python -m app.jobs.worker
 | `uv run alembic revision -m "descrizione"` | Nuova migrazione (scritta a mano) |
 | `uv run alembic upgrade head` | Applica le migrazioni |
 | `uv run python -m app.cli crea-utente --email ... --nome ... [--ruolo collaboratore]` | Crea un utente (la password viene chiesta) |
+| `uv run python -m app.cli reimposta-password --email ...` | Nuova password per un utente (viene chiesta), se l'email non è configurata |
 | `uv run python -m app.cli reimposta-2fa --email ...` | Azzera la 2FA di un utente |
 | `uv run python -m app.cli raccogli-bandi [--forza]` | Raccolta dei bandi immediata |
 | `uv run python -m app.cli pulizia` | Elimina le sessioni scadute e i log vecchi |

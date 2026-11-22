@@ -7,6 +7,7 @@
     <p>Accedi con email e password.</p>
   </hgroup>
   {% if errore %}<div class="messaggio errore" role="alert">{{ errore }}</div>{% endif %}
+  {% if request.query_params.get("reimpostata") == "1" %}<div class="messaggio ok" role="status">Password cambiata: ora entra con la nuova password.</div>{% endif %}
   {% if request.query_params.get("invito") == "1" %}<div class="messaggio ok" role="status">Password salvata: ora entra con la tua email e la nuova password.</div>{% endif %}
   <form method="post" action="/login">
     <label>Email
@@ -17,5 +18,6 @@
     </label>
     <button type="submit">Accedi</button>
   </form>
+  <p class="password-dimenticata"><a href="/password-dimenticata">Password dimenticata?</a></p>
 </article>
 {% endblock %}

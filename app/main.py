@@ -36,6 +36,7 @@ from app.auth.dipendenze import (
     utente_corrente,
 )
 from app.auth.invito import router as invito_router
+from app.auth.recupero import router as recupero_router
 from app.auth.router import router as auth_router
 from app.auth.utenti import router as utenti_router
 from app.bandi.manuali import router as bandi_manuali_router
@@ -197,6 +198,7 @@ app.include_router(bandi_router)
 app.include_router(crm_router)
 app.include_router(utenti_router)
 app.include_router(invito_router)
+app.include_router(recupero_router)
 app.include_router(report_router)
 app.include_router(aggiornamenti_router)
 app.include_router(import_router)

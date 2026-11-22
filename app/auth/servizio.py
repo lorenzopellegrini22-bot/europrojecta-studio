@@ -83,7 +83,12 @@ def troppi_tentativi_da_ip(db: Session, ip: str) -> bool:
     falliti = db.scalar(
         select(func.count())
         .select_from(LogAccesso)
-        .where(LogAccesso.ip == ip, LogAccesso.esito != "ok", LogAccesso.creato_il >= da)
+        .where(
+            LogAccesso.ip == ip,
+            # le richieste di «Password dimenticata» hanno un limite proprio (recupero.py)
+            LogAccesso.esito.not_in(("ok", "recupero_password")),
+            LogAccesso.creato_il >= da,
+        )
     )
     return (falliti or 0) >= settings.login_max_tentativi_ip
 

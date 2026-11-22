@@ -6,6 +6,7 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
 - Entri con email e password; al primo accesso configuri il **codice sul telefono** (app di
   autenticazione) e salvi i **10 codici di recupero** in un posto sicuro.
 - In **Il mio account** cambi la password, rigeneri i codici e vedi gli ultimi accessi.
+- **Password dimenticata?** Dal login chiedi un link via email (vale un'ora, una volta sola) e scegli una nuova password; tutte le sessioni aperte si chiudono. Serve l'email collegata in Impostazioni → Integrazioni.
 
 ## 2. Impostazioni (solo titolare)
 - **Integrazioni:** email (SMTP), OpenAI, Registro Imprese, WhatsApp. Ognuna ha la sua guida

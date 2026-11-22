@@ -558,3 +558,6 @@ di province, comuni e ASL (ora il luogo si ricava dal comune, salvo enti naziona
 85 titoli TED con entità HTML; interessi CPV solo per divisione, troppo ampi (ora anche codici
 precisi, che sostituiscono la divisione); ricerca senza sinonimi del settore («scuola» non
 trovava «scolastico»); «oggi» calcolato in UTC nei container (TZ=Europe/Rome nell'immagine).
+
+## 2026-11-23 — «Password dimenticata»
+Dal login si chiede un link via email (SMTP di Impostazioni → Integrazioni) valido un'ora e usabile una volta; nel database solo l'impronta del token. La risposta è identica per email registrate e no. Limiti: un link ogni 2 minuti per persona, 5 richieste ogni 15 minuti per IP (contate a parte, non come accessi falliti). Dopo il cambio si chiudono tutte le sessioni e si azzera il blocco; la 2FA resta. Senza email configurata: `python -m app.cli reimposta-password` dal server.
