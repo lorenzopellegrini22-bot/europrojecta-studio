@@ -102,6 +102,7 @@ def test_interpretazione_degli_avvisi():
         "810170-2026"
     )
     assert pvl.nome_comune("FORNOVO DI TARO") == "Fornovo di Taro"
+    assert pvl.nome_comune("SANTA MARIA A MONTE") == "Santa Maria a Monte"
     assert pvl.provincia_e_regione("Reggio Emilia") == ("Reggio nell’Emilia", "Emilia-Romagna")
     assert pvl.provincia_e_regione("Lazio") == (None, "Lazio")
 

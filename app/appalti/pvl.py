@@ -126,8 +126,8 @@ def codice_soa(codice: str | None) -> str | None:
     return f"{m.group(1)}{int(m.group(2))}" + (f"-{m.group(3)}" if m.group(3) else "")
 
 
-MINUSCOLE = {"di", "del", "della", "dei", "delle", "e", "in", "sul", "sulla", "al", "d", "l",
-             "nell", "dell", "sull", "all", "nel", "sui", "sotto", "sopra"}  # fmt: skip
+MINUSCOLE = {"a", "da", "di", "del", "della", "dei", "delle", "e", "in", "sul", "sulla", "al",
+             "d", "l", "nell", "dell", "sull", "all", "nel", "sui", "sotto", "sopra"}  # fmt: skip
 
 
 def nome_comune(nome: str) -> str:
