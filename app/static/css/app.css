@@ -390,6 +390,17 @@ hgroup > p + p { margin-top: 0.5rem; }
   .laterale[data-aperto] .menu,
   .laterale[data-aperto] .laterale-piede { display: block; }
   .laterale[data-aperto] .laterale-piede { display: flex; }
+  /* Menu aperto: copre tutto lo schermo e scorre da solo; la pagina sotto resta ferma
+     (prima si apriva in cima e sotto si vedeva e scorreva la pagina) */
+  .laterale[data-aperto] {
+    position: fixed; inset: 0; z-index: 60;
+    height: 100vh; height: 100dvh; max-height: none;
+    overflow-y: auto; overscroll-behavior: contain;
+    display: flex; flex-direction: column;
+  }
+  .laterale[data-aperto] .menu { flex: 1 0 auto; }
+  html.menu-aperto, html.menu-aperto body { overflow: hidden; }
+  html.menu-aperto .barra-basso { display: none; }
   .contenuto { padding: 1.5rem 1rem 3rem; }
   /* Sotto i 16px iOS ingrandisce la pagina quando si tocca un campo */
   input, select, textarea { font-size: 1rem !important; }
@@ -1560,3 +1571,28 @@ details.info-punteggio > summary::before { content: none; display: none; }
   /* sul telefono il riquadro si apre in basso a tutta larghezza, sopra la barra */
   .info-punteggio-testo { position: fixed; left: 0.75rem; right: 0.75rem; top: auto; bottom: 5rem; width: auto; max-height: 60vh; overflow: auto; }
 }
+
+/* Elenco clienti: selezione multipla */
+label.seleziona { display: inline-flex; margin: 0 0.25rem 0 0; vertical-align: middle; }
+label.seleziona input { margin: 0; width: 1.125rem; height: 1.125rem; }
+.barra-selezione {
+  position: sticky; top: 0.5rem; z-index: 25;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem;
+  margin: 0 0 0.75rem; padding: 0.625rem 0.875rem;
+  background: var(--superficie); border: 1px solid var(--linea-forte);
+  border-radius: var(--raggio-s); box-shadow: var(--ombra-fluttua);
+}
+.barra-selezione[hidden] { display: none; }
+.barra-selezione button { margin: 0; }
+dialog.conferma-eliminazione {
+  max-width: min(32rem, calc(100vw - 2rem)); padding: 1.25rem 1.25rem 1rem;
+  border: 1px solid var(--linea-forte); border-radius: var(--raggio-s);
+  background: var(--superficie); color: var(--testo); box-shadow: var(--ombra-fluttua);
+}
+dialog.conferma-eliminazione::backdrop { background: rgba(0, 0, 0, 0.45); }
+dialog.conferma-eliminazione h2 { font-size: 1.125rem; margin: 0 0 0.75rem; }
+@media (max-width: 900px) {
+  .barra-selezione { top: auto; bottom: 4.75rem; position: sticky; }
+}
+.seleziona-tutti-telefono { display: none; }
+@media (max-width: 640px) { .seleziona-tutti-telefono { display: flex; margin: 0 0 0.5rem; } }

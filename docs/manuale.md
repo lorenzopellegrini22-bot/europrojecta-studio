@@ -90,6 +90,9 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
   contributo). I progetti d'investimento (es. «efficientamento della scuola elementare»)
   funzionano come per le imprese. Nell'elenco **Clienti** il filtro «Tipo» mostra solo gli
   enti pubblici o solo le imprese.
+- **Eliminare più clienti** (solo titolare): nell'elenco Clienti spunta le caselle (o «Seleziona
+  tutti»), premi «Elimina definitivamente» e scrivi ELIMINA per confermare. L'eliminazione è
+  definitiva: i clienti non passano dal cestino. Quelli con pratiche si saltano.
 
 ## 4. Bandi e appalti
 - Ogni notte l'app raccoglie i bandi nazionali (Incentivi Italia e Invitalia) e regionali e le
@@ -121,6 +124,9 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
   letti dall'AI»): l'AI non lo legge più.
 
 ## 5. Opportunità ed email del mattino
+- La **«i» accanto al punteggio** spiega il calcolo: si parte da 50 e ogni requisito
+  soddisfatto o da verificare aggiunge o toglie punti (es. +20 bando riservato agli enti, +15
+  bando della regione della sede). Sopra 80 il totale si comprime; si segnala da 45 in su.
 - Ogni mattina alle 7 ricevi un'email con i nuovi bandi adatti a ciascun cliente, il
   punteggio e il perché; anche le scadenze, le pratiche ferme, lo stato delle fonti e la
   spesa AI. Se non c'è niente di nuovo arriva comunque un messaggio breve.

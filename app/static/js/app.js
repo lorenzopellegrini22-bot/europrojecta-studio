@@ -3,11 +3,19 @@
   const laterale = document.getElementById("laterale");
   const pulsante = laterale && laterale.querySelector(".apri-menu");
   if (!pulsante) return;
-  pulsante.addEventListener("click", () => {
-    const aperto = laterale.toggleAttribute("data-aperto");
+  const imposta = (aperto) => {
+    laterale.toggleAttribute("data-aperto", aperto);
+    document.documentElement.classList.toggle("menu-aperto", aperto);
     pulsante.setAttribute("aria-expanded", String(aperto));
     pulsante.textContent = aperto ? "Chiudi" : "Menu";
+    if (aperto) laterale.scrollTop = 0;
+  };
+  pulsante.addEventListener("click", () => imposta(!laterale.hasAttribute("data-aperto")));
+  // Esc chiude; tornando indietro con il browser il menu riparte chiuso
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key === "Escape" && laterale.hasAttribute("data-aperto")) imposta(false);
   });
+  window.addEventListener("pageshow", () => imposta(false));
 })();
 
 // Tendine del menu laterale: ricordano quali sono aperte (solo in questo browser).
@@ -201,4 +209,44 @@ if ("serviceWorker" in navigator && window.isSecureContext) {
       });
     });
   });
+})();
+
+// Elenco clienti: selezione multipla ed eliminazione definitiva con conferma scritta
+(function () {
+  const form = document.getElementById("selezione-clienti");
+  if (!form) return;
+  const caselle = () => [...document.querySelectorAll('input[name="ids"][form="selezione-clienti"]')];
+  const tutti = [...document.querySelectorAll("[data-seleziona-tutti]")];
+  const barra = form.querySelector(".barra-selezione");
+  const dialogo = form.querySelector("dialog");
+  const campo = form.querySelector("[data-campo-conferma]");
+  const invia = form.querySelector("[data-conferma-invia]");
+  const aggiorna = () => {
+    const scelte = caselle().filter((c) => c.checked).length;
+    form.querySelectorAll("[data-conteggio]").forEach((el) => { el.textContent = scelte; });
+    barra.hidden = scelte === 0;
+    tutti.forEach((t) => {
+      t.checked = scelte > 0 && scelte === caselle().length;
+      t.indeterminate = scelte > 0 && scelte < caselle().length;
+    });
+  };
+  document.addEventListener("change", (ev) => {
+    if (tutti.includes(ev.target)) caselle().forEach((c) => { c.checked = ev.target.checked; });
+    if (tutti.includes(ev.target) || caselle().includes(ev.target)) aggiorna();
+  });
+  form.querySelector("[data-deseleziona]").addEventListener("click", () => {
+    caselle().forEach((c) => { c.checked = false; });
+    aggiorna();
+  });
+  form.querySelector("[data-apri-conferma]").addEventListener("click", () => {
+    campo.value = "";
+    invia.disabled = true;
+    dialogo.showModal();
+    campo.focus();
+  });
+  form.querySelector("[data-chiudi-conferma]").addEventListener("click", () => dialogo.close());
+  campo.addEventListener("input", () => {
+    invia.disabled = campo.value.trim().toUpperCase() !== "ELIMINA";
+  });
+  aggiorna();
 })();

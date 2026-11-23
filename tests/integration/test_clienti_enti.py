@@ -4,7 +4,7 @@ import uuid
 from datetime import date, timedelta
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.models import Azienda, Bando, BandoRequisiti, Fonte
 from app.models.appalti import Appalto
@@ -84,3 +84,45 @@ def test_comune_come_cliente(client, crea_utente, accedi, db):
     dati = {"csrf_token": token, "ragione_sociale": nome, "tipo_soggetto": "x"}
     r = client.post(f"/clienti/{a.id}/modifica", data=dati)
     assert r.status_code == 400 and "Tipo di cliente non valido" in r.text
+
+
+def test_eliminazione_multipla_definitiva(client, crea_utente, accedi, db):
+    from app.models import ElementoCestino
+    from tests.integration.test_pratiche import _cliente
+
+    accedi(crea_utente())
+    ida, idb, idc = (_cliente(client, db).id for _ in range(3))
+    lista = client.get("/clienti").text
+    assert 'name="ids"' in lista and "L'azione è definitiva" in lista
+    token = csrf(client, "/clienti")
+    # senza la parola di conferma non si elimina niente
+    r = client.post("/clienti/elimina-selezionati",
+                    data={"csrf_token": token, "ids": [ida, idb], "conferma": "si"})  # fmt: skip
+    assert r.status_code == 303 and "annullata" in r.headers["location"]
+    assert db.get(Azienda, ida) is not None
+    # un cliente con pratica si salta
+    from tests.integration.test_pratiche import _bando
+
+    tok = csrf(client, f"/pratiche/nuova?azienda_id={idc}")
+    bando = _bando(db)
+    r = client.post("/pratiche/nuova",
+                    data={"csrf_token": tok, "azienda_id": idc, "bando_id": bando.id})  # fmt: skip
+    assert r.status_code == 303, r.text
+    nel_cestino = db.scalar(select(func.count()).select_from(ElementoCestino))
+    r = client.post("/clienti/elimina-selezionati", data={
+        "csrf_token": token, "ids": [ida, idb, idc], "conferma": "elimina"})  # fmt: skip
+    assert r.status_code == 303
+    db.expire_all()
+    assert db.get(Azienda, ida) is None and db.get(Azienda, idb) is None
+    assert db.get(Azienda, idc) is not None and "pratiche" in r.headers["location"]
+    # definitiva: non resta nel cestino
+    assert db.scalar(select(func.count()).select_from(ElementoCestino)) == nel_cestino
+
+
+def test_eliminazione_multipla_solo_titolare(client, crea_utente, accedi, db):
+    accedi(crea_utente("collaboratore"))
+    assert 'name="ids"' not in client.get("/clienti").text
+    token = csrf(client, "/clienti/nuovo")
+    r = client.post("/clienti/elimina-selezionati",
+                    data={"csrf_token": token, "ids": ["1"], "conferma": "ELIMINA"})  # fmt: skip
+    assert r.status_code == 403

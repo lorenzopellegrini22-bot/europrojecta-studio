@@ -7,7 +7,7 @@ hanno pratiche)."""
 import re
 from datetime import UTC, date, datetime
 from typing import Annotated, Any
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse, Response
@@ -691,6 +691,47 @@ def salva(request: Request, azienda_id: int, db: Db, utente: Autenticato, form: 
         audit.registra(db, utente, "azienda", a.id, "modifica", differenze)
     db.commit()
     return RedirectResponse(f"/clienti/{a.id}", status_code=303)
+
+
+@router.post("/clienti/elimina-selezionati", dependencies=CSRF)
+def elimina_selezionati(db: Db, utente: Titolare, form: Form) -> Response:
+    """Eliminazione definitiva di più clienti dall'elenco (solo titolare). Il modulo chiede di
+    scrivere ELIMINA; i clienti non passano dal cestino. Quelli con pratiche si saltano, come
+    nell'eliminazione del singolo cliente. Le copie per il cestino servono solo a raccogliere
+    i file da togliere dal disco, poi si cancellano subito."""
+    from app.cestino import servizio as cestino
+    from app.squadra.note import pulisci_orfane
+
+    valori = form.get("ids") or []
+    ids = {int(v) for v in ([valori] if isinstance(valori, str) else valori) if v.isdigit()}
+    if (testo(form, "conferma") or "").upper() != "ELIMINA":
+        msg = "Eliminazione annullata: per confermare bisogna scrivere ELIMINA."
+        return RedirectResponse(f"/clienti?esito=errore&msg={quote(msg)}", status_code=303)
+    if not ids:
+        msg = "Nessun cliente selezionato."
+        return RedirectResponse(f"/clienti?esito=errore&msg={quote(msg)}", status_code=303)
+    con_pratiche = set(
+        db.scalars(select(Pratica.azienda_id).where(Pratica.azienda_id.in_(ids)).distinct())
+    )
+    eliminati = 0
+    for a in db.scalars(select(Azienda).where(Azienda.id.in_(ids - con_pratiche))):
+        audit.registra(
+            db, utente, "azienda", a.id, "elimina",
+            {"ragione_sociale": a.ragione_sociale, "definitiva": True},
+        )  # fmt: skip
+        e = cestino.sposta(db, utente, a, "cliente", a.ragione_sociale, f"/clienti/{a.id}")
+        db.delete(a)
+        db.flush()
+        cestino.elimina_definitivamente(db, e)
+        eliminati += 1
+    pulisci_orfane(db)
+    db.commit()
+    nomi = "cliente eliminato" if eliminati == 1 else "clienti eliminati"
+    msg = f"{eliminati} {nomi} definitivamente."
+    if con_pratiche:
+        msg += f" {len(con_pratiche)} non eliminati perché hanno delle pratiche."
+    esito = "ok" if eliminati else "errore"
+    return RedirectResponse(f"/clienti?esito={esito}&msg={quote(msg)}", status_code=303)
 
 
 @router.post("/clienti/{azienda_id}/elimina", dependencies=CSRF)

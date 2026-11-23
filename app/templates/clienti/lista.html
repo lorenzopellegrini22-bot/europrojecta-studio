@@ -9,6 +9,8 @@
   <a href="/clienti/nuovo" role="button">Nuovo cliente</a>
 </div>
 
+{% set msg = request.query_params.get("msg") %}
+{% if msg %}<div class="messaggio {{ 'ok' if request.query_params.get('esito') == 'ok' else 'errore' }}" role="status">{{ msg }}</div>{% endif %}
 <form method="get" action="/clienti" class="filtri">
   <div class="grid">
     <input type="search" name="q" value="{{ filtri.q }}" placeholder="Ragione sociale, partita IVA, codice fiscale o email" aria-label="Cerca">
@@ -46,14 +48,37 @@
 {% if not aziende %}
 <article><p>Nessun cliente{% if filtri.values() | select | list %} con questi filtri{% endif %}. <a href="/clienti/nuovo">Aggiungi un cliente</a>.</p></article>
 {% else %}
+{% set selezionabili = utente.is_titolare %}
+{% if selezionabili %}
+<form method="post" action="/clienti/elimina-selezionati" id="selezione-clienti" class="selezione-clienti">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <div class="barra-selezione" hidden>
+    <span><strong data-conteggio>0</strong> selezionati</span>
+    <button type="button" class="pulsante-pericolo piccolo" data-apri-conferma>Elimina definitivamente</button>
+    <button type="button" class="secondary outline piccolo" data-deseleziona>Deseleziona</button>
+  </div>
+  <dialog class="conferma-eliminazione" aria-labelledby="titolo-conferma">
+    <h2 id="titolo-conferma">Eliminare <span data-conteggio>0</span> clienti?</h2>
+    <p><strong>L'azione è definitiva e non si può annullare:</strong> i clienti selezionati vengono eliminati insieme a referenti, sedi, progetti, scadenze, aiuti de minimis, opportunità e note. Non passano dal cestino.</p>
+    <p><small>I clienti con delle pratiche non si eliminano: elimina prima le pratiche.</small></p>
+    <label>Per confermare scrivi <strong>ELIMINA</strong>
+      <input name="conferma" autocomplete="off" autocapitalize="characters" spellcheck="false" data-campo-conferma>
+    </label>
+    <div class="gruppo-pulsanti">
+      <button type="submit" class="pulsante-pericolo" data-attesa="Eliminazione in corso…" disabled data-conferma-invia>Elimina definitivamente</button>
+      <button type="button" class="secondary outline" data-chiudi-conferma>Annulla</button>
+    </div>
+  </dialog>
+  <label class="casella seleziona-tutti-telefono"><input type="checkbox" data-seleziona-tutti> Seleziona tutti</label>
+{% endif %}
 <div class="overflow-auto">
 <table class="striped">
-  <thead><tr><th>Ragione sociale</th><th>Partita IVA</th><th>Sede</th><th>Email</th><th>Stato</th><th>Pratiche</th></tr></thead>
+  <thead><tr><th>{% if selezionabili %}<label class="seleziona" title="Seleziona tutti"><input type="checkbox" data-seleziona-tutti aria-label="Seleziona tutti i clienti dell'elenco"></label> {% endif %}Ragione sociale</th><th>Partita IVA</th><th>Sede</th><th>Email</th><th>Stato</th><th>Pratiche</th></tr></thead>
   <tbody>
   {% for a in aziende %}
     {% set sede = a.sede_legale %}
     <tr>
-      <td><a href="/clienti/{{ a.id }}">{{ a.ragione_sociale }}</a></td>
+      <td>{% if selezionabili %}<label class="seleziona"><input type="checkbox" name="ids" value="{{ a.id }}" form="selezione-clienti" aria-label="Seleziona {{ a.ragione_sociale }}"></label> {% endif %}<a href="/clienti/{{ a.id }}">{{ a.ragione_sociale }}</a></td>
       <td>{{ a.partita_iva or "—" }}</td>
       <td>{% if sede and sede.comune_testo %}{{ sede.comune_testo }}{% if sede.provincia %} ({{ sede.provincia }}){% endif %}{% else %}—{% endif %}</td>
       <td>{{ a.email or a.pec or "—" }}</td>
@@ -64,5 +89,6 @@
   </tbody>
 </table>
 </div>
+{% if selezionabili %}</form>{% endif %}
 {% endif %}
 {% endblock %}
