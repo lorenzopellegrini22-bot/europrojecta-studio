@@ -1,0 +1,31 @@
+{# Punteggio con la «i» che spiega come è stato calcolato (app/opportunita/abbinamento.py) #}
+{% macro mostra_punteggio(o) -%}
+{%- set c = (o.motivi or {}).get("calcolo") -%}
+<span class="punteggio-con-info">
+<span class="punteggio" title="{{ 'Punteggio AI' if o.punteggio_ai is not none else 'Punteggio delle regole' }}">{{ o.punteggio }}</span>
+<details class="info-punteggio">
+  <summary aria-label="Come è calcolato il punteggio {{ o.punteggio }}" title="Come è calcolato">i</summary>
+  <div class="info-punteggio-testo">
+    <strong>Come si arriva a {{ o.punteggio }}</strong>
+    {% if o.punteggio_ai is not none %}
+    <p>È il punteggio dell'<strong>AI</strong>, che ha letto il bando e il profilo anonimo del cliente{% if o.motivazione_ai %}: «{{ o.motivazione_ai | truncate(300) }}»{% else %}.{% endif %}</p>
+    {% if o.punteggio_regole is not none %}<p>Le regole davano {{ o.punteggio_regole }}:</p>{% endif %}
+    {% endif %}
+    {% if c %}
+    <table>
+      <tr><td>Punto di partenza</td><td class="punti">{{ c.base }}</td></tr>
+      {% for testo, punti in c.voci %}
+      <tr><td>{{ testo }}</td><td class="punti {{ 'positivo' if punti > 0 else 'negativo' }}">{{ "%+d" % punti }}</td></tr>
+      {% endfor %}
+      <tr class="totale"><td>Totale</td><td class="punti">{{ c.grezzo }}</td></tr>
+    </table>
+    {% if c.tetto is not none %}<p><small>Limitato a {{ c.tetto }} perché il bando quasi certamente non vale per questo cliente (vedi i punti «da verificare»): resta sotto la soglia di segnalazione.</small></p>
+    {% elif c.grezzo > 80 %}<p><small>Sopra 80 il totale si comprime per mantenere l'ordine tra i migliori: {{ c.grezzo }} diventa {{ o.punteggio_regole if o.punteggio_regole is not none else o.punteggio }}.</small></p>{% endif %}
+    <p><small>Si segnala da 45 in su. Il punteggio dice quanto il bando sembra adatto ai dati del cliente: i requisiti vanno sempre verificati sul bando.</small></p>
+    {% else %}
+    <p><small>Il dettaglio dei punti compare dal prossimo aggiornamento delle opportunità («Aggiorna adesso»).</small></p>
+    {% endif %}
+  </div>
+</details>
+</span>
+{%- endmacro %}

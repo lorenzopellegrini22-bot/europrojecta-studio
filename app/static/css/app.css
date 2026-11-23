@@ -1519,3 +1519,44 @@ small.nota-ok { color: var(--ok); }
   .contenuto { padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); }
 }
 @media print { .barra-basso { display: none !important; } }
+
+/* Rotella di attesa sui pulsanti dei moduli (app.js) */
+.rotella {
+  display: inline-block; width: 1em; height: 1em; vertical-align: -0.15em;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+  animation: rotella 0.7s linear infinite;
+}
+@keyframes rotella { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .rotella { animation-duration: 2s; } }
+button.in-attesa { opacity: 1; cursor: progress; }
+
+/* Punteggio con la «i»: spiegazione del calcolo (opportunita/_punteggio.html) */
+.punteggio-con-info { position: relative; display: inline-flex; align-items: center; gap: 0.25rem; }
+details.info-punteggio { display: inline-block; margin: 0; }
+details.info-punteggio > summary {
+  list-style: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 1.25rem; height: 1.25rem; padding: 0; border-radius: 50%;
+  border: 1px solid var(--linea-forte); color: var(--accento-testo);
+  font-size: 0.75rem; font-style: italic; font-weight: 600; cursor: pointer;
+}
+details.info-punteggio > summary::-webkit-details-marker { display: none; }
+details.info-punteggio > summary::after,
+details.info-punteggio > summary::before { content: none; display: none; }
+.info-punteggio-testo {
+  position: absolute; z-index: 20; top: calc(100% + 0.375rem); left: 0;
+  width: min(22rem, calc(100vw - 2rem)); padding: 0.75rem 0.875rem;
+  background: var(--superficie); color: var(--testo);
+  border: 1px solid var(--linea-forte); border-radius: var(--raggio-s);
+  box-shadow: var(--ombra-fluttua); font-size: 0.8125rem; font-weight: 400; text-align: left;
+}
+.info-punteggio-testo p { margin: 0.5rem 0 0; }
+.info-punteggio-testo table { width: 100%; margin: 0.5rem 0 0; font-size: 0.8125rem; }
+.info-punteggio-testo td { padding: 0.2rem 0; border: 0; vertical-align: top; }
+.info-punteggio-testo td.punti { text-align: right; white-space: nowrap; padding-left: 0.75rem; font-variant-numeric: tabular-nums; }
+.info-punteggio-testo .positivo { color: var(--ok); }
+.info-punteggio-testo .negativo { color: var(--errore); }
+.info-punteggio-testo tr.totale td { border-top: 1px solid var(--linea); font-weight: 600; }
+@media (max-width: 640px) {
+  /* sul telefono il riquadro si apre in basso a tutta larghezza, sopra la barra */
+  .info-punteggio-testo { position: fixed; left: 0.75rem; right: 0.75rem; top: auto; bottom: 5rem; width: auto; max-height: 60vh; overflow: auto; }
+}

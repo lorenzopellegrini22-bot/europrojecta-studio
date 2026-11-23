@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "opportunita/_punteggio.html" import mostra_punteggio %}
 {% from "_parziali/documentazione.html" import documentazione %}
 {% from "_parziali/note.html" import note_interne with context %}
 {% block titolo %}{{ o.titolo | truncate(60) }} · Opportunità · {{ NOME_APP }}{% endblock %}
@@ -7,7 +8,7 @@
 <hgroup>
   <h1>{{ o.titolo }}</h1>
   <p>
-    <span class="punteggio">{{ o.punteggio }}</span>
+    {{ mostra_punteggio(o) }}
     <small class="etichetta">{{ "AI" if o.punteggio_ai is not none else "regole" }}</small>
     <small class="etichetta">{{ "Bando" if o.bando_id else "Appalto" }}</small>
     <small class="etichetta">{{ etichette.get(o.stato, o.stato) }}</small>

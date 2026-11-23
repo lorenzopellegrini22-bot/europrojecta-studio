@@ -167,3 +167,38 @@ if ("serviceWorker" in navigator && window.isSecureContext) {
   }
   aggiorna();
 })();
+
+// Rotella sui pulsanti dei moduli che salvano o calcolano («Aggiorna adesso» dura qualche
+// secondo e senza segnale sembrava non succedere niente). Vale per ogni modulo POST: il
+// pulsante premuto mostra la rotella e il testo di attesa (data-attesa), gli altri si
+// bloccano per evitare doppi invii. I download sono tutti GET, quindi la pagina cambia sempre.
+(function () {
+  document.addEventListener("submit", (ev) => {
+    const form = ev.target;
+    if (ev.defaultPrevented || (form.method || "").toLowerCase() !== "post") return;
+    if ([...form.attributes].some((a) => a.name.startsWith("hx-"))) return;
+    const premuto = ev.submitter || form.querySelector("button[type=submit], button:not([type])");
+    // dopo che il browser ha raccolto i dati (un pulsante disattivato non verrebbe inviato)
+    setTimeout(() => {
+      form.querySelectorAll("button, input[type=submit]").forEach((b) => { b.disabled = true; });
+      form.setAttribute("aria-busy", "true");
+      if (premuto && premuto.tagName === "BUTTON") {
+        premuto.dataset.testoOriginale = premuto.innerHTML;
+        premuto.classList.add("in-attesa");
+        const testo = premuto.dataset.attesa || premuto.textContent.trim();
+        premuto.innerHTML = '<span class="rotella" aria-hidden="true"></span> ' + testo;
+      }
+    }, 0);
+  });
+  // tornando indietro con il browser la pagina può riapparire dalla cache: pulsanti di nuovo attivi
+  window.addEventListener("pageshow", () => {
+    document.querySelectorAll("form[aria-busy=true]").forEach((form) => {
+      form.removeAttribute("aria-busy");
+      form.querySelectorAll("button, input[type=submit]").forEach((b) => { b.disabled = false; });
+      form.querySelectorAll("button.in-attesa").forEach((b) => {
+        b.innerHTML = b.dataset.testoOriginale || b.innerHTML;
+        b.classList.remove("in-attesa");
+      });
+    });
+  });
+})();

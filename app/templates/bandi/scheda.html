@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "opportunita/_punteggio.html" import mostra_punteggio %}
 {% from "bandi/_macro.html" import badge_stato, territorio %}
 {% from "_parziali/documentazione.html" import documentazione %}
 {% from "_parziali/segui.html" import pulsante_segui, novita_seguito with context %}
@@ -149,7 +150,7 @@
   {% else %}
   <ul>
     {% for o in compatibili %}
-    <li><span class="punteggio">{{ o.punteggio }}</span> <a href="/clienti/{{ o.azienda_id }}">{{ o.azienda.ragione_sociale }}</a>
+    <li>{{ mostra_punteggio(o) }} <a href="/clienti/{{ o.azienda_id }}">{{ o.azienda.ragione_sociale }}</a>
       {% if o.motivazione_ai %}<br><small>{{ o.motivazione_ai }}</small>{% endif %}
       {% include "opportunita/_feedback.html" %}
       <form method="post" action="/clienti/{{ o.azienda_id }}/report/{{ bando.id }}" class="in-linea"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="secondary outline piccolo">Report PDF</button></form>

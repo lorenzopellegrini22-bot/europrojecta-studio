@@ -126,6 +126,19 @@ def _sezione_settore(titolo: str) -> tuple[tuple[str, ...], str] | None:
     return None
 
 
+class _Voci(list):
+    """Lista dei motivi che ricorda l'ultimo aggiunto: i punti assegnati subito dopo
+    (e.punteggio += 20) vanno a quel motivo, per spiegare il punteggio al consulente."""
+
+    def __init__(self, esito: "Esito", voci: Any = ()) -> None:
+        super().__init__(voci)
+        self._esito = esito
+
+    def append(self, voce: str) -> None:
+        super().append(voce)
+        object.__setattr__(self._esito, "_ultimo", voce)
+
+
 @dataclass
 class Esito:
     punteggio: int
@@ -136,8 +149,38 @@ class Esito:
     # può escludere (es. Camera di commercio di un'altra provincia): resta sotto la soglia
     tetto: int | None = None
 
-    def motivi(self) -> dict[str, list[str]]:
-        return {"soddisfatti": self.soddisfatti, "da_verificare": self.da_verificare}
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "base", self.punteggio)
+        object.__setattr__(self, "punti", {})  # motivo → punti (+/-)
+        object.__setattr__(self, "_ultimo", None)
+        object.__setattr__(self, "soddisfatti", _Voci(self, self.soddisfatti))
+        object.__setattr__(self, "da_verificare", _Voci(self, self.da_verificare))
+
+    def __setattr__(self, nome: str, valore: Any) -> None:
+        if nome == "punteggio" and "punti" in self.__dict__:
+            delta = valore - self.punteggio
+            if delta:
+                motivo = self._ultimo or "Altri criteri"
+                self.punti[motivo] = self.punti.get(motivo, 0) + delta
+        object.__setattr__(self, nome, valore)
+
+    def calcolo(self) -> dict[str, Any]:
+        """Come si arriva al punteggio: base, punti per motivo, eventuale limite."""
+        voci = [[m, p] for m, p in self.punti.items() if p]
+        grezzo = self.base + sum(p for _, p in voci)
+        return {
+            "base": self.base,
+            "voci": voci,
+            "grezzo": grezzo,
+            "tetto": self.tetto if self.tetto is not None and self.tetto < grezzo else None,
+        }
+
+    def motivi(self) -> dict[str, Any]:
+        return {
+            "soddisfatti": list(self.soddisfatti),
+            "da_verificare": list(self.da_verificare),
+            "calcolo": self.calcolo(),
+        }
 
 
 def sedi_cliente(a: Azienda) -> list[Any]:
@@ -252,7 +295,8 @@ def valuta_bando_con_motivo(
     except Escluso as e:
         return None, str(e)
     if esito.tetto is not None:
-        esito.punteggio = min(esito.punteggio, esito.tetto)
+        # il limite non è un motivo: si scrive senza passare dal conteggio dei punti
+        object.__setattr__(esito, "punteggio", min(esito.punteggio, esito.tetto))
     return esito, None
 
 

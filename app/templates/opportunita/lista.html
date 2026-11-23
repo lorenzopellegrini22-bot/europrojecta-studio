@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "opportunita/_punteggio.html" import mostra_punteggio %}
 {% block titolo %}Opportunità · {{ NOME_APP }}{% endblock %}
 {% block contenuto %}
 <div class="intestazione">
@@ -8,7 +9,7 @@
   </hgroup>
   <form method="post" action="/opportunita/aggiorna">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <button type="submit" class="secondary outline piccolo">Aggiorna adesso</button>
+    <button type="submit" class="secondary outline piccolo" data-attesa="Calcolo in corso…">Aggiorna adesso</button>
   </form>
 </div>
 
@@ -49,7 +50,7 @@
   <div class="opportunita stato-{{ o.stato }}">
     <div class="intestazione">
       <div>
-        <span class="punteggio" title="{{ 'Punteggio AI' if o.punteggio_ai is not none else 'Punteggio delle regole' }}">{{ o.punteggio }}</span>
+        {{ mostra_punteggio(o) }}
         <small class="etichetta">{{ "AI" if o.punteggio_ai is not none else "regole" }}</small>
         <small class="etichetta">{{ "Bando" if o.bando_id else "Appalto" }}</small>
         {% if o.stato != "nuova" %}<small class="etichetta">{{ etichette[o.stato] }}</small>{% endif %}

@@ -207,3 +207,21 @@ def test_comune_senza_sede_non_riceve_bandi_di_udine_e_lodi():
     assert (sede.comune_testo, sede.provincia, sede.regione) == (
         "Bassano in Teverina", "VT", "Lazio")  # fmt: skip
     assert not completa_sede_ente(ente, t)  # già completa
+
+
+def test_calcolo_del_punteggio_spiegato():
+    """La «i» accanto al punteggio: base + punti per motivo = totale."""
+    from app.opportunita.abbinamento import valuta_bando_con_motivo
+
+    es, _ = valuta_bando_con_motivo(_comune(), _bando("Parcheggi nei Comuni del Lazio"))
+    c = es.calcolo()
+    assert c["base"] == 50 and c["grezzo"] == es.punteggio
+    assert c["base"] + sum(p for _, p in c["voci"]) == es.punteggio
+    voci = dict(c["voci"])
+    assert voci["Bando riservato agli enti pubblici"] == 20
+    assert es.motivi()["calcolo"] == c
+    # con il limite il totale resta quello dei punti, il punteggio scende al limite
+    sondrio = _comune("Sondrio", 21000)
+    sondrio.sedi[0].provincia, sondrio.sedi[0].regione = "SO", "Lombardia"
+    aler, _ = valuta_bando_con_motivo(sondrio, _bando("Sicurezza Aler", regioni=("Lombardia",)))
+    assert aler.calcolo()["tetto"] == aler.punteggio < aler.calcolo()["grezzo"]

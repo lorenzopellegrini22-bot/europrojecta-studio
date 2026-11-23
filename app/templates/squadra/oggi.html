@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "opportunita/_punteggio.html" import mostra_punteggio %}
 {% block titolo %}Oggi · {{ NOME_APP }}{% endblock %}
 {% macro voce_scadenza(v) -%}
 <li>
@@ -90,7 +91,7 @@
       <li>
         <span class="riga-testo"><a href="/opportunita/{{ o.id }}">{{ o.titolo | truncate(90) }}</a>
           <small>{{ o.azienda.ragione_sociale }} · {{ "Bando" if o.bando_id else "Gara" }}{% if o.scadenza %} · scade il {{ o.scadenza | data }}{% endif %}</small></span>
-        <span class="riga-valore"><span class="punteggio">{{ o.punteggio }}</span></span>
+        <span class="riga-valore">{{ mostra_punteggio(o) }}</span>
       </li>
       {% endfor %}
     </ul>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "opportunita/_punteggio.html" import mostra_punteggio %}
 {% block titolo %}{{ azienda.ragione_sociale }} · {{ NOME_APP }}{% endblock %}
 {% block contenuto %}
 {% set sede = azienda.sede_legale %}
@@ -118,7 +119,7 @@
   {% else %}
   <ul>
     {% for o in opportunita %}
-    <li><span class="punteggio">{{ o.punteggio }}</span> <small class="etichetta">{{ "Bando" if o.bando_id else "Appalto" }}</small>
+    <li>{{ mostra_punteggio(o) }} <small class="etichetta">{{ "Bando" if o.bando_id else "Appalto" }}</small>
       <a href="{{ '/bandi/%d' % o.bando_id if o.bando_id else '/appalti/%d' % o.appalto_id }}">{{ o.titolo | truncate(110) }}</a>{% if o.scadenza %} <small>· scade il {{ o.scadenza | data }}</small>{% endif %}
       {% include "opportunita/_feedback.html" %}</li>
     {% endfor %}
