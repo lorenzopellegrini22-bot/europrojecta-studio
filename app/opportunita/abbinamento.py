@@ -65,7 +65,7 @@ TITOLO_IMPRESE = re.compile(
 
 ALTRI_ENTI = re.compile(
     r"\b(aler|ater|ats|asst|asl|aziende sanitarie|aziende ospedaliere|universita|atenei|"
-    r"camere di commercio|cciaa|istituti scolastici|scuole paritarie|parrocchie)\b"
+    r"camere di commercio|cciaa|istituti scolastici|scuole paritarie|parrocchie|organismi)\b"
 )
 
 
@@ -472,16 +472,24 @@ def _beneficiari_ente(a: Azienda, b: Bando, req: Any, e: Esito) -> None:
         enti = [t for t in tip if any(s in normalizza(t) for s in SOGGETTI_ENTE)]
         if not enti:
             raise Escluso("Bando non rivolto agli enti pubblici: " + ", ".join(tip[:3]))
-        if len(enti) == len(tip):
+        if TITOLO_IMPRESE.search(titolo) and not TITOLO_ENTI.search(titolo):
+            # «Dote Impresa» della Provincia di Sondrio restava a 50 per Sondrio; «FVG -
+            # Aggiornamento professionale dei professionisti» ha solo «Ente Pubblico» tra i
+            # beneficiari della fonte e arrivava a Udine con 75 (prove del 23/11/2026)
+            e.da_verificare.append("Il titolo parla di imprese: verificare il ruolo dell'ente")
+            e.punteggio -= 25
+            e.tetto = PUNTEGGIO_MINIMO - 5
+        elif len(enti) == len(tip):
             e.soddisfatti.append("Bando riservato agli enti pubblici")
             e.punteggio += 20
         else:
             e.soddisfatti.append("Enti pubblici tra i beneficiari")
-            if TITOLO_IMPRESE.search(titolo) and not TITOLO_ENTI.search(titolo):
-                e.da_verificare.append("Il titolo parla di imprese: verificare il ruolo dell'ente")
-                e.punteggio -= 25
-                # «Dote Impresa» della Provincia di Sondrio restava a 50 per Sondrio
-                e.tetto = PUNTEGGIO_MINIMO - 5
+            if len(tip) >= 8:
+                # aperto quasi a tutti (formazione obbligatoria, occupazione): poco specifico
+                e.da_verificare.append(
+                    f"Aperto a {len(tip)} tipi di soggetti: poco specifico per un ente"
+                )
+                e.punteggio -= 15
             elif len(tip) >= 4:
                 e.da_verificare.append(
                     f"Aperto a {len(tip)} tipi di soggetti: verificare che valga per l'ente"

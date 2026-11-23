@@ -471,6 +471,9 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
     tag = p.get("tag") or ""
     if tag:
         query = query.where(Azienda.tag.any(Tag.nome == tag))
+    tipo = p.get("tipo") or ""
+    if tipo in TIPI_SOGGETTO:
+        query = query.where(Azienda.tipo_soggetto == tipo)
     aziende = list(db.scalars(query.options(selectinload(Azienda.tag))))
     dimensione = p.get("dimensione") or ""
     if dimensione in DIMENSIONI:
@@ -493,6 +496,7 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
                 "ateco": ateco,
                 "tag": tag,
                 "dimensione": dimensione,
+                "tipo": tipo,
             },
             "stati": STATI_CLIENTE,
             "regioni": REGIONI,

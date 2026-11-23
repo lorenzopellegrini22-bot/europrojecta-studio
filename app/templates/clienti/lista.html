@@ -22,6 +22,11 @@
       <option value="">Tutte le regioni</option>
       {% for r in regioni %}<option value="{{ r }}" {% if filtri.regione == r %}selected{% endif %}>{{ r }}</option>{% endfor %}
     </select>
+    <select name="tipo" aria-label="Tipo di cliente">
+      <option value="">Imprese ed enti</option>
+      <option value="impresa" {% if filtri.tipo == "impresa" %}selected{% endif %}>Solo imprese</option>
+      <option value="ente_pubblico" {% if filtri.tipo == "ente_pubblico" %}selected{% endif %}>Solo enti pubblici</option>
+    </select>
     <select name="dimensione" aria-label="Dimensione">
       <option value="">Tutte le dimensioni</option>
       {% for d in dimensioni %}<option value="{{ d }}" {% if filtri.dimensione == d %}selected{% endif %}>{{ d | capitalize }}</option>{% endfor %}

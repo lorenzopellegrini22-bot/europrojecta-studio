@@ -88,7 +88,8 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
   5.000 abitanti» nel titolo sono un requisito: un comune più grande non li riceve. Se il
   limite compare solo nel testo è «da verificare» (spesso cambia solo la percentuale del
   contributo). I progetti d'investimento (es. «efficientamento della scuola elementare»)
-  funzionano come per le imprese.
+  funzionano come per le imprese. Nell'elenco **Clienti** il filtro «Tipo» mostra solo gli
+  enti pubblici o solo le imprese.
 
 ## 4. Bandi e appalti
 - Ogni notte l'app raccoglie i bandi nazionali (Incentivi Italia e Invitalia) e regionali e le

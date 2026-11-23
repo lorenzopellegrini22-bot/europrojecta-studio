@@ -103,6 +103,22 @@ def test_altri_enti_e_bandi_dello_stesso_comune():
     assert valuta_bando(_comune(), proprio).punteggio >= PUNTEGGIO_MINIMO
 
 
+def test_professionisti_organismi_e_bandi_per_tutti():
+    """Prova su 12 enti in 9 regioni (23/11/2026)."""
+    c = _comune()
+    # la fonte indica solo «Ente Pubblico», ma il titolo è per i professionisti
+    prof = _bando("FVG - Aggiornamento professionale da parte dei professionisti")
+    assert valuta_bando(c, prof).punteggio < PUNTEGGIO_MINIMO
+    org = _bando("Contributi in favore di organismi regionali di certificazione",
+                 tipologie=("Professionista", "Ente Pubblico", "Consorzio"))  # fmt: skip
+    assert valuta_bando(c, org).punteggio < PUNTEGGIO_MINIMO
+    tutti = ("Ente Pubblico", "Impresa", "Cittadino", "Consorzio", "Professionista",
+             "Rete", "Istituto finanziario", "Università", "Cooperative")  # fmt: skip
+    largo = valuta_bando(c, _bando("Percorsi di formazione obbligatoria", tipologie=tutti))
+    stretto = valuta_bando(c, _bando("Percorsi di formazione obbligatoria"))
+    assert largo.punteggio <= stretto.punteggio - 30
+
+
 def test_imprese_come_prima():
     impresa = _comune()
     impresa.tipo_soggetto = "impresa"

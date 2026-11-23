@@ -66,6 +66,11 @@ def test_comune_come_cliente(client, crea_utente, accedi, db):
     assert per_enti.id in bandi and per_imprese.id not in bandi
     assert all(o.appalto_id is None for o in trovate)  # un comune le gare non le fa
 
+    # ricerca e filtro per tipo nell'elenco clienti
+    assert nome in client.get("/clienti?q=Bassano in Teverina").text
+    assert nome in client.get("/clienti?tipo=ente_pubblico").text
+    assert nome not in client.get("/clienti?tipo=impresa").text
+
     # tipo non valido
     token = csrf(client, f"/clienti/{a.id}/modifica")
     dati = {"csrf_token": token, "ragione_sociale": nome, "tipo_soggetto": "x"}
