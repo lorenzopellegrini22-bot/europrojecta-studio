@@ -91,6 +91,21 @@
   <article id="profilo-opportunita">
     <header><strong>Opportunità</strong> <small>(per trovare in automatico bandi e appalti adatti)</small></header>
     <label class="casella"><input type="checkbox" name="avvisi_attivi" value="1" {% if v.get("avvisi_attivi", true) %}checked{% endif %}> Cerca ogni mattina bandi e appalti per questo cliente</label>
+    <fieldset class="ambiti-ricerca">
+      <legend>Dove cercare</legend>
+      <input type="hidden" name="ambiti_presenti" value="1">
+      {% set ambiti = v.get("ambiti_ricerca") %}
+      {% set predefiniti = {"impresa": ["nazionali", "locali", "appalti"], "ente_pubblico": ["ue", "nazionali", "locali"]} %}
+      {% if ambiti is none %}{% set ambiti = predefiniti.get(v.get("tipo_soggetto") or "impresa", []) %}{% endif %}
+      {% for codice, etichetta, nota in [
+        ("nazionali", "Bandi nazionali", "ministeri, Invitalia, incentivi statali"),
+        ("locali", "Bandi regionali e locali", "regioni, province, comuni, Camere di commercio"),
+        ("ue", "Bandi europei", "Commissione europea: in inglese, di solito in partenariato con enti di altri Paesi"),
+        ("appalti", "Gare d'appalto", "per le imprese che partecipano alle gare"),
+      ] %}
+      <label class="casella"><input type="checkbox" name="ambiti_ricerca" value="{{ codice }}" {% if codice in ambiti %}checked{% endif %}> {{ etichetta }} <small>({{ nota }})</small></label>
+      {% endfor %}
+    </fieldset>
     <div data-solo-impresa>
     <label>Attestazione SOA <small>(una categoria per riga con la classifica, es. «OG6 III», «OS22 II»; vuoto se non ne ha)</small>
       <textarea name="soa_testo" rows="3" placeholder="OG1 II&#10;OG6 III-bis" {% if errori.get("soa_testo") %}aria-invalid="true"{% endif %}>{{ v.get("soa_testo") or "" }}</textarea>

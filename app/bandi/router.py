@@ -151,6 +151,10 @@ def attribuzione(bando: Bando) -> str | None:
         return ATTRIBUZIONE
     if codice == "invitalia":
         return INVITALIA
+    if codice == "ue_funding_tenders":
+        from app.sources.ue import ATTRIBUZIONE as UE
+
+        return UE
     return None
 
 

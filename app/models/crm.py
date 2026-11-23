@@ -35,6 +35,12 @@ DIMENSIONI = ("micro", "piccola", "media", "grande")
 # Tipo di cliente: le imprese e gli enti pubblici (comuni, province, unioni…) cercano bandi
 # diversi; per gli enti non contano ATECO, dimensione e de minimis (app/opportunita).
 TIPI_SOGGETTO = ("impresa", "ente_pubblico")
+# Dove cercare per il cliente (scheda → Opportunità). None = predefiniti del tipo di cliente
+AMBITI_RICERCA = ("ue", "nazionali", "locali", "appalti")
+AMBITI_PREDEFINITI = {
+    "impresa": ("nazionali", "locali", "appalti"),
+    "ente_pubblico": ("ue", "nazionali", "locali"),
+}
 
 
 class Azienda(ConTimestamp, Base):
@@ -101,6 +107,8 @@ class Azienda(ConTimestamp, Base):
     regioni_interesse: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
     # Divisioni CPV (2 cifre) di interesse per servizi e forniture
     cpv_interesse: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
+    # Ambiti di ricerca scelti (AMBITI_RICERCA); None = predefiniti, [] = nessuno
+    ambiti_ricerca: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
 
     sedi: Mapped[list["Sede"]] = relationship(
         back_populates="azienda", cascade="all, delete-orphan", order_by="Sede.id"
@@ -126,6 +134,13 @@ class Azienda(ConTimestamp, Base):
     @property
     def sede_legale(self) -> "Sede | None":
         return next((s for s in self.sedi if s.tipo == "legale"), None)
+
+    @property
+    def ambiti(self) -> set[str]:
+        """Dove cercare bandi e gare per questo cliente."""
+        if self.ambiti_ricerca is not None:
+            return set(self.ambiti_ricerca)
+        return set(AMBITI_PREDEFINITI.get(self.tipo_soggetto or "impresa", ()))
 
     @property
     def referente_principale(self) -> "Referente | None":

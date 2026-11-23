@@ -163,7 +163,18 @@ if ("serviceWorker" in navigator && window.isSecureContext) {
     form.querySelectorAll("[data-solo-impresa]").forEach((el) => { el.hidden = ente; });
   };
   let toccato = Boolean(form.querySelector("input[name=azienda_id]"));
-  scelta.addEventListener("change", () => { toccato = true; aggiorna(); });
+  // ambiti predefiniti del tipo di cliente, finché non si toccano le caselle «Dove cercare»
+  const PREDEFINITI = { impresa: ["nazionali", "locali", "appalti"], ente_pubblico: ["ue", "nazionali", "locali"] };
+  let ambitiToccati = Boolean(form.querySelector("input[name=azienda_id]"));
+  form.querySelectorAll("input[name=ambiti_ricerca]").forEach((c) => {
+    c.addEventListener("change", () => { ambitiToccati = true; });
+  });
+  const ambitiPredefiniti = () => {
+    if (ambitiToccati) return;
+    const scelti = PREDEFINITI[scelta.value] || [];
+    form.querySelectorAll("input[name=ambiti_ricerca]").forEach((c) => { c.checked = scelti.includes(c.value); });
+  };
+  scelta.addEventListener("change", () => { toccato = true; aggiorna(); ambitiPredefiniti(); });
   const nome = form.querySelector("input[name=ragione_sociale]");
   const ENTI = /^(comune|provincia|citt[aà] metropolitana|regione|unione (dei |di )?comuni|comunit[aà] montana)\b/i;
   if (nome) {
@@ -171,6 +182,7 @@ if ("serviceWorker" in navigator && window.isSecureContext) {
       if (toccato) return;
       scelta.value = ENTI.test(nome.value.trim()) ? "ente_pubblico" : "impresa";
       aggiorna();
+      ambitiPredefiniti();
     });
   }
   aggiorna();

@@ -73,6 +73,24 @@ def _migliaia(n: int) -> str:
     return f"{n:,}".replace(",", ".")
 
 
+def e_europeo(b: Any) -> bool:
+    """Bando della Commissione europea (fonte app/sources/ue.py)."""
+    from app.sources.ue import PREFISSO_ID
+
+    return (getattr(b, "id_esterno", None) or "").startswith(PREFISSO_ID)
+
+
+AMBITI_NOMI = {"ue": "europei", "nazionali": "nazionali", "locali": "regionali e locali"}
+
+
+def ambito_bando(b: Any) -> str:
+    """In quale casella «Dove cercare» del cliente ricade il bando."""
+    if e_europeo(b):
+        return "ue"
+    territorio = getattr(getattr(b, "requisiti", None), "territorio", None)
+    return "locali" if territorio in ("regionale", "provinciale", "comunale") else "nazionali"
+
+
 def e_ente(a: Any) -> bool:
     return getattr(a, "tipo_soggetto", None) == "ente_pubblico"
 
@@ -302,6 +320,9 @@ def valuta_bando_con_motivo(
 
 def _valuta(a: Azienda, b: Bando, ctx: Contesto) -> Esito:
     req = b.requisiti
+    ambiti = getattr(a, "ambiti", None)
+    if ambiti is not None and (ambito := ambito_bando(b)) not in ambiti:
+        raise Escluso(f"Ricerca dei bandi {AMBITI_NOMI[ambito]} non attiva per il cliente")
     e = Esito(punteggio=50)
     if req is None:
         e.da_verificare.append("Requisiti del bando non ancora disponibili")
@@ -363,7 +384,9 @@ def _valuta(a: Azienda, b: Bando, ctx: Contesto) -> Esito:
                 return _altri_filtri(a, req, b, e, ctx)
             if len(con_sigla) == len(sedi):
                 raise Escluso(f"Bando per altre province ({', '.join(province[:3])})")
-    if req.territorio == "nazionale":
+    if req.territorio == "nazionale" and e_europeo(b):
+        _europeo(a, b, e)
+    elif req.territorio == "nazionale":
         # anche i bandi segnati «nazionali» possono essere di una Camera di commercio
         if not _ente_di_altre_province(a, b, e, ctx):
             e.soddisfatti.append("Bando nazionale")
@@ -563,6 +586,9 @@ def _beneficiari_ente(a: Azienda, b: Bando, req: Any, e: Esito) -> None:
             e.punteggio += 20
         else:
             e.soddisfatti.append("Enti pubblici tra i beneficiari")
+            if e_europeo(b) and _titolo_enti_ue(b):
+                e.soddisfatti.append("Dal titolo: rivolto a città, quartieri o enti locali")
+                e.punteggio += 10
             if len(tip) >= 8:
                 # aperto quasi a tutti (formazione obbligatoria, occupazione): poco specifico
                 e.da_verificare.append(
@@ -785,6 +811,29 @@ PAROLE_PER_CATEGORIA: dict[str, re.Pattern[str]] = {
 # presentazione, sola finalità (nelle fonti è spesso generica: «Sostegno investimenti» ha un
 # bando su tre). Senza legami con i progetti attivi il bando scende ma non viene escluso.
 PUNTI_PROGETTO = {"spese": 30, "titolo": 30, "finalita": 5}
+# Le stesse categorie nei bandi europei, scritti in inglese (app/sources/ue.py)
+PAROLE_UE_PER_CATEGORIA = {
+    c: re.compile(r)
+    for c, r in {
+        "digitale e software": r"\b(digital\w*|software|artificial intelligence|cyber\w*|"
+        r"cloud|data spaces?|semiconductors?|chips?|quantum|5g|6g|blockchain)\b",
+        "ricerca e sviluppo": r"\b(research and innovation actions?|r&i|pre-commercial "
+        r"procurement|technology transfer)\b",
+        "energia e ambiente": r"\b(energy|renewable\w*|emissions?|decarboni\w+|hydrogen|"
+        r"batter\w+|solar|photovoltaic|wind|heating|heat pumps?)\b",
+        "formazione": r"\b(skills?|training|upskilling|reskilling|traineeships?)\b",
+        "internazionalizzazione": r"\b(internationali[sz]ation|export\w*|third[- ]country "
+        r"markets?|global markets?)\b",
+        "macchinari e attrezzature": r"\b(manufacturing|machinery|equipment|robot\w*|"
+        r"production lines?)\b",
+        "immobili e opere": r"\b(buildings?|renovation|construction|built environment|"
+        r"public spaces?|infrastructures?)\b",
+        "avvio d'impresa": r"\b(start-?ups?|scale-?ups?|new ventures?)\b",
+        "brevetti e proprieta intellettuale": r"\b(intellectual property|patents?)\b",
+        "consulenze": r"\b(advisory|coaching|business support services?)\b",
+        "assunzioni": r"\b(employment|job creation|recruitment)\b",
+    }.items()
+}
 PUNTI_SENZA_PROGETTO = -20
 
 
@@ -811,6 +860,13 @@ def finanzia(b: Bando, req: Any) -> dict[str, set[str]]:
     da_finalita = {
         c for c, ff in FINALITA_PER_CATEGORIA.items() if any(f.startswith(ff) for f in finalita)
     }
+    if e_europeo(b):
+        # bandi UE in inglese: titolo e invito valgono come il titolo, il testo come finalità
+        raw = getattr(b, "raw", None) or {}
+        intestazione = normalizza(f"{b.titolo or ''} {raw.get('callTitle') or ''}")
+        corpo = normalizza((getattr(b, "descrizione", None) or "")[:2500])
+        titolo |= {c for c, r in PAROLE_UE_PER_CATEGORIA.items() if r.search(intestazione)}
+        da_finalita |= {c for c, r in PAROLE_UE_PER_CATEGORIA.items() if r.search(corpo)}
     return {"spese": spese, "titolo": titolo - spese, "finalita": da_finalita - spese - titolo}
 
 
@@ -843,6 +899,7 @@ def _esigenze(b: Bando, req: Any, e: Esito, ctx: Contesto) -> None:
     nomi = {normalizza(c): c for c in CATEGORIE_SPESA}  # con gli accenti, per la pagina
     elenco = ", ".join(sorted(nomi.get(c, c) for c in comuni))
     if punti == PUNTI_PROGETTO["finalita"]:
+        object.__setattr__(e, "solo_finalita", True)
         e.da_verificare.append(
             f"Forse utile al progetto «{migliore.titolo}» ({elenco}): lo dice solo la finalità"
         )
@@ -964,7 +1021,53 @@ def _altri_filtri(a: Azienda, req: Any, b: Bando, e: Esito, ctx: Contesto) -> Es
     _segnali_nel_testo(a, b, e, ctx.oggi)
     if b.stato == "in_arrivo":
         e.soddisfatti.append("In arrivo: c'è tempo per preparare la domanda")
+    if e_europeo(b) and (e.progetto_id is None or getattr(e, "solo_finalita", False)):
+        # i bandi UE non dicono settore né dimensione: senza un progetto del cliente che
+        # corrisponda arrivavano a tutte le imprese (149 bandi aperti il 23/11/2026)
+        e.da_verificare.append(
+            "Bando europeo senza un progetto del cliente collegato: aggiungi un progetto "
+            "d'investimento per riceverlo"
+        )
+        e.tetto = PUNTEGGIO_MINIMO - 5
+    elif e_europeo(b) and (getattr(b, "raw", None) or {}).get("programma") in (
+        "HORIZON",
+        "EURATOM",
+    ):
+        # Horizon è un programma di ricerca: un'officina con un progetto sul fotovoltaico
+        # riceveva i bandi sulla fusione nucleare (prova del 23/11/2026)
+        ricerca = any(
+            "ricerca e sviluppo" in categorie_progetto(p) for p in ctx.progetti if p.attivo
+        )
+        if not ricerca:
+            e.da_verificare.append(
+                "Horizon Europe finanzia ricerca e innovazione in consorzi internazionali: "
+                "serve un progetto di ricerca e sviluppo"
+            )
+            e.tetto = PUNTEGGIO_MINIMO - 5
     return e
+
+
+def _titolo_enti_ue(b: Any) -> bool:
+    from app.sources.ue import _ENTI
+
+    return bool(_ENTI.search(b.titolo or ""))
+
+
+def _europeo(a: Azienda, b: Any, e: Esito) -> None:
+    """Bandi della Commissione europea: valgono per tutta l'UE, ma si partecipa quasi sempre
+    in partenariato con enti di altri Paesi e i testi sono in inglese."""
+    e.soddisfatti.append("Bando europeo: aperto ai soggetti di tutti i Paesi UE")
+    e.da_verificare.append(
+        "Bando europeo in inglese: di solito serve un partenariato con enti di altri Paesi"
+    )
+    e.punteggio -= 10
+    raw = getattr(b, "raw", None) or {}
+    piccolo = (getattr(a, "abitanti", None) or 10**9) < 5000
+    if e_ente(a) and piccolo and raw.get("programma") == "HORIZON":
+        e.da_verificare.append(
+            "Horizon Europe: consorzi di ricerca internazionali, impegnativi per un piccolo comune"
+        )
+        e.punteggio -= 10
 
 
 def _classifica_copre(classifica: str | None, importo: Decimal | None) -> bool | None:
@@ -1185,7 +1288,7 @@ def abbina(db: Session, oggi: date | None = None) -> str:
         # un ente pubblico le gare le bandisce, non vi partecipa
         trovate_a = [
             ("appalto", ap.id, es)
-            for ap in ([] if e_ente(a) else appalti)
+            for ap in (appalti if "appalti" in getattr(a, "ambiti", {"appalti"}) else [])
             if (es := valuta_appalto(a, ap, regioni)) is not None
         ]
         migliori = []

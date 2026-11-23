@@ -1596,3 +1596,9 @@ dialog.conferma-eliminazione h2 { font-size: 1.125rem; margin: 0 0 0.75rem; }
 }
 .seleziona-tutti-telefono { display: none; }
 @media (max-width: 640px) { .seleziona-tutti-telefono { display: flex; margin: 0 0 0.5rem; } }
+
+/* Scheda cliente: «Dove cercare» */
+fieldset.ambiti-ricerca { margin: 0.75rem 0 1rem; }
+fieldset.ambiti-ricerca legend { font-weight: 500; margin-bottom: 0.25rem; }
+fieldset.ambiti-ricerca label.casella { flex-wrap: wrap; align-items: baseline; }
+fieldset.ambiti-ricerca label.casella small { flex-basis: 100%; margin-left: 1.75rem; color: var(--testo-2); }

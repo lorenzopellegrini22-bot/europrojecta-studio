@@ -9,7 +9,9 @@ from app.sources.incentivi_italia import FONTE as INCENTIVI_ITALIA
 from app.sources.invitalia import FONTE as INVITALIA
 from app.sources.regioni.lazio import FONTE as REGIONE_LAZIO
 from app.sources.regioni.toscana import FONTE as REGIONE_TOSCANA
+from app.sources.ue import FONTE as UE_FUNDING_TENDERS
 
 FONTI: dict[str, Fonte] = {
-    f.codice: f for f in (INCENTIVI_ITALIA, INVITALIA, REGIONE_LAZIO, REGIONE_TOSCANA)
+    f.codice: f
+    for f in (INCENTIVI_ITALIA, INVITALIA, REGIONE_LAZIO, REGIONE_TOSCANA, UE_FUNDING_TENDERS)
 }

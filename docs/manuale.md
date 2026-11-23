@@ -77,6 +77,14 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
   precisi» scrivi quelli dell'attività del cliente (es. 79710000 vigilanza, 909 pulizie) e
   l'app propone solo quelle gare. Con sedi in più regioni
   il numero massimo di opportunità per cliente sale (fino al doppio).
+- **Dove cercare** (scheda del cliente → Opportunità): caselle «Bandi nazionali», «Bandi
+  regionali e locali», «Bandi europei» e «Gare d'appalto». Per le imprese sono attive di
+  predefinito nazionali, regionali e gare; per gli enti nazionali, regionali ed europei.
+- **Bandi europei** (portale Funding & Tenders della Commissione): testi in inglese, di solito
+  in partenariato con enti di altri Paesi. A un'impresa arrivano solo se un suo progetto
+  d'investimento corrisponde al bando (Horizon Europe solo con un progetto di ricerca e
+  sviluppo); a un ente se gli enti sono tra i beneficiari. Nella scheda del bando ci sono
+  contributo, dotazione e la sezione «Condizioni e criteri di valutazione».
 - Per cercare a mano in altri territori: filtro per regione in **Bandi**, per regione e
   provincia in **Appalti**.
 - **Comuni e altri enti pubblici** (provincia, unione di comuni, comunità montana): nel modulo

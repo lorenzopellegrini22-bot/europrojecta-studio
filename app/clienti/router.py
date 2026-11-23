@@ -29,7 +29,7 @@ from app.models import (
     Segnalatore,
     Utente,
 )
-from app.models.crm import DIMENSIONI, STATI_CLIENTE, TIPI_SOGGETTO
+from app.models.crm import AMBITI_RICERCA, DIMENSIONI, STATI_CLIENTE, TIPI_SOGGETTO
 from app.models.crm_esteso import FREQUENZE_AGGIORNAMENTO, Tag
 from app.opportunita.abbinamento import CLASSIFICHE_SOA
 from app.pratiche.servizio import ETICHETTE_STATO_PRATICA, partita_iva_valida
@@ -202,6 +202,10 @@ def _valori(form: dict[str, Any]) -> dict[str, Any]:
     v["regioni_interesse"] = [regioni] if isinstance(regioni, str) else regioni
     cpv = form.get("cpv_interesse") or []
     v["cpv_interesse"] = [cpv] if isinstance(cpv, str) else cpv
+    if form.get("ambiti_presenti"):
+        ambiti = form.get("ambiti_ricerca") or []
+        ambiti = [ambiti] if isinstance(ambiti, str) else ambiti
+        v["ambiti_ricerca"] = [a for a in AMBITI_RICERCA if a in ambiti]
     # codici più precisi delle divisioni (es. 79710000 vigilanza dentro la 79)
     from app.utils.cpv import codici_precisi
 
@@ -326,6 +330,7 @@ def _valori_da_azienda(a: Azienda) -> dict[str, Any]:
         f"{s['codice']} {s.get('classifica') or ''}".strip() for s in a.soa_possedute or []
     )
     v["regioni_interesse"] = a.regioni_interesse or []
+    v["ambiti_ricerca"] = sorted(a.ambiti)
     v["cpv_interesse"] = a.cpv_interesse or []
     v["cpv_precisi"] = " ".join(c for c in a.cpv_interesse or [] if len(c) > 2)
     v["sedi_operative_testo"] = _testo_sedi_operative(a)
@@ -415,6 +420,8 @@ def _applica(azienda: Azienda, v: dict[str, Any]) -> dict[str, Any]:
         "regioni_interesse": sorted(v.get("regioni_interesse") or []) or None,
         "cpv_interesse": sorted(v.get("cpv_interesse") or []) or None,
     }
+    if "ambiti_ricerca" in v:
+        profilo["ambiti_ricerca"] = v["ambiti_ricerca"]
     for campo, valore in profilo.items():
         if getattr(azienda, campo) != valore:
             setattr(azienda, campo, valore)

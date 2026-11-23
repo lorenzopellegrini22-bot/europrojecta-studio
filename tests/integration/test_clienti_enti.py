@@ -126,3 +126,23 @@ def test_eliminazione_multipla_solo_titolare(client, crea_utente, accedi, db):
     r = client.post("/clienti/elimina-selezionati",
                     data={"csrf_token": token, "ids": ["1"], "conferma": "ELIMINA"})  # fmt: skip
     assert r.status_code == 403
+
+
+def test_dove_cercare_per_cliente(client, crea_utente, accedi, db):
+    accedi(crea_utente())
+    token = csrf(client, "/clienti/nuovo")
+    nome = f"Comune di Celleno {uuid.uuid4().hex[:4]}"
+    dati = {"csrf_token": token, "ragione_sociale": nome, "tipo_soggetto": "ente_pubblico"}
+    assert client.post("/clienti/nuovo", data=dati).status_code == 303
+    a = db.scalar(select(Azienda).where(Azienda.ragione_sociale == nome))
+    assert a.ambiti_ricerca is None and a.ambiti == {"ue", "nazionali", "locali"}
+    modulo = client.get(f"/clienti/{a.id}/modifica").text
+    assert 'name="ambiti_ricerca" value="ue" checked' in modulo
+    assert 'name="ambiti_ricerca" value="appalti" checked' not in modulo
+    token = csrf(client, f"/clienti/{a.id}/modifica")
+    dati = {"csrf_token": token, "ragione_sociale": nome, "tipo_soggetto": "ente_pubblico",
+            "ambiti_presenti": "1", "ambiti_ricerca": ["nazionali", "ue"]}  # fmt: skip
+    assert client.post(f"/clienti/{a.id}/modifica", data=dati).status_code == 303
+    db.expire_all()
+    a = db.get(Azienda, a.id)
+    assert a.ambiti_ricerca == ["ue", "nazionali"] and a.ambiti == {"ue", "nazionali"}
