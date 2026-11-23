@@ -145,3 +145,65 @@ def test_report_per_un_ente():
     titoli = dict(sezioni(_comune()))
     assert titoli["perche_adatto"] == "Perché è adatto al vostro ente"
     assert dict(sezioni(N(tipo_soggetto="impresa")))["perche_adatto"].endswith("vostra impresa")
+
+
+def _territorio():
+    from app.riferimenti.territorio import Territorio, VoceComune
+
+    t = Territorio()
+    for codice, nome, sigla, prov, reg in (
+        ("056006", "Bassano in Teverina", "VT", "Viterbo", "Lazio"),
+        ("030129", "Udine", "UD", "Udine", "Friuli-Venezia Giulia"),
+        ("093033", "Pordenone", "PN", "Pordenone", "Friuli-Venezia Giulia"),
+        ("098031", "Lodi", "LO", "Lodi", "Lombardia"),
+    ):
+        v = VoceComune(codice, nome, sigla, prov, reg)
+        t.per_nome[nome.lower()].append(v)
+        t.per_codice[codice] = v
+        t.sigla_da_provincia[prov.lower()] = sigla
+    return t
+
+
+def test_comune_senza_sede_non_riceve_bandi_di_udine_e_lodi():
+    """Segnalato il 23/11/2026 sul sito: il Comune di Bassano in Teverina, inserito senza
+    sede, riceveva un bando della Camera di commercio di Udine e uno per la provincia di
+    Lodi."""
+    from app.opportunita.abbinamento import Contesto, completa_sede_ente
+    from app.utils.enti import comune_dal_nome
+
+    assert comune_dal_nome("Comune di Bassano in Teverina") == "Bassano in Teverina"
+    assert comune_dal_nome("Città metropolitana di Roma Capitale") == "Roma"
+    assert comune_dal_nome("Officine Tuscia S.r.l.") is None
+    t = _territorio()
+    ctx = Contesto(territorio=t)
+    senza = _comune()
+    senza.sedi, senza.sede_legale = [], None
+    udine = _bando("CCIAA Pordenone-Udine - Contributi per la promozione", regioni=None)
+    udine.ente = "Camera di Commercio Pordenone-Udine"
+    lodi = _bando("Accordo Quadro di Sviluppo Territoriale per la Provincia di Lodi",
+                  regioni=("Lombardia",), territorio="comunale", comuni=["Lodi"])  # fmt: skip
+    parcheggi = _bando("Parcheggi urbani nei Comuni del Lazio")
+    # senza sede: i bandi locali restano sotto la soglia
+    for b in (lodi, parcheggi):
+        assert valuta_bando(senza, b, ctx).punteggio < PUNTEGGIO_MINIMO
+    # con la sede (ricavata dal nome) Udine e Lodi si escludono, il Lazio passa
+    con = _comune()
+    for b in (udine, lodi):
+        assert valuta_bando(con, b, ctx) is None, b.titolo
+    assert valuta_bando(con, parcheggi, ctx).punteggio >= PUNTEGGIO_MINIMO
+
+    class Ente:  # come Azienda: sedi in lista, sede legale calcolata
+        tipo_soggetto, ragione_sociale = "ente_pubblico", "Comune di Bassano in Teverina"
+        sedi: list = []
+
+        @property
+        def sede_legale(self):
+            return next((s for s in self.sedi if s.tipo == "legale"), None)
+
+    ente = Ente()
+    ente.sedi = []
+    assert completa_sede_ente(ente, t)
+    (sede,) = ente.sedi
+    assert (sede.comune_testo, sede.provincia, sede.regione) == (
+        "Bassano in Teverina", "VT", "Lazio")  # fmt: skip
+    assert not completa_sede_ente(ente, t)  # già completa

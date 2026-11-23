@@ -77,6 +77,30 @@ def e_ente(a: Any) -> bool:
     return getattr(a, "tipo_soggetto", None) == "ente_pubblico"
 
 
+def completa_sede_ente(a: Azienda, territorio: Any) -> bool:
+    """Ente senza regione nella sede: la ricava dal nome («Comune di Bassano in Teverina»)
+    con la tabella ISTAT e la salva. Senza, un comune del Lazio riceveva i bandi della
+    Camera di commercio di Udine e della provincia di Lodi (segnalato il 23/11/2026)."""
+    from app.models import Sede
+    from app.riferimenti.territorio import completa_sede
+    from app.utils.enti import comune_dal_nome
+
+    if not e_ente(a) or territorio is None or any(s.regione for s in a.sedi):
+        return False
+    sede = a.sede_legale
+    if sede is not None and sede.comune_testo:
+        return completa_sede(territorio, sede) and bool(sede.regione)
+    voce = territorio.comune(comune_dal_nome(a.ragione_sociale))
+    if voce is None:
+        return False
+    if sede is None:
+        sede = Sede(tipo="legale")
+        a.sedi.append(sede)
+    sede.comune_testo, sede.provincia = voce.nome, voce.sigla
+    sede.regione, sede.codice_istat = voce.regione, voce.codice
+    return True
+
+
 # Bandi chiaramente di settore (parola nel titolo) → divisioni ATECO a cui sono rivolti.
 # Un cliente con ATECO di un altro settore non li riceve; senza ATECO restano "da verificare".
 SETTORI_BANDO: tuple[tuple[tuple[str, ...], tuple[str, ...], str], ...] = (
@@ -266,6 +290,11 @@ def _valuta(a: Azienda, b: Bando, ctx: Contesto) -> Esito:
     # Territorio: conta ogni sede, legale o operativa. Si esclude solo se tutte le sedi sono
     # note e nessuna è nel territorio del bando.
     sedi = sedi_cliente(a)
+    if ente and not any(s.regione for s in sedi) and req.territorio != "nazionale":
+        e.da_verificare.append(
+            "Manca la regione dell'ente: indica la sede per ricevere i bandi del territorio"
+        )
+        e.tetto = PUNTEGGIO_MINIMO - 5
     con_comune = [s for s in sedi if s.comune_testo]
     if req.territorio == "comunale" and req.comuni and con_comune:
         ok = next((s for s in con_comune if _comune_ammesso(s, req.comuni, ctx)), None)
@@ -291,8 +320,10 @@ def _valuta(a: Azienda, b: Bando, ctx: Contesto) -> Esito:
             if len(con_sigla) == len(sedi):
                 raise Escluso(f"Bando per altre province ({', '.join(province[:3])})")
     if req.territorio == "nazionale":
-        e.soddisfatti.append("Bando nazionale")
-        e.punteggio += 5
+        # anche i bandi segnati «nazionali» possono essere di una Camera di commercio
+        if not _ente_di_altre_province(a, b, e, ctx):
+            e.soddisfatti.append("Bando nazionale")
+            e.punteggio += 5
     elif req.regioni:
         dentro = next((s for s in sedi if s.regione and s.regione in req.regioni), None)
         tutte_note = bool(sedi) and all(s.regione for s in sedi)
@@ -436,6 +467,10 @@ def _ente_di_altre_province(a: Azienda, b: Bando, e: Esito, ctx: Contesto) -> bo
         e.soddisfatti.append(f"Ente della provincia di una sede ({locale})")
         e.punteggio += 10
         return False
+    if e_ente(a):
+        # un ente ha un solo territorio: il bando di una Camera di commercio, Provincia o
+        # Comune di altre province non lo riguarda
+        raise Escluso(f"Bando di {locale}: per {', '.join(sorted(sigle))}")
     e.da_verificare.append(
         f"Bando di {locale}: di solito solo per chi è in {', '.join(sorted(sigle))}"
     )
@@ -1087,6 +1122,7 @@ def abbina(db: Session, oggi: date | None = None) -> str:
     titoli = {b.id: b.titolo for b in bandi}
     totale_nuove = 0
     for a in clienti:
+        completa_sede_ente(a, territorio)
         esistenti = {
             ("bando" if o.bando_id else "appalto", o.bando_id or o.appalto_id): o
             for o in db.scalars(select(Opportunita).where(Opportunita.azienda_id == a.id))

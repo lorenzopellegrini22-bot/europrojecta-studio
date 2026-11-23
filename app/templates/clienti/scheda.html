@@ -108,6 +108,9 @@
 
 <section id="opportunita">
   <h2>Opportunità</h2>
+  {% if azienda.tipo_soggetto == "ente_pubblico" and not (azienda.sedi | selectattr("regione") | list) %}
+  <div class="messaggio attenzione">Manca la sede dell'ente: senza regione l'app non sa quali bandi del territorio proporre. <a href="/clienti/{{ azienda.id }}/modifica">Indica comune, provincia e regione</a>.</div>
+  {% endif %}
   {% if not azienda.avvisi_attivi %}
   <p>La ricerca automatica è disattivata per questo cliente. <a href="/clienti/{{ azienda.id }}/modifica#profilo-opportunita">Attivala</a>.</p>
   {% elif not opportunita %}

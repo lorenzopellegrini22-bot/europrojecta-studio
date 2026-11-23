@@ -36,7 +36,7 @@ from app.pratiche.servizio import ETICHETTE_STATO_PRATICA, partita_iva_valida
 from app.riferimenti.istat import norm_nome
 from app.sicurezza.cifratura import ErroreCifratura
 from app.utils.cpv import DIVISIONI_CPV
-from app.utils.enti import tipo_dal_nome
+from app.utils.enti import comune_dal_nome, tipo_dal_nome
 from app.utils.numeri import importo_italiano
 from app.utils.ricerca import condizione
 from app.utils.territorio import REGIONI
@@ -177,6 +177,9 @@ def _valori(form: dict[str, Any]) -> dict[str, Any]:
         v.get("ragione_sociale"), v.get("forma_giuridica")
     )
     v["abitanti"] = _numero(testo(form, "abitanti"))
+    if v["tipo_soggetto"] == "ente_pubblico" and not v.get("comune_testo"):
+        # senza sede l'ente riceverebbe i bandi locali di tutta Italia
+        v["comune_testo"] = comune_dal_nome(v.get("ragione_sociale"))
     v["dipendenti"] = _numero(testo(form, "dipendenti"))
     v["anno_dati"] = _numero(testo(form, "anno_dati"))
     v["fatturato"] = _numero(testo(form, "fatturato"), decimale=True)

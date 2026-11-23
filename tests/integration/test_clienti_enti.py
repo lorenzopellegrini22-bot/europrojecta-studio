@@ -66,6 +66,14 @@ def test_comune_come_cliente(client, crea_utente, accedi, db):
     assert per_enti.id in bandi and per_imprese.id not in bandi
     assert all(o.appalto_id is None for o in trovate)  # un comune le gare non le fa
 
+    # senza comune nel modulo la sede si ricava dal nome
+    token = csrf(client, "/clienti/nuovo")
+    nome2 = f"Comune di Celleno {uuid.uuid4().hex[:4]}"
+    dati = {"csrf_token": token, "ragione_sociale": nome2, "tipo_soggetto": "ente_pubblico"}
+    assert client.post("/clienti/nuovo", data=dati).status_code == 303
+    a2 = db.scalar(select(Azienda).where(Azienda.ragione_sociale == nome2))
+    assert a2.sede_legale is not None and a2.sede_legale.comune_testo.startswith("Celleno")
+
     # ricerca e filtro per tipo nell'elenco clienti
     assert nome in client.get("/clienti?q=Bassano in Teverina").text
     assert nome in client.get("/clienti?tipo=ente_pubblico").text

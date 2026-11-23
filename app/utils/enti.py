@@ -41,3 +41,25 @@ def limite_abitanti(testo: str | None) -> int | None:
     if _PICCOLI.search(t):
         return PICCOLI_COMUNI
     return None
+
+
+_SEDE_DAL_NOME = re.compile(
+    r"^(?:comune di|provincia di|citta metropolitana di|libero consorzio comunale di)\s+(.+)$"
+)
+
+
+def comune_dal_nome(ragione_sociale: str | None) -> str | None:
+    """Il comune della sede di un ente dal suo nome: «Comune di Bassano in Teverina» →
+    «Bassano in Teverina», «Provincia di Viterbo» → «Viterbo» (il capoluogo). Senza la sede
+    l'app non sa dove si trova l'ente e i bandi locali di tutta Italia passerebbero."""
+    if not ragione_sociale:
+        return None
+    m = _SEDE_DAL_NOME.match(normalizza(ragione_sociale).strip())
+    if not m:
+        return None
+    # dal testo originale, per tenere maiuscole e accenti
+    resto = ragione_sociale.strip()[len(ragione_sociale.strip()) - len(m.group(1)) :]
+    resto = resto.strip(" .")
+    if resto.lower().endswith(" capitale"):  # «Roma Capitale»
+        resto = resto[: -len(" capitale")]
+    return resto or None
