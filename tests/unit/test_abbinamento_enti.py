@@ -86,6 +86,23 @@ def test_beneficiari_non_indicati_e_misti():
     assert valuta_bando(c, sport).punteggio >= PUNTEGGIO_MINIMO
 
 
+def test_altri_enti_e_bandi_dello_stesso_comune():
+    """Prova del 23/11/2026 su Sondrio e Pedavena."""
+    sondrio = _comune("Sondrio", 21000)
+    sondrio.sedi[0].provincia, sondrio.sedi[0].regione = "SO", "Lombardia"
+    aler = _bando("Sicurezza Aler lombarde 2025", regioni=("Lombardia",))
+    es = valuta_bando(sondrio, aler)
+    assert es.punteggio < PUNTEGGIO_MINIMO and any("ALER" in x for x in es.da_verificare)
+    dote = _bando("Provincia di Sondrio - Dote Impresa Collocamento Mirato",
+                  regioni=("Lombardia",), tipologie=("Ente Pubblico", "Impresa"))  # fmt: skip
+    assert valuta_bando(sondrio, dote).punteggio < PUNTEGGIO_MINIMO
+    pedavena = _comune("Pedavena", 4300)
+    proprio = _bando("Bando riqualificazione caseificio - Comune di Pedavena")
+    assert valuta_bando(pedavena, proprio).punteggio < PUNTEGGIO_MINIMO
+    # lo stesso bando per un altro comune non cambia per questa regola
+    assert valuta_bando(_comune(), proprio).punteggio >= PUNTEGGIO_MINIMO
+
+
 def test_imprese_come_prima():
     impresa = _comune()
     impresa.tipo_soggetto = "impresa"
@@ -104,3 +121,11 @@ def test_limite_abitanti_e_profilo_anonimo():
     testo = profilo_anonimo(c)
     assert "Ente pubblico" in testo and "fino a 3.000 abitanti" in testo
     assert "Bassano" not in testo and "1300" not in testo and "1.300" not in testo
+
+
+def test_report_per_un_ente():
+    from app.report.servizio import sezioni
+
+    titoli = dict(sezioni(_comune()))
+    assert titoli["perche_adatto"] == "Perché è adatto al vostro ente"
+    assert dict(sezioni(N(tipo_soggetto="impresa")))["perche_adatto"].endswith("vostra impresa")

@@ -63,6 +63,12 @@ TITOLO_IMPRESE = re.compile(
 )
 
 
+ALTRI_ENTI = re.compile(
+    r"\b(aler|ater|ats|asst|asl|aziende sanitarie|aziende ospedaliere|universita|atenei|"
+    r"camere di commercio|cciaa|istituti scolastici|scuole paritarie|parrocchie)\b"
+)
+
+
 def _migliaia(n: int) -> str:
     return f"{n:,}".replace(",", ".")
 
@@ -449,6 +455,18 @@ def _beneficiari_ente(a: Azienda, b: Bando, req: Any, e: Esito) -> None:
     from app.utils.ricerca import normalizza
 
     titolo = f" {normalizza(b.titolo or '')} "
+    # Bando pubblicato dallo stesso ente (prova del 23/11/2026: «Bando riqualificazione
+    # caseificio - Comune di Pedavena» arrivava al Comune di Pedavena con 90)
+    nome = normalizza(getattr(a, "ragione_sociale", None) or "").strip()
+    if len(nome) > 10 and nome in f"{normalizza(getattr(b, 'ente', None) or '')} {titolo}":
+        e.da_verificare.append("Bando pubblicato dallo stesso ente: non è un finanziamento per lui")
+        e.tetto = PUNTEGGIO_MINIMO - 5
+    # «Ente Pubblico» comprende aziende per la casa, sanità, università e Camere di commercio:
+    # i bandi Aler della Regione Lombardia arrivavano ai comuni con 85 (prova 23/11/2026)
+    altro = ALTRI_ENTI.search(titolo)
+    if altro and not TITOLO_ENTI.search(titolo):
+        e.da_verificare.append(f"Bando per {altro.group(1).upper()}: di solito non per i comuni")
+        e.tetto = PUNTEGGIO_MINIMO - 5
     tip = req.tipologie_soggetto or []
     if tip:
         enti = [t for t in tip if any(s in normalizza(t) for s in SOGGETTI_ENTE)]
@@ -462,9 +480,11 @@ def _beneficiari_ente(a: Azienda, b: Bando, req: Any, e: Esito) -> None:
             if TITOLO_IMPRESE.search(titolo) and not TITOLO_ENTI.search(titolo):
                 e.da_verificare.append("Il titolo parla di imprese: verificare il ruolo dell'ente")
                 e.punteggio -= 25
+                # «Dote Impresa» della Provincia di Sondrio restava a 50 per Sondrio
+                e.tetto = PUNTEGGIO_MINIMO - 5
             elif len(tip) >= 4:
                 e.da_verificare.append(
-                    f"Aperto a {len(tip)} tipi di soggetti: verificare che valga per i comuni"
+                    f"Aperto a {len(tip)} tipi di soggetti: verificare che valga per l'ente"
                 )
                 e.punteggio -= 5
     elif TITOLO_ENTI.search(titolo):

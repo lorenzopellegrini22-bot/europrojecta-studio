@@ -49,7 +49,7 @@ def scheda(request: Request, rid: int, db: Db, _: Autenticato) -> Response:
         {
             "r": r,
             "b": db.get(Bando, r.bando_id),
-            "sezioni": s.SEZIONI,
+            "sezioni": s.sezioni(r.azienda),
             "msg": request.query_params.get("msg"),
             "esito": request.query_params.get("esito"),
         },

@@ -26,6 +26,17 @@ SEZIONI = (
     ("scadenze", "Scadenze e modalità"),
     ("note", "Note del consulente"),
 )
+
+
+def sezioni(a: Azienda | None) -> tuple[tuple[str, str], ...]:
+    """Titoli delle sezioni: per un comune o un altro ente «al vostro ente»."""
+    if getattr(a, "tipo_soggetto", None) == "ente_pubblico":
+        return tuple(
+            (k, "Perché è adatto al vostro ente" if k == "perche_adatto" else t) for k, t in SEZIONI
+        )
+    return SEZIONI
+
+
 ATTRIBUZIONE = (
     "Fonte dei dati: Incentivi Italia (incentivitalia.gov.it), licenza CC BY 4.0, "
     "dati rielaborati. Verificare sempre il testo ufficiale del bando."
@@ -117,7 +128,7 @@ def html(r: ReportBando, b: Bando, consulente: str) -> str:
         r=r,
         b=b,
         a=r.azienda,
-        sezioni=[(k, t, r.contenuto.get(k) or "") for k, t in SEZIONI],
+        sezioni=[(k, t, r.contenuto.get(k) or "") for k, t in sezioni(r.azienda)],
         consulente=consulente,
         attribuzione=ATTRIBUZIONE,
         oggi=datetime.now(UTC),
@@ -206,7 +217,7 @@ def word(r: ReportBando, b: Bando, consulente: str) -> bytes:
         dettagli.append(f"scadenza {b.data_chiusura:%d/%m/%Y}")
     dettagli.append(f"{datetime.now(UTC):%d/%m/%Y}")
     doc.add_paragraph(" · ".join(pulito(x) for x in dettagli if x))
-    for chiave, titolo in SEZIONI:
+    for chiave, titolo in sezioni(r.azienda):
         testo = pulito((r.contenuto or {}).get(chiave) or "").strip()
         if not testo:
             continue

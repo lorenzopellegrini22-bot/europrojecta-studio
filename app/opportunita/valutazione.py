@@ -31,7 +31,7 @@ from app.utils.cpv import etichetta
 
 log = logging.getLogger(__name__)
 
-VERSIONE_PROMPT = "v1"
+VERSIONE_PROMPT = "v2"  # v2: regole per i clienti enti pubblici
 PROMPT = (Path(__file__).parent / "prompts" / f"valutazione_{VERSIONE_PROMPT}.md").read_text(
     encoding="utf-8"
 )
