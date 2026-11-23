@@ -32,6 +32,9 @@ from app.db import Base, ConTimestamp
 STATI_CLIENTE = ("prospect", "attivo", "ex")
 TIPI_SEDE = ("legale", "operativa")
 DIMENSIONI = ("micro", "piccola", "media", "grande")
+# Tipo di cliente: le imprese e gli enti pubblici (comuni, province, unioni…) cercano bandi
+# diversi; per gli enti non contano ATECO, dimensione e de minimis (app/opportunita).
+TIPI_SOGGETTO = ("impresa", "ente_pubblico")
 
 
 class Azienda(ConTimestamp, Base):
@@ -45,6 +48,7 @@ class Azienda(ConTimestamp, Base):
         CheckConstraint(
             "partita_iva IS NULL OR partita_iva ~ '^[0-9]{11}$'", name="ck_azienda_partita_iva"
         ),
+        CheckConstraint(f"tipo_soggetto IN {TIPI_SOGGETTO}", name="ck_azienda_tipo_soggetto"),
         CheckConstraint(
             "regioni_interesse IS NULL OR cardinality(regioni_interesse) > 0",
             name="ck_azienda_regioni_interesse",
@@ -60,6 +64,11 @@ class Azienda(ConTimestamp, Base):
     codice_fiscale: Mapped[str | None] = mapped_column(String(16))
     forma_giuridica: Mapped[str | None] = mapped_column(String(100))
     dimensione_manuale: Mapped[str | None] = mapped_column(String(10))
+    tipo_soggetto: Mapped[str] = mapped_column(
+        String(20), default="impresa", server_default="impresa"
+    )
+    # Solo per gli enti: abitanti (bandi per i piccoli comuni, «fino a 5.000 abitanti»)
+    abitanti: Mapped[int | None] = mapped_column(Integer)
     pec: Mapped[str | None] = mapped_column(String(254))
     email: Mapped[str | None] = mapped_column(String(254))
     telefono: Mapped[str | None] = mapped_column(String(40))

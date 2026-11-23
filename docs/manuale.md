@@ -79,6 +79,16 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
   il numero massimo di opportunità per cliente sale (fino al doppio).
 - Per cercare a mano in altri territori: filtro per regione in **Bandi**, per regione e
   provincia in **Appalti**.
+- **Comuni e altri enti pubblici** (provincia, unione di comuni, comunità montana): nel modulo
+  scegli **Tipo di cliente → Ente pubblico** (con «Comune di …» nel nome si imposta da solo) e
+  indica gli **abitanti**. Spariscono ATECO, dimensione, bilancio e SOA, che per un ente non
+  servono. L'app propone i bandi che hanno gli enti pubblici tra i beneficiari, nazionali e
+  della regione dell'ente; scarta quelli solo per imprese, professionisti o cittadini e non
+  propone gare d'appalto (l'ente le bandisce, non vi partecipa). «Piccoli comuni» o «fino a
+  5.000 abitanti» nel titolo sono un requisito: un comune più grande non li riceve. Se il
+  limite compare solo nel testo è «da verificare» (spesso cambia solo la percentuale del
+  contributo). I progetti d'investimento (es. «efficientamento della scuola elementare»)
+  funzionano come per le imprese.
 
 ## 4. Bandi e appalti
 - Ogni notte l'app raccoglie i bandi nazionali (Incentivi Italia e Invitalia) e regionali e le

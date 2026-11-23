@@ -142,3 +142,28 @@ if ("serviceWorker" in navigator && window.isSecureContext) {
     navigator.serviceWorker.register("/sw.js").catch(() => { /* senza: l'app funziona uguale */ });
   });
 }
+
+// Modulo cliente: per gli enti pubblici si nascondono i campi da impresa (ATECO, dimensione,
+// bilancio) e compaiono gli abitanti. Su un cliente nuovo «Comune di …» sceglie l'ente da sé.
+(function () {
+  const scelta = document.querySelector("select[data-tipo-cliente]");
+  if (!scelta) return;
+  const form = scelta.form;
+  const aggiorna = () => {
+    const ente = scelta.value === "ente_pubblico";
+    form.querySelectorAll("[data-solo-ente]").forEach((el) => { el.hidden = !ente; });
+    form.querySelectorAll("[data-solo-impresa]").forEach((el) => { el.hidden = ente; });
+  };
+  let toccato = Boolean(form.querySelector("input[name=azienda_id]"));
+  scelta.addEventListener("change", () => { toccato = true; aggiorna(); });
+  const nome = form.querySelector("input[name=ragione_sociale]");
+  const ENTI = /^(comune|provincia|citt[aà] metropolitana|regione|unione (dei |di )?comuni|comunit[aà] montana)\b/i;
+  if (nome) {
+    nome.addEventListener("input", () => {
+      if (toccato) return;
+      scelta.value = ENTI.test(nome.value.trim()) ? "ente_pubblico" : "impresa";
+      aggiorna();
+    });
+  }
+  aggiorna();
+})();

@@ -294,7 +294,13 @@ def importa(
                 viste.add(piva)
                 esito.importate += 1
                 continue
-            a = Azienda(ragione_sociale=v["ragione_sociale"], partita_iva=piva)
+            from app.utils.enti import tipo_dal_nome
+
+            a = Azienda(
+                ragione_sociale=v["ragione_sociale"],
+                partita_iva=piva,
+                tipo_soggetto=tipo_dal_nome(v["ragione_sociale"], v.get("forma_giuridica")),
+            )
             db.add(a)
         else:
             esito.aggiornate += 1

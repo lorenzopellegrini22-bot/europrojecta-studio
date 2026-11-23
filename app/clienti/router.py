@@ -29,13 +29,14 @@ from app.models import (
     Segnalatore,
     Utente,
 )
-from app.models.crm import DIMENSIONI, STATI_CLIENTE
+from app.models.crm import DIMENSIONI, STATI_CLIENTE, TIPI_SOGGETTO
 from app.models.crm_esteso import FREQUENZE_AGGIORNAMENTO, Tag
 from app.opportunita.abbinamento import CLASSIFICHE_SOA
 from app.pratiche.servizio import ETICHETTE_STATO_PRATICA, partita_iva_valida
 from app.riferimenti.istat import norm_nome
 from app.sicurezza.cifratura import ErroreCifratura
 from app.utils.cpv import DIVISIONI_CPV
+from app.utils.enti import tipo_dal_nome
 from app.utils.numeri import importo_italiano
 from app.utils.ricerca import condizione
 from app.utils.territorio import REGIONI
@@ -55,6 +56,7 @@ CAMPI_AZIENDA = (
     "codice_fiscale",
     "forma_giuridica",
     "dimensione_manuale",
+    "tipo_soggetto",
     "pec",
     "email",
     "telefono",
@@ -70,6 +72,7 @@ CAMPI_NUMERICI = (
     "segnalatore_id",
     "totale_attivo",
     "plafond_de_minimis_manuale",
+    "abitanti",
 )
 # Altri campi dell'azienda (non numerici) salvati così come sono
 CAMPI_PROFILO = ("data_costituzione", "frequenza_aggiornamenti")
@@ -121,6 +124,8 @@ def _valida(db: Session, valori: dict[str, Any], azienda_id: int | None) -> dict
     cap = valori.get("cap")
     if cap and not (cap.isdigit() and len(cap) == 5):
         errori["cap"] = "Il CAP ha 5 cifre."
+    if valori.get("tipo_soggetto") not in TIPI_SOGGETTO:
+        errori["tipo_soggetto"] = "Tipo di cliente non valido."
     if valori.get("stato_cliente") not in STATI_CLIENTE:
         errori["stato_cliente"] = "Stato non valido."
     if valori.get("dimensione_manuale") and valori["dimensione_manuale"] not in DIMENSIONI:
@@ -168,6 +173,10 @@ def _valori(form: dict[str, Any]) -> dict[str, Any]:
     if v["partita_iva"] and v["partita_iva"].startswith("IT"):
         v["partita_iva"] = v["partita_iva"][2:]
     v["stato_cliente"] = v["stato_cliente"] or "attivo"
+    v["tipo_soggetto"] = v["tipo_soggetto"] or tipo_dal_nome(
+        v.get("ragione_sociale"), v.get("forma_giuridica")
+    )
+    v["abitanti"] = _numero(testo(form, "abitanti"))
     v["dipendenti"] = _numero(testo(form, "dipendenti"))
     v["anno_dati"] = _numero(testo(form, "anno_dati"))
     v["fatturato"] = _numero(testo(form, "fatturato"), decimale=True)

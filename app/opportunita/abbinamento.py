@@ -48,6 +48,28 @@ CLASSIFICHE_SOA: dict[str, Decimal | None] = {
 }
 INCREMENTO_QUINTO = Decimal("1.2")
 SOGGETTI_IMPRESA = ("impresa", "professionista", "rete", "consorzio", "cooperative")
+# Clienti enti pubblici (azienda.tipo_soggetto): beneficiari della fonte che li comprendono
+SOGGETTI_ENTE = ("ente pubblico", "enti pubblici", "pubblica amministrazione", "comuni",
+                 "comune", "enti locali", "ente locale", "unioni di comuni")  # fmt: skip
+# Bandi senza beneficiari indicati: parole del titolo che dicono a chi si rivolgono
+TITOLO_ENTI = re.compile(
+    r"\b(comuni|enti locali|enti pubblici|amministrazioni (comunali|locali|pubbliche)|"
+    r"unioni (dei |di )?comuni|piccoli comuni|province)\b"
+)
+TITOLO_IMPRESE = re.compile(
+    r"\b(imprese|impresa|pmi|startup|start-up|aziende|professionisti|lavoratori autonomi|"
+    r"commercianti|esercizi commerciali|artigian\w*|imprenditori\w*|autoimpiego|automotive|"
+    r"assunzion\w*|filiera|filiere)\b"
+)
+
+
+def _migliaia(n: int) -> str:
+    return f"{n:,}".replace(",", ".")
+
+
+def e_ente(a: Any) -> bool:
+    return getattr(a, "tipo_soggetto", None) == "ente_pubblico"
+
 
 # Bandi chiaramente di settore (parola nel titolo) → divisioni ATECO a cui sono rivolti.
 # Un cliente con ATECO di un altro settore non li riceve; senza ATECO restano "da verificare".
@@ -211,13 +233,19 @@ def _valuta(a: Azienda, b: Bando, ctx: Contesto) -> Esito:
         e.da_verificare.append("Requisiti del bando non ancora disponibili")
         e.punteggio -= 10
         return e
-    if req.tipologie_soggetto and not any(
-        any(s in t.lower() for s in SOGGETTI_IMPRESA) for t in req.tipologie_soggetto
-    ):
-        raise Escluso("Bando non rivolto alle imprese: " + ", ".join(req.tipologie_soggetto[:3]))
-    _tipologie(a, b, req, e)
+    ente = e_ente(a)
+    if ente:
+        _beneficiari_ente(a, b, req, e)
+    else:
+        if req.tipologie_soggetto and not any(
+            any(s in t.lower() for s in SOGGETTI_IMPRESA) for t in req.tipologie_soggetto
+        ):
+            raise Escluso(
+                "Bando non rivolto alle imprese: " + ", ".join(req.tipologie_soggetto[:3])
+            )
+        _tipologie(a, b, req, e)
     # Bandi di settore (cultura, agricoltura, turismo…): solo per chi è di quel settore
-    settore = _sezione_settore(b.titolo)
+    settore = None if ente else _sezione_settore(b.titolo)
     if settore:
         divisioni, nome = settore
         primario = a.ateco_primario
@@ -403,13 +431,72 @@ def _ente_di_altre_province(a: Azienda, b: Bando, e: Esito, ctx: Contesto) -> bo
         e.punteggio += 10
         return False
     e.da_verificare.append(
-        f"Bando di {locale}: di solito solo per le imprese di {', '.join(sorted(sigle))}"
+        f"Bando di {locale}: di solito solo per chi è in {', '.join(sorted(sigle))}"
     )
     e.punteggio -= 25
     # Collaudo su 50 aziende (21/11/2026): con i bonus di settore, ATECO e progetto il voucher
     # turismo della CCIAA di Bari arrivava a 75 per un hotel di Lecce
     e.tetto = PUNTEGGIO_MINIMO - 5
     return True
+
+
+def _beneficiari_ente(a: Azienda, b: Bando, req: Any, e: Esito) -> None:
+    """Cliente ente pubblico (comune, provincia, unione…): passano i bandi che hanno gli enti
+    tra i beneficiari; quelli solo per imprese, professionisti o cittadini si escludono.
+    «Ente Pubblico» della fonte nazionale comprende anche ASL, Camere di commercio e aziende
+    per la casa: un bando aperto a molti tipi di soggetti resta da verificare."""
+    from app.utils.enti import limite_abitanti
+    from app.utils.ricerca import normalizza
+
+    titolo = f" {normalizza(b.titolo or '')} "
+    tip = req.tipologie_soggetto or []
+    if tip:
+        enti = [t for t in tip if any(s in normalizza(t) for s in SOGGETTI_ENTE)]
+        if not enti:
+            raise Escluso("Bando non rivolto agli enti pubblici: " + ", ".join(tip[:3]))
+        if len(enti) == len(tip):
+            e.soddisfatti.append("Bando riservato agli enti pubblici")
+            e.punteggio += 20
+        else:
+            e.soddisfatti.append("Enti pubblici tra i beneficiari")
+            if TITOLO_IMPRESE.search(titolo) and not TITOLO_ENTI.search(titolo):
+                e.da_verificare.append("Il titolo parla di imprese: verificare il ruolo dell'ente")
+                e.punteggio -= 25
+            elif len(tip) >= 4:
+                e.da_verificare.append(
+                    f"Aperto a {len(tip)} tipi di soggetti: verificare che valga per i comuni"
+                )
+                e.punteggio -= 5
+    elif TITOLO_ENTI.search(titolo):
+        e.soddisfatti.append("Dal titolo: rivolto a comuni o enti locali")
+        e.punteggio += 10
+    elif TITOLO_IMPRESE.search(titolo):
+        e.da_verificare.append("Beneficiari non indicati: dal titolo sembra per le imprese")
+        e.punteggio -= 30
+    else:
+        # Prova sui comuni di Viterbo (23/11/2026): senza beneficiari e senza enti nel titolo
+        # passavano viaggi di istruzione, adozioni e autoimpiego della Regione Lazio
+        e.da_verificare.append("Beneficiari non indicati: il titolo non parla di enti")
+        e.punteggio -= 25
+    # Popolazione: «piccoli comuni», «comuni fino a 5.000 abitanti». È un requisito certo solo
+    # nel titolo: nel testo spesso cambia solo la percentuale di contributo (parcheggi urbani
+    # nei Comuni del Lazio: 100% fino a 5.000 abitanti, 90% per gli altri; prova 23/11/2026)
+    abitanti = getattr(a, "abitanti", None)
+    limite = limite_abitanti(b.titolo)
+    if limite:
+        fino = f"fino a {_migliaia(limite)} abitanti"
+        if abitanti is None:
+            e.da_verificare.append(f"Solo comuni {fino}: indica gli abitanti del cliente")
+        elif abitanti > limite:
+            raise Escluso(f"Bando per comuni {fino} (il cliente ne ha {_migliaia(abitanti)})")
+        else:
+            e.soddisfatti.append(f"Comune {fino} ({_migliaia(abitanti)})")
+            e.punteggio += 10
+    elif limite := limite_abitanti((getattr(b, "descrizione", None) or "")[:3000]):
+        e.da_verificare.append(
+            f"Il testo cita i comuni fino a {_migliaia(limite)} abitanti: requisito o solo "
+            "misura del contributo?"
+        )
 
 
 def _tipologie(a: Azienda, b: Bando, req: Any, e: Esito) -> None:
@@ -492,8 +579,8 @@ CRISI = re.compile(
     re.IGNORECASE,
 )
 MESI_IMPRESA_GIOVANE = 36
-SOLO_MICRO = re.compile(r"micro[ -]?imprese", re.IGNORECASE)
-ALTRE_DIMENSIONI = re.compile(r"piccol[ae]|medi[ae]|PMI", re.IGNORECASE)
+SOLO_MICRO = re.compile(r"\bmicro[ -]?imprese\b", re.IGNORECASE)
+ALTRE_DIMENSIONI = re.compile(r"\bpiccol[ae]\b|\bmedi[ae]\b|\bPMI\b", re.IGNORECASE)
 
 
 def _segnali_nel_testo(a: Azienda, b: Bando, e: Esito, oggi: date | None) -> None:
@@ -661,6 +748,13 @@ def _esigenze(b: Bando, req: Any, e: Esito, ctx: Contesto) -> None:
 def _altri_filtri(a: Azienda, req: Any, b: Bando, e: Esito, ctx: Contesto) -> Esito:
     from app.utils.impresa import anzianita_mesi, dimensione_calcolata, plafond_residuo
 
+    if e_ente(a):
+        # ATECO, dimensione, forma giuridica, anzianità e de minimis riguardano le imprese
+        _esigenze(b, req, e, ctx)
+        _apertura_vecchia(b, e, ctx.oggi)
+        if b.stato == "in_arrivo":
+            e.soddisfatti.append("In arrivo: c'è tempo per preparare la domanda")
+        return e
     # Dimensione: quella manuale esclude; quella stimata (senza ULA) solo «da verificare»
     if req.dimensioni:
         manuale = a.dimensione_manuale
@@ -980,9 +1074,10 @@ def abbina(db: Session, oggi: date | None = None) -> str:
             ("bando", b.id, es) for b in bandi if (es := valuta_bando(a, b, ctx)) is not None
         ]
         regioni = regioni_cliente(a)
+        # un ente pubblico le gare le bandisce, non vi partecipa
         trovate_a = [
             ("appalto", ap.id, es)
-            for ap in appalti
+            for ap in ([] if e_ente(a) else appalti)
             if (es := valuta_appalto(a, ap, regioni)) is not None
         ]
         migliori = []

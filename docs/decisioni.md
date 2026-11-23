@@ -561,3 +561,7 @@ trovava «scolastico»); «oggi» calcolato in UTC nei container (TZ=Europe/Rome
 
 ## 2026-11-23 — «Password dimenticata»
 Dal login si chiede un link via email (SMTP di Impostazioni → Integrazioni) valido un'ora e usabile una volta; nel database solo l'impronta del token. La risposta è identica per email registrate e no. Limiti: un link ogni 2 minuti per persona, 5 richieste ogni 15 minuti per IP (contate a parte, non come accessi falliti). Dopo il cambio si chiudono tutte le sessioni e si azzera il blocco; la 2FA resta. Senza email configurata: `python -m app.cli reimposta-password` dal server.
+
+## 2026-11-23 — Clienti enti pubblici
+Nuovo campo `azienda.tipo_soggetto` (`impresa` | `ente_pubblico`) e `abitanti` (migrazione 0027; i clienti «Comune di…», «Provincia di…» esistenti diventano enti). Per un ente l'abbinamento (`_beneficiari_ente`) passa solo i bandi con enti pubblici tra i beneficiari; senza beneficiari indicati serve una parola da enti nel titolo, altrimenti il punteggio va sotto soglia. Salta ATECO, dimensione, forma giuridica, anzianità, de minimis e settore; nessuna gara d'appalto. Il limite di abitanti esclude solo se è nel titolo: nel testo del bando «parcheggi urbani nei Comuni del Lazio» i 5.000 abitanti decidono solo la percentuale (prova sui comuni di Viterbo). All'AI va il profilo dell'ente con la fascia di popolazione, non il numero esatto. Corretti anche SOLO_MICRO e ALTRE_DIMENSIONI, che contenevano un carattere di controllo al posto di `\b` e non scattavano mai.
+

@@ -18,18 +18,26 @@
   <input type="hidden" name="stato_attivita" value="{{ v.get('stato_attivita') or '' }}">
   <input type="hidden" name="da_registro" value="{{ v.get('da_registro') or '' }}">
   <article>
-    <header><strong>Dati dell'azienda</strong></header>
+    <header><strong>Dati del cliente</strong></header>
+    <label>Tipo di cliente
+      <select name="tipo_soggetto" data-tipo-cliente {% if errori.get("tipo_soggetto") %}aria-invalid="true"{% endif %}>
+        <option value="impresa" {% if v.get("tipo_soggetto") != "ente_pubblico" %}selected{% endif %}>Impresa o professionista</option>
+        <option value="ente_pubblico" {% if v.get("tipo_soggetto") == "ente_pubblico" %}selected{% endif %}>Ente pubblico (comune, provincia, unione di comuni…)</option>
+      </select>
+      {% if errori.get("tipo_soggetto") %}<small class="errore-campo">{{ errori.tipo_soggetto }}</small>{% endif %}
+      <small data-solo-ente>Per un ente l'app cerca i bandi rivolti agli enti pubblici della sua regione e nazionali; ATECO, dimensione e de minimis non servono.</small>
+    </label>
     <div class="grid">
       {{ campo("partita_iva", "Partita IVA", extra='inputmode="numeric" maxlength="13"') }}
       {{ campo("codice_fiscale", "Codice fiscale", extra='maxlength="16"') }}
     </div>
     {% if registro_disponibile %}
-    <p>
+    <p data-solo-impresa>
       <button type="submit" formaction="/clienti/compila" formnovalidate class="secondary piccolo">Compila dal Registro Imprese</button>
       <small>Inserisci la partita IVA (o il codice fiscale) e premi: i campi si riempiono con i dati ufficiali. Niente viene salvato finché non premi Salva.</small>
     </p>
     {% elif utente.is_titolare %}
-    <p><small>Puoi compilare i dati in automatico collegando il <a href="/impostazioni/integrazioni/registro_imprese">Registro Imprese</a> nelle impostazioni.</small></p>
+    <p data-solo-impresa><small>Puoi compilare i dati in automatico collegando il <a href="/impostazioni/integrazioni/registro_imprese">Registro Imprese</a> nelle impostazioni.</small></p>
     {% endif %}
     {% if v.get("stato_attivita") and v.get("stato_attivita") | upper != "ATTIVA" %}
     <div class="messaggio attenzione">Stato al Registro Imprese: {{ v.get("stato_attivita") }}</div>
@@ -37,7 +45,8 @@
     {{ campo("ragione_sociale", "Ragione sociale *", extra="required") }}
     <div class="grid">
       {{ campo("forma_giuridica", "Forma giuridica", extra='placeholder="es. S.r.l."') }}
-      <label>Dimensione
+      <div data-solo-ente>{{ campo("abitanti", "Abitanti", "number", extra='min="0" placeholder="es. 1300"') }}</div>
+      <label data-solo-impresa>Dimensione
         <select name="dimensione_manuale">
           <option value="">Non indicata</option>
           {% for d in dimensioni %}<option value="{{ d }}" {% if v.get("dimensione_manuale") == d %}selected{% endif %}>{{ d | capitalize }}</option>{% endfor %}
@@ -53,6 +62,7 @@
 
   <article>
     <header><strong>Attività e dimensione</strong></header>
+    <div data-solo-impresa>
     <div class="grid">
       {{ campo("ateco_codice", "Codice ATECO prevalente", extra='placeholder="es. 62.01"') }}
       {{ campo("ateco_descrizione", "Descrizione ATECO") }}
@@ -68,6 +78,7 @@
       {{ campo("plafond_de_minimis_manuale", "Plafond de minimis residuo (€, se lo conosci)", extra='inputmode="decimal"') }}
     </div>
     <small>Con dipendenti e fatturato (o totale di bilancio) l'app stima la dimensione secondo la Raccomandazione 2003/361/CE; quella scelta a mano sopra prevale sempre. Il plafond indicato a mano prevale su quello calcolato dagli aiuti registrati.</small>
+    </div>
     <label>Segnalato da
       <select name="segnalatore_id" {% if errori.get("segnalatore_id") %}aria-invalid="true"{% endif %}>
         <option value="">Nessun segnalatore</option>
@@ -80,6 +91,7 @@
   <article id="profilo-opportunita">
     <header><strong>Opportunità</strong> <small>(per trovare in automatico bandi e appalti adatti)</small></header>
     <label class="casella"><input type="checkbox" name="avvisi_attivi" value="1" {% if v.get("avvisi_attivi", true) %}checked{% endif %}> Cerca ogni mattina bandi e appalti per questo cliente</label>
+    <div data-solo-impresa>
     <label>Attestazione SOA <small>(una categoria per riga con la classifica, es. «OG6 III», «OS22 II»; vuoto se non ne ha)</small>
       <textarea name="soa_testo" rows="3" placeholder="OG1 II&#10;OG6 III-bis" {% if errori.get("soa_testo") %}aria-invalid="true"{% endif %}>{{ v.get("soa_testo") or "" }}</textarea>
       {% if errori.get("soa_testo") %}<small class="errore-campo">{{ errori.soa_testo }}</small>{% else %}<small>Classifiche: {{ classifiche | join(", ") }}.</small>{% endif %}
@@ -100,6 +112,7 @@
         <small id="aiuto-cpv-precisi">Le divisioni sono ampie: la 79 comprende vigilanza, pubblicità e organizzazione di eventi, la 90 pulizie e rifiuti. Scrivi qui i codici dell'attività del cliente (es. 79710000 vigilanza, 909 pulizie), separati da spazi: valgono anche tutti i loro sottocodici e sostituiscono la divisione corrispondente.</small>
       </label>
     </details>
+    </div>
   </article>
 
   <article>

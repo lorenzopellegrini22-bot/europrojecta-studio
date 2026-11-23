@@ -56,12 +56,55 @@ def _sha(testo: str) -> str:
 # --- Testi -------------------------------------------------------------------------------
 
 
+def _fascia_abitanti(n: int | None) -> str | None:
+    """Fascia, non il numero esatto: con provincia e abitanti si riconoscerebbe il comune."""
+    if n is None:
+        return None
+    for limite in (1000, 3000, 5000, 15000, 30000, 60000, 100000):
+        if n <= limite:
+            return f"fino a {limite:,} abitanti".replace(",", ".")
+    return "oltre 100.000 abitanti"
+
+
+def _profilo_ente(a: Azienda, progetti: list[Any] | None) -> str:
+    righe = ["Ente pubblico cliente (dati anonimi): un ente locale, non un'impresa."]
+    if a.forma_giuridica:
+        righe.append(f"- tipo di ente: {a.forma_giuridica}")
+    if fascia := _fascia_abitanti(getattr(a, "abitanti", None)):
+        righe.append(f"- popolazione: {fascia}")
+    sede = a.sede_legale
+    if sede and (sede.regione or sede.provincia):
+        righe.append(
+            f"- territorio: regione {sede.regione or 'non indicata'}"
+            + (f", provincia {sede.provincia}" if sede.provincia else "")
+        )
+    righe += _righe_progetti(progetti)
+    return "\n".join(righe)
+
+
+def _righe_progetti(progetti: list[Any] | None) -> list[str]:
+    righe = []
+    for i, pr in enumerate([p for p in progetti or [] if p.attivo][:3], start=1):
+        parti = []
+        if pr.descrizione:
+            parti.append(pr.descrizione[:600])
+        if pr.categorie:
+            parti.append("spese: " + ", ".join(pr.categorie))
+        if pr.importo_stimato:
+            parti.append(f"importo circa {int(pr.importo_stimato):,} euro".replace(",", "."))
+        if parti:
+            righe.append(f"- progetto d'investimento {i}: " + "; ".join(parti))
+    return righe
+
+
 def profilo_anonimo(a: Azienda, progetti: list[Any] | None = None) -> str:
     """Solo dati non identificativi (docs/dati-in-uscita.md). Dei progetti d'investimento
     si mandano solo descrizione, categorie di spesa e importo (mai il titolo, che potrebbe
     contenere nomi)."""
     from app.utils.impresa import anzianita_mesi, dimensione_effettiva
 
+    if getattr(a, "tipo_soggetto", None) == "ente_pubblico":
+        return _profilo_ente(a, progetti)
     righe = ["Impresa cliente (dati anonimi):"]
     if a.forma_giuridica:
         righe.append(f"- forma giuridica: {a.forma_giuridica}")
@@ -107,16 +150,7 @@ def profilo_anonimo(a: Azienda, progetti: list[Any] | None = None) -> str:
             "- servizi e forniture di interesse: "
             + ", ".join(etichetta(c) for c in a.cpv_interesse)
         )
-    for i, pr in enumerate([p for p in progetti or [] if p.attivo][:3], start=1):
-        parti = []
-        if pr.descrizione:
-            parti.append(pr.descrizione[:600])
-        if pr.categorie:
-            parti.append("spese: " + ", ".join(pr.categorie))
-        if pr.importo_stimato:
-            parti.append(f"importo circa {int(pr.importo_stimato):,} euro".replace(",", "."))
-        if parti:
-            righe.append(f"- progetto d'investimento {i}: " + "; ".join(parti))
+    righe += _righe_progetti(progetti)
     return "\n".join(righe)
 
 

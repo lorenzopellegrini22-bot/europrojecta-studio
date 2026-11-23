@@ -20,12 +20,17 @@
     <header><strong>Dati</strong></header>
     <dl class="dati">
       <dt>Codice fiscale</dt><dd>{{ azienda.codice_fiscale or "—" }}</dd>
+      {% if azienda.tipo_soggetto == "ente_pubblico" %}
+      <dt>Tipo</dt><dd>Ente pubblico</dd>
+      <dt>Abitanti</dt><dd>{{ "{:,}".format(azienda.abitanti).replace(",", ".") if azienda.abitanti else "—" }}</dd>
+      {% else %}
       <dt>ATECO</dt><dd>{% if azienda.ateco_primario %}{{ azienda.ateco_primario.codice }}{% if azienda.ateco_primario.descrizione %} · {{ azienda.ateco_primario.descrizione }}{% endif %}{% else %}—{% endif %}</dd>
       <dt>Dipendenti</dt><dd>{{ azienda.dipendenti if azienda.dipendenti is not none else "—" }}{% if azienda.anno_dati %} <small>({{ azienda.anno_dati }})</small>{% endif %}</dd>
       <dt>Fatturato</dt><dd>{{ azienda.fatturato | euro }}</dd>
+      {% endif %}
       {% if azienda.segnalatore %}<dt>Segnalato da</dt><dd><a href="/segnalatori/{{ azienda.segnalatore.id }}">{{ azienda.segnalatore.nome }}</a></dd>{% endif %}
       {% if azienda.stato_attivita %}<dt>Registro Imprese</dt><dd>{{ azienda.stato_attivita }}{% if azienda.registro_imprese_il %} <small>(letto il {{ azienda.registro_imprese_il | data_ora }})</small>{% endif %}</dd>{% endif %}
-      <dt>Dimensione</dt><dd>{{ (dimensione or "—") | capitalize }}{% if dimensione_provenienza == "calcolata" %} <small>(stima da dipendenti e fatturato: le ULA e le imprese collegate possono cambiarla)</small>{% endif %}</dd>
+      {% if azienda.tipo_soggetto != "ente_pubblico" %}<dt>Dimensione</dt><dd>{{ (dimensione or "—") | capitalize }}{% if dimensione_provenienza == "calcolata" %} <small>(stima da dipendenti e fatturato: le ULA e le imprese collegate possono cambiarla)</small>{% endif %}</dd>{% endif %}
       {% if azienda.data_costituzione %}<dt>Costituita il</dt><dd>{{ azienda.data_costituzione | data }}</dd>{% endif %}
       {% if azienda.totale_attivo is not none %}<dt>Totale di bilancio</dt><dd>{{ azienda.totale_attivo | euro }}</dd>{% endif %}
       {% if azienda.tag %}<dt>Tag</dt><dd>{% for t in azienda.tag %}<a href="/clienti?tag={{ t.nome | urlencode }}" class="etichetta">{{ t.nome }}</a> {% endfor %}</dd>{% endif %}
@@ -106,7 +111,7 @@
   {% if not azienda.avvisi_attivi %}
   <p>La ricerca automatica è disattivata per questo cliente. <a href="/clienti/{{ azienda.id }}/modifica#profilo-opportunita">Attivala</a>.</p>
   {% elif not opportunita %}
-  <p>Nessuna opportunità al momento.{% if not azienda.soa_possedute and not azienda.cpv_interesse %} Per gli appalti indica le categorie SOA o quelle di interesse: <a href="/clienti/{{ azienda.id }}/modifica#profilo-opportunita">completa il profilo</a>.{% endif %}</p>
+  <p>Nessuna opportunità al momento.{% if azienda.tipo_soggetto != "ente_pubblico" and not azienda.soa_possedute and not azienda.cpv_interesse %} Per gli appalti indica le categorie SOA o quelle di interesse: <a href="/clienti/{{ azienda.id }}/modifica#profilo-opportunita">completa il profilo</a>.{% endif %}</p>
   {% else %}
   <ul>
     {% for o in opportunita %}
