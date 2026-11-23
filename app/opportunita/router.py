@@ -131,6 +131,8 @@ def lista(request: Request, db: Db, _: Autenticato) -> Response:
             Azienda.avvisi_attivi,
             Azienda.soa_possedute.is_(None),
             Azienda.cpv_interesse.is_(None),
+            # gli enti pubblici le gare non le fanno: niente da completare
+            Azienda.tipo_soggetto == "impresa",
         )
     )
     return render(
