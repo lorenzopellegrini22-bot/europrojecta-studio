@@ -69,6 +69,51 @@ ALTRI_ENTI = re.compile(
 )
 
 
+# Frase «chi può partecipare» nel testo del bando (normalizzato) e enti locali nella stessa
+# frase. «dei comuni», «nei comuni» sono luoghi, non beneficiari.
+CHI_PARTECIPA = re.compile(
+    r"\b(possono (presentare|partecipare|candidarsi|accedere|beneficiare)|chi puo partecipare|"
+    r"soggetti (proponenti|ammessi|ammissibili|beneficiari|richiedenti)|"
+    r"beneficiari (dell|del|sono|ammessi)|destinatari (dell|del|sono)|"
+    r"(avviso|bando) e rivolto|e rivolto (a|ai|agli|alle)|sono rivolt[ei] (a|ai|agli|alle)|"
+    r"a chi si rivolge)\b"
+)
+# «Pubbliche Amministrazioni»: Fondo nazionale efficienza energetica di Invitalia
+ENTI_BENEFICIARI = re.compile(
+    r"(?<!\bdei )(?<!\bnei )(?<!\bdi )(?<!\bdai )\b(comuni|enti locali|amministrazioni comunali|"
+    r"pubbliche amministrazioni|unioni (dei |di )?comuni)\b"
+)
+
+
+# Esclusioni scritte nel testo. Collaudo Vignanello (24/11/2026): i fondi di garanzia del
+# Credito Sportivo valgono per «soggetti pubblici diversi dagli enti territoriali» e
+# arrivavano ai comuni con 55; i parcheggi del Lazio escludono i comuni capoluogo.
+ENTI_ESCLUSI = re.compile(
+    r"\b(divers[ie] dagli enti (territoriali|locali)|divers[ie] dai comuni|"
+    r"esclusi (gli enti (territoriali|locali)|i comuni)|"
+    r"(ad|con) esclusione degli enti (territoriali|locali)|"
+    r"non possono (partecipare|presentare domanda) (i comuni|gli enti (locali|territoriali)))\b"
+)
+COMUNI_ESCLUSI = re.compile(r"\b(?:con|ad) esclusione dei comuni di ([^.;:]{3,200})")
+
+
+def testo_bando(b: Any) -> str:
+    from app.utils.ricerca import normalizza
+
+    testo = f"{getattr(b, 'descrizione', None) or ''} . {getattr(b, 'testo_pagina', None) or ''}"
+    return normalizza(testo[:8000])
+
+
+def enti_nel_testo(b: Any) -> bool:
+    """Il testo del bando dice che possono partecipare comuni o enti locali."""
+    testo = testo_bando(b)
+    for m in CHI_PARTECIPA.finditer(testo):
+        frase = re.split(r"[.;:](?:\s|$)", testo[m.start() : m.start() + 300])[0]
+        if ENTI_BENEFICIARI.search(frase):
+            return True
+    return False
+
+
 def _migliaia(n: int) -> str:
     return f"{n:,}".replace(",", ".")
 
@@ -569,6 +614,18 @@ def _beneficiari_ente(a: Azienda, b: Bando, req: Any, e: Esito) -> None:
     if altro and not TITOLO_ENTI.search(titolo):
         e.da_verificare.append(f"Bando per {altro.group(1).upper()}: di solito non per i comuni")
         e.tetto = PUNTEGGIO_MINIMO - 5
+    testo = testo_bando(b)
+    if m := ENTI_ESCLUSI.search(testo):
+        raise Escluso(f"Il bando esclude gli enti territoriali: «{m.group(0)}»")
+    sede = getattr(a, "sede_legale", None)
+    comune = normalizza(getattr(sede, "comune_testo", None) or "").strip()
+    m = COMUNI_ESCLUSI.search(testo) if comune else None
+    if m and re.search(rf"\b{re.escape(comune)}\b", m.group(1)):
+        raise Escluso(f"Il bando esclude il Comune di {sede.comune_testo}")
+    if re.search(r"\b(gestori (di|degli) impianti di risalita|piste da sci)\b", testo[:1500]):
+        # «Energia in Vetta» arrivava con 45 al Comune di Vignanello (collaudo 24/11/2026)
+        e.da_verificare.append("Solo per chi gestisce impianti di risalita o piste da sci")
+        e.tetto = PUNTEGGIO_MINIMO - 5
     tip = req.tipologie_soggetto or []
     if tip:
         enti = [t for t in tip if any(s in normalizza(t) for s in SOGGETTI_ENTE)]
@@ -602,6 +659,11 @@ def _beneficiari_ente(a: Azienda, b: Bando, req: Any, e: Esito) -> None:
                 e.punteggio -= 5
     elif TITOLO_ENTI.search(titolo):
         e.soddisfatti.append("Dal titolo: rivolto a comuni o enti locali")
+        e.punteggio += 10
+    elif enti_nel_testo(b):
+        # Collaudo con il Comune di Vignanello (24/11/2026): «L'Italia delle donne» non ha
+        # beneficiari nella fonte ma il testo dice «possono presentare… gli enti locali»
+        e.soddisfatti.append("Dal testo: possono partecipare comuni o enti locali")
         e.punteggio += 10
     elif TITOLO_IMPRESE.search(titolo):
         e.da_verificare.append("Beneficiari non indicati: dal titolo sembra per le imprese")

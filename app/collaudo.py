@@ -19,6 +19,8 @@ Formato del file:
   "dimensione": "piccola", "regione": "Lazio", "provincia": "VT", "comune": "Viterbo",
   "ateco": "25.62", "dipendenti": 12, "fatturato": 1500000, "data_costituzione": "2015-03-01",
   "progetti": [{"titolo": "...", "descrizione": "...", "categorie": ["..."], "importo": 200000}]}],
+ Per un ente: "tipo_soggetto": "ente_pubblico", "abitanti": 4600 e, se serve,
+ "ambiti_ricerca": ["ue", "nazionali", "locali"] (senza: quelli predefiniti del tipo).
  "bandi": [{"fonte": "incentivi_italia", "id_esterno": "1234", "titolo": "..."}],
  "etichette": [{"azienda": "A1", "bando": "incentivi_italia:1234",
                 "atteso": "compatibile" | "non_compatibile" | "dubbio" | "da_etichettare",
@@ -71,6 +73,9 @@ def azienda_di_prova(d: dict[str, Any]) -> tuple[Azienda, list[Any]]:
     """Azienda in memoria (non salvata) e i suoi progetti, per le stesse regole notturne."""
     a = Azienda(
         ragione_sociale=d["ragione_sociale"],
+        tipo_soggetto=d.get("tipo_soggetto", "impresa"),
+        abitanti=d.get("abitanti"),
+        ambiti_ricerca=d.get("ambiti_ricerca"),
         forma_giuridica=d.get("forma_giuridica"),
         dimensione_manuale=d.get("dimensione"),
         dipendenti=d.get("dipendenti"),
@@ -204,8 +209,16 @@ class Risultato:
 
 
 def esegui(db: Session, dati: dict[str, Any], oggi: date | None = None) -> Risultato:
+    from app.opportunita.abbinamento import completa_sede_ente
+    from app.riferimenti import ateco as rif_ateco
+    from app.riferimenti import territorio as rif_territorio
+
     oggi = oggi or date.today()
+    territorio = rif_territorio.in_memoria(db)
+    raccordo = rif_ateco.in_memoria(db)
     aziende = {d["chiave"]: (d, *azienda_di_prova(d)) for d in dati["aziende"]}
+    for _, a, _ in aziende.values():
+        completa_sede_ente(a, territorio)  # come l'abbinamento notturno
     bandi: dict[str, Bando | None] = {}
     for b in dati["bandi"]:
         chiave = f"{b['fonte']}:{b['id_esterno']}"
@@ -226,7 +239,9 @@ def esegui(db: Session, dati: dict[str, Any], oggi: date | None = None) -> Risul
                  "punteggio": None, "motivo": "bando non trovato", "nota": e.get("nota", "")}
             )  # fmt: skip
             continue
-        esito, motivo = valuta_bando_con_motivo(a, b, Contesto(progetti=progetti, oggi=oggi))
+        esito, motivo = valuta_bando_con_motivo(
+            a, b, Contesto(progetti=progetti, oggi=oggi, territorio=territorio, raccordo=raccordo)
+        )
         r.coppie.append(
             {
                 "azienda": d["ragione_sociale"],

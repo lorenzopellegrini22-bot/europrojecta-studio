@@ -225,3 +225,39 @@ def test_calcolo_del_punteggio_spiegato():
     sondrio.sedi[0].provincia, sondrio.sedi[0].regione = "SO", "Lombardia"
     aler, _ = valuta_bando_con_motivo(sondrio, _bando("Sicurezza Aler", regioni=("Lombardia",)))
     assert aler.calcolo()["tetto"] == aler.punteggio < aler.calcolo()["grezzo"]
+
+
+def test_collaudo_vignanello():
+    """Casi trovati nel collaudo con il Comune di Vignanello (24/11/2026)."""
+    vignanello, viterbo = _comune("Vignanello", 4600), _comune("Viterbo", 67000)
+    # il testo esclude gli enti territoriali anche se la fonte dice «Ente Pubblico»
+    garanzia = _bando("Fondo di garanzia per l'impiantistica sportiva", ["Ente Pubblico",
+                      "Impresa"], None, "A chi si rivolge: fondazioni, università, enti "
+                      "pubblici diversi dagli enti territoriali.")  # fmt: skip
+    esito, motivo = valuta_bando_con_motivo(vignanello, garanzia)
+    assert esito is None and "esclude gli enti territoriali" in motivo
+    # comuni esclusi per nome: i capoluoghi nei parcheggi del Lazio
+    escluse = "con esclusione dei comuni di Frosinone, Latina, Rieti, Viterbo e Roma."
+    parcheggi = _bando("Contributi per la realizzazione di parcheggi urbani nei Comuni del Lazio",
+                       descrizione=f"Contributi per parcheggi urbani, {escluse}")  # fmt: skip
+    assert valuta_bando(viterbo, parcheggi) is None
+    assert valuta_bando(vignanello, parcheggi).punteggio >= PUNTEGGIO_MINIMO
+    # beneficiari non indicati dalla fonte ma scritti nel testo
+    donne = _bando("L'Italia delle donne (biennio 2026-2027)", None, descrizione="Chi può "
+                   "partecipare? Possono presentare le proposte le Regioni, le Province "
+                   "autonome, gli enti locali, gli archivi di Stato.")  # fmt: skip
+    es = valuta_bando(vignanello, donne)
+    assert es.punteggio >= PUNTEGGIO_MINIMO
+    assert "Dal testo: possono partecipare comuni o enti locali" in es.soddisfatti
+    fnee = _bando("Fondo nazionale efficienza energetica", None, None, "A CHI SI RIVOLGE Le "
+                  "agevolazioni sono rivolte a imprese ed ESCO (quali Consorzi e ATI) e "
+                  "Pubbliche Amministrazioni in forma singola o associata.")  # fmt: skip
+    assert valuta_bando(vignanello, fnee).punteggio >= PUNTEGGIO_MINIMO
+    # «nei comuni» è un luogo, non un beneficiario
+    viaggi = _bando("Viaggi di istruzione", None, descrizione="Possono presentare domanda le "
+                    "scuole con sede nei comuni delle aree interne.")  # fmt: skip
+    assert valuta_bando(vignanello, viaggi).punteggio < PUNTEGGIO_MINIMO
+    # impianti sciistici: solo per chi li gestisce
+    vetta = _bando("Energia in Vetta", ["Ente Pubblico", "Impresa"], None, "Misura rivolta ai "
+                   "gestori degli impianti di risalita e delle piste da sci.")  # fmt: skip
+    assert valuta_bando(vignanello, vetta).punteggio < PUNTEGGIO_MINIMO

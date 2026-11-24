@@ -28,3 +28,27 @@ devono essere pertinenti e **nessun bando chiaramente compatibile** deve essere 
   settore si cercano solo a inizio parola.
 - I bandi di **enti locali** senza territorio indicato (es. «Comune di Treviglio») venivano
   proposti a tutti: ora restano visibili ma con punteggio sotto la soglia.
+
+## Collaudo con il Comune di Vignanello (24/11/2026)
+Prova fatta da Claude, non ancora con il consulente: tutti i 1.201 bandi aperti o in arrivo
+del database locale abbinati al Comune di Vignanello (VT, circa 4.600 abitanti). Etichettate
+204 coppie (proposte, sotto soglia e le escluse del Lazio o che parlano di comuni) leggendo
+il testo dei bandi: `vignanello.json`, report in `vignanello.md`.
+
+```bash
+python -m app.cli collaudo --file docs/collaudo/vignanello.json --report docs/collaudo/vignanello.md
+```
+
+- **Prima delle correzioni: non superato.** 13 proposte, 3 sbagliate (77%):
+  - i due fondi di garanzia del Credito Sportivo, che nel testo valgono per i «soggetti
+    pubblici diversi dagli enti territoriali»;
+  - «Energia in Vetta», solo per chi gestisce impianti di risalita e piste da sci.
+- **Mancava** «L'Italia delle donne» (Pari Opportunità): la fonte non dice i beneficiari,
+  il testo sì («possono presentare… gli enti locali»).
+- **Dopo le correzioni: superato**, 10 proposte pertinenti su 10, nessuna esclusione
+  sbagliata. Resta sotto soglia il Fondo nazionale efficienza energetica (aperto alla PA):
+  la scheda Invitalia ha solo il titolo finché la lettura notturna delle pagine non
+  scarica il testo, poi la nuova regola lo riconosce.
+- Trovato anche: i parcheggi del Lazio escludono i comuni capoluogo, che ora non lo ricevono.
+- I bandi Horizon per città e quartieri sono etichettati «dubbio»: ammessi, ma servono
+  consorzi di ricerca internazionali.

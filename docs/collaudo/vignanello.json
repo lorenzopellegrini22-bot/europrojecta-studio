@@ -1,0 +1,2260 @@
+{
+ "istruzioni": "Collaudo del 24/11/2026 con il Comune di Vignanello (VT), etichette di Claude da rivedere con il consulente. Abitanti: circa 4.600 (valore indicativo).",
+ "aziende": [
+  {
+   "chiave": "V01",
+   "ragione_sociale": "Comune di Vignanello",
+   "tipo_soggetto": "ente_pubblico",
+   "abitanti": 4600,
+   "forma_giuridica": "Comune"
+  }
+ ],
+ "bandi": [
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-CL5-2026-11-D3-04",
+   "titolo": "De-risking renewable fuel technologies through transnational pre-commercial procurement of renewable fuel industrial value chains"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-CERV-2026-CITIZENS-REM-HOLOCAUSTJEW",
+   "titolo": "Strengthening the remembrance of the Holocaust against Jewish people."
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-CERV-2026-CITIZENS-REM-HISTMIGRATION",
+   "titolo": "Fostering remembrance of the legacy of colonialism, slavery, and migration, and their impact on contemporary multicultural European societies."
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-CERV-2026-CITIZENS-REM-TRANSITION",
+   "titolo": "Remembering democratic transitions, the (re-)building of democratic institutions, and strengthening society based on the rule of law, democracy, and fundamental rights."
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-NEB-2026-01-BUSINESS-02",
+   "titolo": "Understanding capital market dynamics for increased investment in New European Bauhaus projects in neighbourhoods"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-NEB-2026-01-PARTICIPATION-02",
+   "titolo": "Innovative approaches for the spatial design of neighbourhoods"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-NEB-2026-01-REGEN-03",
+   "titolo": "Innovative solutions for the sustainable and beautiful use of vertical space"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-NEB-2026-01-BUSINESS-03",
+   "titolo": "Approaches to reuse vacant, obsolete or underutilised spaces"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-NEB-2026-01-PARTICIPATION-01",
+   "titolo": "Addressing homelessness through housing-led approaches aligned with the New European Bauhaus"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-NEB-2026-01-PARTICIPATION-03",
+   "titolo": "Understanding inhabitant’s experiences of neighbourhoods to support their health and well-being"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-NEB-2026-01-BUSINESS-01",
+   "titolo": "Structurally addressing homelessness through coordinated social infrastructure and services in neighbourhoods"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-NATURE-2027-02-03",
+   "titolo": "Networking to scale up living labs for nature restoration solutions and to address bottlenecks to implementation"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-HLTH-2027-01-ENVHLTH-MISSCLIMA-03",
+   "titolo": "Tools and technologies to support health adaptation to climate change"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-BRIDGING-2027-01-10",
+   "titolo": "Autonomous Drive Ambition Cities (IA) - Apply AI"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-CERV-2026-CITIZENS-REM-GENCRIME-2",
+   "titolo": "Strengthening the remembrance of LGBTIQ+ victims and other victims"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-CERV-2026-CITIZENS-REM-GENCRIME-1",
+   "titolo": "Strengthening the remembrance of Roma victims"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-WIDERA-2027-05-ERA-03",
+   "titolo": "Pillar III: Science comes to town 2029"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-CL5-2027-06-D6-08",
+   "titolo": "Enhancing Mobility for All: affordable, reliable, and accessible multimodal transport for inclusive rural and urban connectivity – Societal Readiness pilot"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-CL5-2027-06-D6-05",
+   "titolo": "European CCAM knowledge hub and tools for safe and scalable deployment (CCAM Partnership)"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-NEB-2027-01-BUSINESS-02",
+   "titolo": "Innovative models for collective community investment and ownership"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-NEB-2027-01-PARTICIPATION-02",
+   "titolo": "Intergenerational neighbourhoods and communities aligned with the New European Bauhaus"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-CL2-2027-01-HERITAGE-03",
+   "titolo": "Crafting routes to a circular economy"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-NEB-2027-01-PARTICIPATION-01",
+   "titolo": "The transformative potential of co-governance in the green transition of neighbourhoods"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-NATURE-2027-03-01",
+   "titolo": "Advancing interdisciplinary, data-driven research at the biodiversity- health interface under a One Health approach"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-NEB-2027-01-PARTICIPATION-03",
+   "titolo": "Novel combinations of knowledge and research methods to address social issues and advance a fair green transition of neighbourhoods"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-NEB-2027-02-NEB-SOIL-01",
+   "titolo": "Reducing soil sealing through sustainable urban and territorial design in the New European Bauhaus"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-CL2-2027-01-DEMOCRACY-08",
+   "titolo": "Global Human Rights and EU values"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-CL2-2027-01-DEMOCRACY-05",
+   "titolo": "Development aid and democratic governance"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-CL6-2027-01-CIRCBIO-06",
+   "titolo": "Towards a Europe of Bioeconomy Places"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-CL6-2027-01-BIODIV-06",
+   "titolo": "Living labs driving transformative change via knowledge integration and inclusive governance"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-CL6-2027-01-CIRCBIO-07",
+   "titolo": "Improving biomass flows for a sustainable and circular bioeconomy"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-CL6-2027-01-CIRCBIO-02-two-stage",
+   "titolo": "Open topic: Using the Circular Cities and Regions Initiative to strengthen urban manufacturing in support of the Clean Industrial Deal"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-CL6-2027-01-CIRCBIO-01-two-stage",
+   "titolo": "Deploying circular systemic solutions through living labs in cities and regions (Circular Cities and Regions Initiative topic)"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-MISS-2027-01-CLIMA-01",
+   "titolo": "Demonstrating transformative solutions to increase cross-border climate resilience"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-MISS-2027-01-CLIMA-02",
+   "titolo": "Researching and applying the potential of Artificial Intelligence to foster climate resilience at the regional and local levels"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-MISS-2027-04-CIT-01",
+   "titolo": "Innovative microgrids for improved energy system integration and efficiency in urban contexts"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-MISS-2027-07-CLIMA-CIT-NEB-01",
+   "titolo": "Urban nature: supporting restoration of urban ecosystems, along urban transport networks and in the built environment"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-MISS-2027-04-CIT-02",
+   "titolo": "Hydrogen cities"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-MISS-2027-04-CIT-03",
+   "titolo": "Inclusive and climate resilient multimodal passenger hubs enhancing modal shift towards sustainable transport and shared mobility"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-MISS-2027-03-OCEAN-03",
+   "titolo": "Green, circular and resilient harbours"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-MISS-2027-03-OCEAN-01",
+   "titolo": "Increasing riparian and coastal areas resilience to climate change, including in waterfront cities and islands."
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-MISS-2027-07-CLIMA-CIT-CCRI-02",
+   "titolo": "Deploying innovative wastewater management, treatment and valorisation solutions in European cities and regions in the context of climate change"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-MISS-2027-03-OCEAN-04",
+   "titolo": "Towards community-driven business models: coastal and freshwaters sustainable tourism"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-MISS-2027-04-CIT-05",
+   "titolo": "Boosting the transformation towards climate-neutral cities, the net-zero economy and open strategic autonomy through Pre-Commercial Procurement (PCP)"
+  },
+  {
+   "fonte": "ue_funding_tenders",
+   "id_esterno": "ue-HORIZON-MISS-2027-04-CIT-CCRI-04",
+   "titolo": "Advancing circular logistics solutions in cities"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-20016",
+   "titolo": "Bonus occupazionale RI-SALGO"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-19730",
+   "titolo": "Misure per favorire l’inserimento lavorativo delle persone con disabilità"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-19713",
+   "titolo": "Rafforzamento delle capacità manageriali delle imprese"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "3364",
+   "titolo": "Avviso Nuovo Fondo Piccolo Credito -  Seconda finestra 2024"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8675",
+   "titolo": "Primi interventi urgenti di protezione civile in conseguenza degli eccezionali eventi nel territorio della città metropolitana di Venezia, delle province di Vicenza, di Verona, di Padova e di Treviso, del comune di Badia Polesine"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8703",
+   "titolo": "Doposcuola nel Comune di Besenello 2026-2027"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioinnova-63341",
+   "titolo": "Finanziamenti con provvista BEI e contributo in conto interessi"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7708",
+   "titolo": "Comune di Sacco - Fondo di sostegno Comuni marginali - II annualità"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7795",
+   "titolo": "Regione FVG - Comune di Amaro - Bando prime misure di sostegno per l'immediata ripresa delle attività economiche e produttive compromesse dagli eventi metereologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7958",
+   "titolo": "Comune di Collegno - Fondo incentivi per le imprese 2026"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-19542",
+   "titolo": "Manifestazioni di interesse a realizzare iniziative di sostegno alle donne vittime di violenza e ai loro figli minori"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8773",
+   "titolo": "Bando per il cofinanziamento di interventi a sostegno dei mercati nei comuni lombardi - Regione Lombardia"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8779",
+   "titolo": "FERX definitivo - Accesso diretto per impianti fino a 1 MW"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8865",
+   "titolo": "Comune di Cesena - Contributi a fondo perduto per interventi in conto capitale a favore di imprese ubicate nel perimetro degli Hub riconosciuti"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-21705",
+   "titolo": "Investimenti nelle aziende agricole per la diversificazione in attività non agricole"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-21043",
+   "titolo": "Adesione e registrazione di soggetti erogatori privati di servizi educativi per la prima infanzia"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-22051",
+   "titolo": "PRESEPI 2026"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-17471",
+   "titolo": "Contributo su finanziamenti alle imprese del Lazio erogati su provvista BEI"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-21691",
+   "titolo": "Partecipazione degli studenti a viaggi di istruzione e a eventi di premiazione per la valorizzazione delle eccellenze (a. s. 2026/2027 e 2027/2028)"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-brevetti-2026",
+   "titolo": "Brevetti+ 2026"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7693",
+   "titolo": "Avviso Pubblico Bonus occupazione per le imprese ospitanti di tirocini RI-SALGO"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7709",
+   "titolo": "Comune di Sacco - Fondo di sostegno Comuni marginali - III annualità"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7792",
+   "titolo": "Regione Lazio - Bonus occupazione per le imprese ospitanti tirocini nell'ambito dell'intervento SALGO"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-fondo-di-contrasto-alla-deindustrializzazione-2026",
+   "titolo": "Fondo di contrasto alla deindustrializzazione 2026"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "2435",
+   "titolo": "Manifestazioni di interesse per l'emissione di Minibond nell'ambito dell'Operazione Basket Bond Lazio con il sostegno del Fondo di Garanzia Minibond"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "2659",
+   "titolo": "Credito d'imposta per gli investimenti nelle Zone logistiche semplificate (ZLS)- Annualità 2026-2027-2028"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8875",
+   "titolo": "Bando per la concessione di contributi alle imprese localizzate o che intendano insediarsi nel perimetro dell'Hub di Prossimità – area GAD e via Bologna del Comune di Ferrara"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "2780",
+   "titolo": "Piano operativo del Comparto per contributi in conto interessi del Fondo patrimonio culturale"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "1727",
+   "titolo": "Comparto di garanzia patrimonio culturale - Istituto per il Credito Sportivo"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "1712",
+   "titolo": "Piano Operativo Fondo Contributi Interessi"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "1726",
+   "titolo": "Fondo di garanzia per l'impiantistica sportiva - Istituto per il Credito Sportivo"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "861",
+   "titolo": "2022 - Contributi a fondo perduto per il sostegno alle attività produttive dei comuni delle aree interne e montane - Comune di Segusino -"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "1197",
+   "titolo": "Fondo rotativo regionale per il recupero di aziende in crisi  o a rischio di delocalizzazione - Regione Lazio"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "1393",
+   "titolo": "Avviso pubblico Fondo Comuni marginali - Comune di Caramanico Terme"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "1515",
+   "titolo": "Fondo comuni marginali: annualità 2022 - comune di Santa Elisabetta"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "649",
+   "titolo": "Agevolazione IRAP - Misure di sostegno a favore dei piccoli comuni della Lombardia"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "1958",
+   "titolo": "Contributi a valere sul Fondo comuni marginali - Comune di Camastra"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "1952",
+   "titolo": "Contributi Fondo Comuni Marginali per l'avvio di attività commerciali  artigianali e agricole nel Comune di Giuliana"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "2065",
+   "titolo": "Incentivi alle imprese per l'assunzione di ricercatori - MUR - PNNR"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "315",
+   "titolo": "Friuli Venezia Giulia - Concessione di contributi a Comuni, operatori economici, proprietari di immobili, associazioni per progetti unitari di alberghi diffusi - 2023 - (Legge Regionale 3/2021, art. 35, c. 7)"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "900000187",
+   "titolo": "Agevolazioni fiscali finalizzate all'assunzione di dipendenti detenuti o internati"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "193",
+   "titolo": "Energia in Vetta"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "4545",
+   "titolo": "Attrazione Investimenti - Invest in Lazio Grant facility"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "3437",
+   "titolo": "Avviso pubblico ISI 2024 per il miglioramento dei livelli di salute e sicurezza sul lavoro - Lazio"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8001",
+   "titolo": "FVG - Comune di Lignano Sabbiadoro - Bando prime misure di sostegno per l'immediata ripresa delle attività economiche e produttive compromesse dagli eventi metereologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8019",
+   "titolo": "Comune di Rocchetta a Volturno - Fondo di sostegno Aree interne 2021"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8014",
+   "titolo": "Comune di Pedivigliano - Fondo di sostegno ai comuni marginali"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8015",
+   "titolo": "CCIAA Frosinone Latina - Bando per il sostegno alle imprese agrituristiche 2026"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8045",
+   "titolo": "Comune di Rocchetta a Volturno - Fondo di sostegno aree interne - 2022"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8527",
+   "titolo": "Comune di Fossalto - Avviso pubblico per contributi a valere sul fondo comuni marginali - annualità 2022"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8049",
+   "titolo": "Comune di Rivello - Contributi a valere sul Fondo di sostegno ai comuni marginali - Annualità 2022-2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8071",
+   "titolo": "Comune di Padria - Contributi De Minimis 2026"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8179",
+   "titolo": "Avviso pubblico Nuovo Fondo Futuro - Fare Lazio"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8237",
+   "titolo": "Comune di Reggio Calabria - \"IMPACT\" Avviso pubblico per la concessione di incentivi in favore delle imprese per l’inclusione nel mondo del lavoro dei soggetti appartenenti alle categorie svantaggiate"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8466",
+   "titolo": "Comune di Annicco - Avviso pubblico per contributi a fondo perduto per le spese di gestione sostenute dalle attività economiche commerciali e artigianali - Annualità  2022"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8191",
+   "titolo": "Convenzione tra l’Amministrazione Comunale e Agrifidi Emilia societa’ cooperativa per agevolare il credito bancario a favore delle aziende agricole esistenti nel Comune di Traversetolo - Anno 2026"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8217",
+   "titolo": "Comune di Beinette - Misure per ristorare le imprese esercenti trasporto scolastico delle perdite di fatturato da Covid19"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8221",
+   "titolo": "Comune di Casola Valsenio - Agevolazioni a favore dell’ampliamento di attività commerciali, artigianali e di servizio"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8224",
+   "titolo": "Contributi a fondo perduto per il sostegno delle spese di trasporto per macellazione a favore delle aziende zootecniche del Comune di Pratovecchio Stia"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8250",
+   "titolo": "Comune di Milano - Negozi e botteghe di quartiere"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8251",
+   "titolo": "Comune di Milano - Fondi di garanzia per la locazione commerciale"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8265",
+   "titolo": "Comune di Reggio Calabria - REGGIO VALORE – CENTRO STORICO Riqualificazione e valorizzazione del centro storico di Reggio Calabria - Bando per l’assegnazione di contributi a fondo perduto alle micro e piccole imprese"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8440",
+   "titolo": "Fondo in favore di micro e piccole imprese e associazioni del Comune di Trento danneggiate da furti e atti vandalici - Anno 2026"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8469",
+   "titolo": "Comune di Cagliari - Contributi per la realizzazione di progetti inclusivi in ambito educativo"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8525",
+   "titolo": "Comune di Trento - Contributi da parte del Servizio Economia, turismo e montagna"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8576",
+   "titolo": "Comune di Norbello - Misure di sostegno finalizzate all'apertura di un esercizio alimentare nel territorio comunale"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8577",
+   "titolo": "Comune di Collecchio - Agevolazione credito bancario a favore delle imprese - Anno 2026"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8645",
+   "titolo": "Bando per contributi a favore di aziende agricole per la gestione di processi di agricoltura conservativa, sostenibile e sicura - Comune di Tresignana"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8713",
+   "titolo": "Partecipazione della Regione Lazio alle attività dell'anno 2026 della Fondazione Musica per Roma"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8686",
+   "titolo": "Contributi a fondo perduto per le spese sostenute dalle attività economiche, commerciali e artigianali, operanti nel Comune di Placanica - Annualità 2021"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "3519",
+   "titolo": "Potenziamento rete Spazio Attivo - Avvisi per premi/contributi diretti"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8718",
+   "titolo": "Comune di Sarentino - Bando per contributi alle imprese per progetti di sviluppo sostenibile"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8890",
+   "titolo": "Automotive - Accordi per l’innovazione nella filiera"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8743",
+   "titolo": "Riapertura termini per la concessione di contributi a fondo perduto a sostegno delle microimprese del commercio, dell'artigianato, dei servizi alla persona, dell'agricoltura, ai fini della valorizzazione di determinate aree - Comune di Grosseto"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioinnova-63034",
+   "titolo": "Giovani Attività Professionali 2026"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioinnova-62755",
+   "titolo": "Atelier dell’Immaginario"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioinnova-60810",
+   "titolo": "Zagarolo Game City 2026"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioinnova-56759",
+   "titolo": "Sostituzione Veicoli Commerciali Inquinanti"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "3901",
+   "titolo": "Regime di aiuti a sostegno dell'occupazione di determinati lavoratori in Italia e nel Mezzogiorno"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioinnova-40997",
+   "titolo": "Basket Bond Lazio – Contributo sui costi di emissione sostenuti dalle Pmi ammissibili"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioinnova-40791",
+   "titolo": "Basket Bond Lazio"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioinnova-12899",
+   "titolo": "Fondo Microcredito ‘Adozioni’"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "5038",
+   "titolo": "Bandi per la partecipazione alle procedure competitive per l'accesso agli incentivi previsti dal DM FER2"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "5058",
+   "titolo": "Contributi a valere sul Fondo di sostegno alle attività economiche, artigianali e commerciali nel Comune di Orroli - Annualità 2022"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "5121",
+   "titolo": "Comune di Pistoia - Bando pubblico 2025 - Concessione di ristori a sostegno delle attività economiche extra-agricole per danni economico-finanziari subiti in seguito alla chiusura del ponte sul torrente Bure"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioinnova-63717",
+   "titolo": "Voucher Internazionalizzazione Pmi 2027"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "5296",
+   "titolo": "Bando Natalinsieme 2025 - Comune di San Donà di Piave"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "5469",
+   "titolo": "Avviso pubblico per presentare proposte di investimento a valere sul fondo denominato Lazio Venture 2"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-18462",
+   "titolo": "Progetto nazionale di sperimentazione per l’istituzione della filiera formativa tecnologico-professionale – prima annualità"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7022",
+   "titolo": "Fondo di sostegno comuni marginali - Terza annualità 2023 - Comune di Tuglie"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7821",
+   "titolo": "Regione FVG - Comune di Duino-Aurisina - Bando prime misure economiche di sostegno al tessuto economico per l’immediata ripresa delle attività economiche e produttive compromesse dagli eventi meteorologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7825",
+   "titolo": "Regione FVG - Comune di Osoppo - Bando prime misure economiche di sostegno al tessuto economico per l’immediata ripresa delle attività economiche e produttive compromesse dagli eventi meteorologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7850",
+   "titolo": "Bando riqualificazione caseificio - Comune di Pedavena"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-18453",
+   "titolo": "Progetto nazionale di sperimentazione per l’istituzione della filiera formativa tecnologico-professionale – seconda annualità"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7713",
+   "titolo": "Regione FVG - Comune di Grado - Bando prime misure di sostegno per l'immediata ripresa delle attività economiche e produttive compromesse dagli eventi metereologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7741",
+   "titolo": "Regione FVG - Comune di Trieste - Bando prime misure di sostegno per l'immediata ripresa delle attività economiche e produttive compromesse dagli eventi metereologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7744",
+   "titolo": "Regione FVG - Comune di Majano - Bando prime misure di sostegno per l'immediata ripresa delle attività economiche e produttive compromesse dagli eventi metereologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-5820",
+   "titolo": "Finanziamenti a tasso agevolato a sostegno di percorsi di adozione internazionale avviati dalle famiglie"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7771",
+   "titolo": "Regione FVG - Comune di San Giovanni al Natisone - Bando prime misure di sostegno per l'immediata ripresa delle attività economiche e produttive compromesse dagli eventi metereologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7780",
+   "titolo": "Regione FVG - Comune di Tarvisio - Bando prime misure di sostegno per l'immediata ripresa delle attività economiche e produttive compromesse dagli eventi metereologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7796",
+   "titolo": "Bando Regione FVG - Comune di Cavazzo Carnico - Bando prime misure di sostegno per l'immediata ripresa delle attività economiche e produttive compromesse dagli eventi metereologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7807",
+   "titolo": "Bando Regione FVG - Comune di Muggia - Bando prime misure di sostegno per l'immediata ripresa delle attività economiche e produttive compromesse dagli eventi metereologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-18410",
+   "titolo": "Contributi per la realizzazione di parcheggi urbani nei Comuni del Lazio"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7890",
+   "titolo": "Bando per la partecipazione delle imprese aderenti ai marchi collettivi Tuscia Viterbese e REA Qualità Reatina alle iniziative di promozione agroalimentare della Regione Lazio 2026"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7907",
+   "titolo": "Comune di Alzano Lombardo - Contributi Start-Up 2025"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7840",
+   "titolo": "Regione FVG - Comune di Arta Terme - Bando prime misure di sostegno per l'immediata ripresa delle attività economiche e produttive compromesse dagli eventi metereologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7842",
+   "titolo": "Regione FVG - Comune di Comeglians - Bando prime misure di sostegno per l'immediata ripresa delle attività economiche e produttive compromesse dagli eventi metereologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7921",
+   "titolo": "Regione FVG - Comune di Sauris - Bando prime misure di sostegno per l'immediata ripresa delle attività economiche e produttive compromesse dagli eventi metereologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7942",
+   "titolo": "Regione FVG - Comune di Povoletto - Bando prime misure di sostegno per l'immediata ripresa delle attività economiche e produttive compromesse dagli eventi metereologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7949",
+   "titolo": "CCCIAA e Comune di Firenze - Bando a sostegno delle micro, piccole e medie imprese della città metropolitana di Firenze in materia di sicurezza delle sedi aziendali - Anno 2026"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7952",
+   "titolo": "Regione FVG - Comune di Paluzza - Bando prime misure di sostegno per l'immediata ripresa delle attività economiche e produttive compromesse dagli eventi metereologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7962",
+   "titolo": "Regione FVG - Comune di Trasaghis - Bando prime misure di sostegno per l'immediata ripresa delle attività economiche e produttive compromesse dagli eventi metereologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7963",
+   "titolo": "Regione FVG - Comune di Nimis - Bando prime misure di sostegno per l'immediata ripresa delle attività economiche e produttive compromesse dagli eventi metereologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7997",
+   "titolo": "FVG - Comune di Villa Santina - Bando prime misure di sostegno per l'immediata ripresa delle attività economiche e produttive compromesse dagli eventi metereologici verificatisi dal 24 ottobre al 5 novembre 2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7571",
+   "titolo": "Comune di Africo - Fondo di sostegno ai comuni marginali - Annualità 2021/2022/2023"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "7258",
+   "titolo": "Fondo Aree Interne - Comune di Castel San Niccolò - Anno 2022"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-sapereconsumare",
+   "titolo": "Saper(e)Consumare"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8844",
+   "titolo": "Comune di Cividale del Friuli - Bando per contributi alle imprese finalizzati all’acquisto e all’attivazione di impianti e sistemi tecnologici necessari alla digitalizzazione dei processi produttivi"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8832",
+   "titolo": "Bando per la concessione di contributi alle imprese localizzate in ambito Hub del Comune di Cento"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8834",
+   "titolo": "CCIAA Frosinone-Latina - Bando per la concessione di contributi per sistemi di videosorveglianza  digitale - Anno 2026"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8848",
+   "titolo": "Contributi a fondo perduto volti a sostenere l'insediamento e l'innovazione delle attività economiche sul territorio del comune di Castelnuovo Rangone"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8849",
+   "titolo": "ImpresAlcentro 2026 - Bando per la promozione, valorizzazione e crescita del centro storico del comune di Gualdo Tadino mediante concessione di contributi a fondo perduto per imprese e attività commerciali, artigianali e dei pubblici esercizi"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8873",
+   "titolo": "Bando per la concessione di contributi alle imprese localizzate o che intendano insediarsi nel perimetro dell'Hub Urbano - Centro Storico del Comune di Ferrara"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8878",
+   "titolo": "Asolo e Monte Grappa per le imprese - Pedemontana FUND - Comune di Monfumo"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8882",
+   "titolo": "Bando per contributi a fondo perduto per interventi in conto capitale a sostegno delle imprese del territorio dell’Hub Urbano del Comune di Formigine denominato “Formigine Centro Verde Vivo”"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-autoimpiego-centro-nord",
+   "titolo": "Autoimpiego Centro-Nord"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-22014",
+   "titolo": "Luci del Varietà – Cinema, territorio e giovani"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-21766",
+   "titolo": "Contributo alle famiglie degli alunni e degli studenti con disabilità delle scuole paritarie (a.s. 2025/26)"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-21616",
+   "titolo": "Business Opportunities – Manifestazione d’interesse"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-20072",
+   "titolo": "Contributo di Libertà per le donne che hanno subito violenza"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-21499",
+   "titolo": "L’Italia delle donne (biennio 2026-2027)"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-21425",
+   "titolo": "Sostegno al Servizio di psicologia scolastica e agli sportelli di ascolto nelle istituzioni scolastiche e formative"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-21307",
+   "titolo": "Manifestazioni di interesse finalizzate alla partecipazione a World Travel Market"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-21305",
+   "titolo": "Manifestazioni di interesse finalizzate alla partecipazione a ILTM – International Luxury Travel Market 2026"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-21051",
+   "titolo": "Percorsi di Istruzione e formazione professionale (IeFP) e percorsi formativi individualizzati per persone con disabilità (PFI) – Annualità 2026-2027"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-20167",
+   "titolo": "Percorso di tutoraggio per le imprese"
+  },
+  {
+   "fonte": "regione_lazio",
+   "id_esterno": "lazioeuropa-20104",
+   "titolo": "Bonus occupazionale SALGO"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-voucher-cloud-e-cybersecurity",
+   "titolo": "Voucher cloud e cybersecurity"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-fondo-di-partecipazione-mur",
+   "titolo": "Fondo di partecipazione MUR"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-sviluppo-competenze-specialistiche-delle-pmi",
+   "titolo": "Sviluppo competenze specialistiche delle Pmi"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-cultura-cresce",
+   "titolo": "Cultura Cresce"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-legge-181",
+   "titolo": "Legge 181"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-agevolazioni-le-imprese-confiscate-o-sequestrate-alla-criminalita",
+   "titolo": "Agevolazioni per le imprese confiscate o sequestrate alla criminalità"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-contratto-di-sviluppo",
+   "titolo": "Contratto di sviluppo"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-finanziamenti-vittime-di-mancati-pagamenti",
+   "titolo": "Finanziamenti a vittime di mancati pagamenti"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-attrazione-investimenti-esteri",
+   "titolo": "Attrazione investimenti esteri"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-italia-economia-sociale",
+   "titolo": "Italia Economia Sociale"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-progetto-rete-giovani-competenze-lavoro",
+   "titolo": "Progetto Rete – Giovani, competenze, lavoro"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-rilanciamo-le-aree-di-crisi-industriale",
+   "titolo": "Rilanciamo le aree di crisi industriale"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-fondo-nazionale-efficienza-energetica",
+   "titolo": "Fondo nazionale efficienza energetica"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-piattaforma-invitalia-gare-telematiche-ingate",
+   "titolo": "Piattaforma Invitalia Gare Telematiche - InGaTe"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-albi-fornitori-invitalia",
+   "titolo": "Albi fornitori Invitalia"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-cis-foggia",
+   "titolo": "CIS Foggia"
+  },
+  {
+   "fonte": "invitalia",
+   "id_esterno": "invitalia-nuovo-ecobonus-lincentivo-la-mobilita-sostenibile",
+   "titolo": "Nuovo ecobonus - L’incentivo per la mobilità sostenibile"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8872",
+   "titolo": "Contributi del fondo regionale per la valorizzazione delle edicole quali presidi di informazione, cultura e servizi nei Comuni della Regione Molise - Annualità 2026"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "5101",
+   "titolo": "Comune di Ferrara - contributi per l'apertura di nuove attività in locali commerciali sfitti del centro storico - Linea A"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "5103",
+   "titolo": "Comune di Ferrara - contributi per l'apertura di nuove attività in locali commerciali sfitti del centro storico - Linea B"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8818",
+   "titolo": "Comune di Treviglio - Bando per contributi a fondo perduto alle MPMI che svolgono vendita al dettaglio di beni e/o servizi, somministrazione di cibi e bevande, prestazione di servizi alla persona e commercio su area pubblica"
+  },
+  {
+   "fonte": "incentivi_italia",
+   "id_esterno": "8816",
+   "titolo": "Comune di Brescia - Bando per lo sviluppo dei servizi del sistema commerciale territoriale 2026"
+  }
+ ],
+ "etichette": [
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-CL5-2026-11-D3-04",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-CERV-2026-CITIZENS-REM-HOLOCAUSTJEW",
+   "atteso": "compatibile",
+   "nota": "CERV memoria: enti pubblici ammessi; serve un progetto con associazioni, testi in inglese"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-CERV-2026-CITIZENS-REM-HISTMIGRATION",
+   "atteso": "compatibile",
+   "nota": "CERV memoria: enti pubblici ammessi"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-CERV-2026-CITIZENS-REM-TRANSITION",
+   "atteso": "compatibile",
+   "nota": "CERV memoria: enti pubblici ammessi"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-NEB-2026-01-BUSINESS-02",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-NEB-2026-01-PARTICIPATION-02",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-NEB-2026-01-REGEN-03",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-NEB-2026-01-BUSINESS-03",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-NEB-2026-01-PARTICIPATION-01",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-NEB-2026-01-PARTICIPATION-03",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-NEB-2026-01-BUSINESS-01",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-NATURE-2027-02-03",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-HLTH-2027-01-ENVHLTH-MISSCLIMA-03",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-BRIDGING-2027-01-10",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-CERV-2026-CITIZENS-REM-GENCRIME-2",
+   "atteso": "compatibile",
+   "nota": "CERV memoria: enti pubblici ammessi"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-CERV-2026-CITIZENS-REM-GENCRIME-1",
+   "atteso": "compatibile",
+   "nota": "CERV memoria: enti pubblici ammessi"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-WIDERA-2027-05-ERA-03",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-CL5-2027-06-D6-08",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-CL5-2027-06-D6-05",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-NEB-2027-01-BUSINESS-02",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-NEB-2027-01-PARTICIPATION-02",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-CL2-2027-01-HERITAGE-03",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-NEB-2027-01-PARTICIPATION-01",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-NATURE-2027-03-01",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-NEB-2027-01-PARTICIPATION-03",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-NEB-2027-02-NEB-SOIL-01",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-CL2-2027-01-DEMOCRACY-08",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-CL2-2027-01-DEMOCRACY-05",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-CL6-2027-01-CIRCBIO-06",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-CL6-2027-01-BIODIV-06",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-CL6-2027-01-CIRCBIO-07",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-CL6-2027-01-CIRCBIO-02-two-stage",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-CL6-2027-01-CIRCBIO-01-two-stage",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-MISS-2027-01-CLIMA-01",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-MISS-2027-01-CLIMA-02",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-MISS-2027-04-CIT-01",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-MISS-2027-07-CLIMA-CIT-NEB-01",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-MISS-2027-04-CIT-02",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-MISS-2027-04-CIT-03",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-MISS-2027-03-OCEAN-03",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-MISS-2027-03-OCEAN-01",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-MISS-2027-07-CLIMA-CIT-CCRI-02",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-MISS-2027-03-OCEAN-04",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-MISS-2027-04-CIT-05",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "ue_funding_tenders:ue-HORIZON-MISS-2027-04-CIT-CCRI-04",
+   "atteso": "dubbio",
+   "nota": "Horizon Europe: enti ammessi, ma consorzi di ricerca internazionali; poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-20016",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-19730",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-19713",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:3364",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8675",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8703",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioinnova-63341",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7708",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7795",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7958",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-19542",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8773",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8779",
+   "atteso": "compatibile",
+   "nota": "FERX: incentivo per impianti rinnovabili fino a 1 MW, anche di proprietà comunale"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8865",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-21705",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-21043",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-22051",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-17471",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-21691",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-brevetti-2026",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7693",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7709",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7792",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-fondo-di-contrasto-alla-deindustrializzazione-2026",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:2435",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:2659",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8875",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:2780",
+   "atteso": "compatibile",
+   "nota": "Credito Sportivo: interessi su mutui per il patrimonio culturale, soggetti pubblici ammessi"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:1727",
+   "atteso": "non_compatibile",
+   "nota": "Il testo: soggetti pubblici diversi dagli enti territoriali"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:1712",
+   "atteso": "compatibile",
+   "nota": "Credito Sportivo: contributi in conto interessi anche agli enti locali e territoriali"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:1726",
+   "atteso": "non_compatibile",
+   "nota": "Il testo: enti pubblici diversi dagli enti territoriali"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:861",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:1197",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:1393",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:1515",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:649",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:1958",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:1952",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:2065",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:315",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:900000187",
+   "atteso": "dubbio",
+   "nota": "Sgravi per chi assume detenuti: pensato per imprese e cooperative"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:193",
+   "atteso": "non_compatibile",
+   "nota": "Solo per gestori di impianti di risalita e piste da sci (stagione 2022/23)"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:4545",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:3437",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8001",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8019",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8014",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8015",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8045",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8527",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8049",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8071",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8179",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8237",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8466",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8191",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8217",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8221",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8224",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8250",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8251",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8265",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8440",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8469",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8525",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8576",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8577",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8645",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8713",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8686",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:3519",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8718",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8890",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8743",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioinnova-63034",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioinnova-62755",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioinnova-60810",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioinnova-56759",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:3901",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioinnova-40997",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioinnova-40791",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioinnova-12899",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:5038",
+   "atteso": "dubbio",
+   "nota": "FER2: impianti innovativi (biogas, solare termodinamico): possibile ma poco realistico per un comune di 4.600 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:5058",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:5121",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioinnova-63717",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:5296",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:5469",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-18462",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7022",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7821",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7825",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7850",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-18453",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7713",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7741",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7744",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-5820",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7771",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7780",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7796",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7807",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-18410",
+   "atteso": "compatibile",
+   "nota": "Riservato ai comuni del Lazio (esclusi i capoluoghi); contributo 100% sotto 5.000 abitanti"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7890",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7907",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7840",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7842",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7921",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7942",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7949",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7952",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7962",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7963",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7997",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7571",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:7258",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-sapereconsumare",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8844",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8832",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8834",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8848",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8849",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8873",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8878",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8882",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-autoimpiego-centro-nord",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-22014",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-21766",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-21616",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-20072",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-21499",
+   "atteso": "compatibile",
+   "nota": "Il testo: possono candidarsi Regioni, Province ed enti locali"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-21425",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-21307",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-21305",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-21051",
+   "atteso": "dubbio",
+   "nota": "IeFP: per centri di formazione, anche a gestione diretta degli enti territoriali"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-20167",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "regione_lazio:lazioeuropa-20104",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-voucher-cloud-e-cybersecurity",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-fondo-di-partecipazione-mur",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-sviluppo-competenze-specialistiche-delle-pmi",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-cultura-cresce",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-legge-181",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-agevolazioni-le-imprese-confiscate-o-sequestrate-alla-criminalita",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-contratto-di-sviluppo",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-finanziamenti-vittime-di-mancati-pagamenti",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-attrazione-investimenti-esteri",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-italia-economia-sociale",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-progetto-rete-giovani-competenze-lavoro",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-rilanciamo-le-aree-di-crisi-industriale",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-fondo-nazionale-efficienza-energetica",
+   "atteso": "compatibile",
+   "nota": "Invitalia: aperto alle Pubbliche Amministrazioni (sportello chiuso solo per le imprese)"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-piattaforma-invitalia-gare-telematiche-ingate",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-albi-fornitori-invitalia",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-cis-foggia",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "invitalia:invitalia-nuovo-ecobonus-lincentivo-la-mobilita-sostenibile",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8872",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:5101",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:5103",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8818",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  },
+  {
+   "azienda": "V01",
+   "bando": "incentivi_italia:8816",
+   "atteso": "non_compatibile",
+   "nota": "Per imprese, scuole, famiglie o altri territori"
+  }
+ ]
+}
