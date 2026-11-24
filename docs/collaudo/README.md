@@ -52,3 +52,19 @@ python -m app.cli collaudo --file docs/collaudo/vignanello.json --report docs/co
 - Trovato anche: i parcheggi del Lazio escludono i comuni capoluogo, che ora non lo ricevono.
 - I bandi Horizon per città e quartieri sono etichettati «dubbio»: ammessi, ma servono
   consorzi di ricerca internazionali.
+
+## Set del contratto etichettato da Claude (24/11/2026)
+`set-etichettato.json` è `set-proposto.json` (10 aziende di prova × 20 bandi, ancora tutti
+aperti) con le etichette messe leggendo i bandi; report in `set-etichettato.md`. Da rivedere
+con il consulente.
+
+- **Prima delle correzioni: non superato**, 4 pertinenti su 24 proposte giudicate (17%):
+  - bandi nazionali non collegati ai progetti arrivavano a 45 esatti (Conto Termico a una
+    software house, finanziamenti per l'estero a chi non esporta): ora −25;
+  - Workers Buyout del Lazio a una ditta appena nata, indennizzo dell'alluvione 2023 a ogni
+    impresa di Firenze e Pisa, fondo umbro in cui la domanda la fanno i Confidi: ora restano
+    sotto la soglia con il motivo;
+  - Conto Termico (interventi negli edifici) al progetto «Flotta green»: ora conta solo se un
+    progetto riguarda immobili e opere.
+- **Dopo: superato**, 4 pertinenti su 4, nessuna esclusione sbagliata; altre 4 proposte sono
+  «dubbio» (filiera autobus elettrici, formazione continua, impresa femminile).

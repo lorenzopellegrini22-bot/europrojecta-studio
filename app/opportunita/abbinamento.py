@@ -773,6 +773,16 @@ CRISI = re.compile(
     r"crisi d'impresa|crisi aziendale",
     re.IGNORECASE,
 )
+CALAMITA = re.compile(
+    r"\b(eventi alluvionali|alluvion[ei]|eventi sismici|sisma|calamit[aà] natural[ei]|"
+    r"eventi calamitosi|danni (materiali )?(diretti )?subiti)\b",
+    re.IGNORECASE,
+)
+SOLO_INTERMEDIARI = re.compile(
+    r"\b(invito ai confidi|rivolt[oa] ai confidi|destinatari [^.]{0,60}sono i confidi|"
+    r"possono presentare domanda (i confidi|le banche))\b",
+    re.IGNORECASE,
+)
 MESI_IMPRESA_GIOVANE = 36
 SOLO_MICRO = re.compile(r"\bmicro[ -]?imprese\b", re.IGNORECASE)
 ALTRE_DIMENSIONI = re.compile(r"\bpiccol[ae]\b|\bmedi[ae]\b|\bPMI\b", re.IGNORECASE)
@@ -801,9 +811,20 @@ def _segnali_nel_testo(a: Azienda, b: Bando, e: Esito, oggi: date | None) -> Non
             # Smart&Start per una startup di pochi mesi era al 26° posto (prova del 21/11/2026)
             e.soddisfatti.append(f"Bando per imprese nuove: l'impresa ha {mesi} mesi")
             e.punteggio += 15
-    if CRISI.search(f"{getattr(b, 'titolo', '')} {testo[:600]}"):
+    # Collaudo del 24/11/2026: requisiti che solo poche imprese hanno restano sotto la soglia
+    # (il Workers Buyout del Lazio arrivava con 60 a una ditta appena nata, l'indennizzo
+    # dell'alluvione 2023 a ogni impresa di Firenze e Pisa, il fondo dei Confidi umbri con 80)
+    inizio = f"{getattr(b, 'titolo', '')} {testo[:800]}"
+    if CRISI.search(inizio):
         e.da_verificare.append("Bando per imprese in crisi o in difficoltà")
         e.punteggio -= 20
+        e.tetto = PUNTEGGIO_MINIMO - 5
+    if CALAMITA.search(inizio):
+        e.da_verificare.append("Solo per imprese danneggiate da calamità: verificare i danni")
+        e.tetto = PUNTEGGIO_MINIMO - 5
+    if SOLO_INTERMEDIARI.search(inizio):
+        e.da_verificare.append("La domanda la presentano Confidi o banche, non l'impresa")
+        e.tetto = PUNTEGGIO_MINIMO - 5
     dimensione = dimensione_effettiva(a)[0] if hasattr(a, "dipendenti") else a.dimensione_manuale
     if (
         dimensione in ("piccola", "media", "grande")
@@ -896,7 +917,15 @@ PAROLE_UE_PER_CATEGORIA = {
         "assunzioni": r"\b(employment|job creation|recruitment)\b",
     }.items()
 }
-PUNTI_SENZA_PROGETTO = -20
+# Un bando nazionale generico non collegato ai progetti arrivava a 45 esatti (50 +5 +10 -20):
+# Conto Termico a una software house, finanziamenti per l'estero a chi non esporta
+# (collaudo del 24/11/2026). Con -25 resta sotto la soglia; regionali e comunali restano.
+PUNTI_SENZA_PROGETTO = -25
+SOLO_EDIFICI = re.compile(
+    r"\b(negli edifici|degli edifici|di edifici|interventi edilizi|riqualificazione energetica "
+    r"(degli|di) (edifici|immobili))\b",
+    re.IGNORECASE,
+)
 
 
 def categorie_progetto(p: Any) -> set[str]:
@@ -960,6 +989,13 @@ def _esigenze(b: Bando, req: Any, e: Esito, ctx: Contesto) -> None:
 
     nomi = {normalizza(c): c for c in CATEGORIE_SPESA}  # con gli accenti, per la pagina
     elenco = ", ".join(sorted(nomi.get(c, c) for c in comuni))
+    testo = f"{getattr(b, 'titolo', '') or ''} {(getattr(b, 'descrizione', None) or '')[:1000]}"
+    if SOLO_EDIFICI.search(testo) and not any("immobili e opere" in c for _, c in progetti):
+        # Conto Termico (interventi negli edifici) arrivava con 95 al progetto «Flotta green»
+        # di un'impresa di trasporti (collaudo del 24/11/2026)
+        e.da_verificare.append("Finanzia interventi sugli edifici: nessun progetto li prevede")
+        e.punteggio += PUNTI_SENZA_PROGETTO
+        return
     if punti == PUNTI_PROGETTO["finalita"]:
         object.__setattr__(e, "solo_finalita", True)
         e.da_verificare.append(
