@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block titolo %}Automazioni · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+<div class="intestazione">
+  <hgroup>
+    <h1>Automazioni</h1>
+    <p>Messaggi ai clienti che partono quando succede qualcosa: esce un bando adatto, un bando sta per scadere, arriva il momento del riepilogo. Girano ogni mattina dopo la ricerca dei bandi.</p>
+  </hgroup>
+  {% if utente.is_titolare %}
+  <p class="gruppo-pulsanti">
+    <a href="/automazioni/nuova?evento=nuovo_bando" role="button" class="piccolo">Nuova: bando adatto</a>
+    <a href="/automazioni/nuova?evento=scadenza" role="button" class="piccolo secondary outline">Nuova: promemoria scadenza</a>
+    <a href="/automazioni/nuova?evento=riepilogo" role="button" class="piccolo secondary outline">Nuovo: riepilogo</a>
+  </p>
+  {% endif %}
+</div>
+{% if msg %}<div class="messaggio {{ 'ok' if esito == 'ok' else 'errore' }}" role="status">{{ msg }}</div>{% endif %}
+
+<details class="guida">
+  <summary><span class="icona-info" aria-hidden="true">i</span> Come funzionano</summary>
+  <ul>
+    <li>Ogni automazione sceglie i clienti (tutti, solo imprese, solo enti o clienti scelti), i tipi di bando e da quale punteggio in su.</li>
+    <li>«Prepara una bozza» mette il messaggio in <a href="/aggiornamenti">Aggiornamenti</a>: parte solo quando lo approvi. «Invia da sola» lo spedisce subito, a tuo nome.</li>
+    <li>Al massimo un messaggio al giorno per cliente: se escono più bandi insieme finiscono nello stesso messaggio. Un bando già segnalato a un cliente non gli viene riproposto come nuovo.</li>
+    <li>Partono solo ai referenti con il consenso per quel canale; chi si disiscrive non riceve più nulla.</li>
+    <li>Quando accendi un'automazione conta solo quello che trova da quel momento: niente messaggi arretrati.</li>
+  </ul>
+</details>
+
+{% if not automazioni %}
+<article><p>Non ci sono automazioni.</p></article>
+{% else %}
+<div class="overflow-auto">
+<table class="striped">
+  <thead><tr><th>Automazione</th><th>Per chi</th><th>Cosa fa</th><th>Messaggi</th><th>Ultima volta</th><th>Stato</th></tr></thead>
+  <tbody>
+  {% for au in automazioni %}
+  <tr>
+    <td><a href="/automazioni/{{ au.id }}">{{ au.nome }}</a><br><small>{{ descrivi(au) }} · da {{ au.punteggio_minimo }} punti</small></td>
+    <td>{{ destinatari[au.destinatari] }}{% if au.destinatari == "scelti" %} ({{ (au.aziende_ids or []) | length }}){% endif %}</td>
+    <td>{{ "Bozza da approvare" if au.azione == "bozza" else "Invia da sola" }}</td>
+    <td>
+      {%- set bozze = conteggi.get((au.id, "bozza"), 0) %}{% set inviati = conteggi.get((au.id, "inviato"), 0) %}{% set errori = conteggi.get((au.id, "errore"), 0) %}
+      {% if bozze %}<a href="/aggiornamenti?stato=bozza">{{ bozze }} da approvare</a><br>{% endif %}
+      {% if inviati %}{{ inviati }} inviati<br>{% endif %}
+      {% if errori %}<a href="/aggiornamenti?stato=errore">{{ errori }} non inviati</a>{% endif %}
+      {% if not (bozze or inviati or errori) %}—{% endif %}
+    </td>
+    <td>{% if au.ultima_esecuzione %}{{ au.ultima_esecuzione | data_ora }}<br><small>{{ au.ultimo_esito }}</small>{% else %}—{% endif %}</td>
+    <td>
+      {% if utente.is_titolare %}
+      <form method="post" action="/automazioni/{{ au.id }}/accendi">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="attiva" value="{{ '0' if au.attiva else '1' }}">
+        <button class="piccolo {{ 'secondary outline' if not au.attiva else '' }}" title="{{ 'Spegni' if au.attiva else 'Accendi' }}">{{ "Accesa" if au.attiva else "Spenta" }}</button>
+      </form>
+      {% else %}{{ "Accesa" if au.attiva else "Spenta" }}{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

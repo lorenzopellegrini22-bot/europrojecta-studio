@@ -262,3 +262,42 @@ if ("serviceWorker" in navigator && window.isSecureContext) {
   });
   aggiorna();
 })();
+
+// Automazioni: i campi che dipendono da «Quando parte» e «Per quali clienti»
+(function () {
+  const evento = document.querySelector("select[data-evento-automazione]");
+  if (!evento) return;
+  const form = evento.form;
+  const destinatari = form.querySelector("select[data-destinatari-automazione]");
+  const aggiorna = () => {
+    form.querySelectorAll("[data-solo-evento]").forEach((el) => {
+      el.hidden = el.dataset.soloEvento !== evento.value;
+    });
+    form.querySelectorAll("[data-solo-destinatari]").forEach((el) => {
+      el.hidden = el.dataset.soloDestinatari !== destinatari.value;
+    });
+  };
+  // cambiando «Quando parte» il testo predefinito segue, se non è stato modificato
+  const modelli = JSON.parse(form.dataset.modelli || "{}");
+  let precedente = evento.value;
+  evento.addEventListener("change", () => {
+    const vecchio = modelli[precedente];
+    const nuovo = modelli[evento.value];
+    const oggetto = form.querySelector("[name=oggetto]");
+    const testo = form.querySelector("[name=testo]");
+    if (vecchio && nuovo && oggetto.value === vecchio.oggetto && testo.value === vecchio.testo) {
+      oggetto.value = nuovo.oggetto;
+      testo.value = nuovo.testo;
+    }
+    precedente = evento.value;
+    aggiorna();
+  });
+  destinatari.addEventListener("change", aggiorna);
+  aggiorna();
+})();
+
+// Moduli con data-conferma: chiedono conferma prima di inviare (es. eliminare)
+document.addEventListener("submit", (ev) => {
+  const testo = ev.target instanceof HTMLFormElement ? ev.target.dataset.conferma : null;
+  if (testo && !window.confirm(testo)) ev.preventDefault();
+}, true);

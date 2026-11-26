@@ -49,6 +49,11 @@ FREQUENZE_AGGIORNAMENTO = ("nessuno", "settimanale", "mensile")
 CANALI = ("email", "whatsapp")
 STATI_AGGIORNAMENTO = ("bozza", "approvato", "inviato", "errore", "scartato")
 STATI_REPORT = ("bozza", "approvato", "inviato")
+# Automazioni (sezione Automazioni): quando partono, per chi, cosa fanno
+EVENTI_AUTOMAZIONE = ("nuovo_bando", "scadenza", "riepilogo")
+DESTINATARI_AUTOMAZIONE = ("tutti", "imprese", "enti", "scelti")
+AZIONI_AUTOMAZIONE = ("bozza", "invio")
+CANALI_AUTOMAZIONE = ("preferito", "email", "whatsapp")
 
 
 def _in(valori: tuple[str, ...]) -> str:
@@ -216,9 +221,52 @@ class AggiornamentoCliente(ConTimestamp, Base):
     inviato_il: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     id_messaggio: Mapped[str | None] = mapped_column(Text)
     errore: Mapped[str | None] = mapped_column(Text)
+    # Creato da un'automazione (None: a mano o dalla frequenza del cliente)
+    automazione_id: Mapped[int | None] = mapped_column(
+        ForeignKey("automazione.id", ondelete="SET NULL"), index=True
+    )
+    appalti_citati: Mapped[list[int] | None] = mapped_column(ARRAY(BigInteger))
 
     azienda: Mapped[Azienda] = relationship()
     referente: Mapped[Referente | None] = relationship()
+    automazione: Mapped["Automazione | None"] = relationship()
+
+
+class Automazione(ConTimestamp, Base):
+    """Regola della sezione Automazioni: quando succede qualcosa (nuovo bando adatto, bando
+    in scadenza, riepilogo periodico) prepara o invia un messaggio ai clienti scelti."""
+
+    __tablename__ = "automazione"
+    __table_args__ = (
+        CheckConstraint(f"evento IN {_in(EVENTI_AUTOMAZIONE)}", name="ck_automazione_evento"),
+        CheckConstraint(
+            f"destinatari IN {_in(DESTINATARI_AUTOMAZIONE)}", name="ck_automazione_destinatari"
+        ),
+        CheckConstraint(f"azione IN {_in(AZIONI_AUTOMAZIONE)}", name="ck_automazione_azione"),
+        CheckConstraint(f"canale IN {_in(CANALI_AUTOMAZIONE)}", name="ck_automazione_canale"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    nome: Mapped[str] = mapped_column(String(200))
+    attiva: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # da quando è attiva: le opportunità trovate prima non fanno partire messaggi arretrati
+    attiva_dal: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    evento: Mapped[str] = mapped_column(String(20))
+    giorni_scadenza: Mapped[int | None] = mapped_column(Integer)  # evento «scadenza»
+    frequenza: Mapped[str | None] = mapped_column(String(20))  # evento «riepilogo»
+    destinatari: Mapped[str] = mapped_column(String(10), default="tutti")
+    aziende_ids: Mapped[list[int] | None] = mapped_column(ARRAY(BigInteger))
+    ambiti: Mapped[list[str] | None] = mapped_column(ARRAY(Text))  # None = tutti
+    punteggio_minimo: Mapped[int] = mapped_column(Integer, default=70)
+    azione: Mapped[str] = mapped_column(String(10), default="bozza")
+    canale: Mapped[str] = mapped_column(String(10), default="preferito")
+    oggetto: Mapped[str] = mapped_column(Text)
+    testo: Mapped[str] = mapped_column(Text)
+    usa_ai: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # chi la gestisce: i messaggi inviati da soli partono a suo nome (firma e casella email)
+    utente_id: Mapped[int | None] = mapped_column(ForeignKey("utente.id", ondelete="SET NULL"))
+    ultima_esecuzione: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ultimo_esito: Mapped[str | None] = mapped_column(Text)
 
 
 class ReportBando(ConTimestamp, Base):

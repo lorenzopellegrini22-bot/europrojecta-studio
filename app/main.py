@@ -39,6 +39,7 @@ from app.auth.invito import router as invito_router
 from app.auth.recupero import router as recupero_router
 from app.auth.router import router as auth_router
 from app.auth.utenti import router as utenti_router
+from app.automazioni.router import router as automazioni_router
 from app.bandi.manuali import router as bandi_manuali_router
 from app.bandi.router import router as bandi_router
 from app.cestino.router import router as cestino_router
@@ -201,6 +202,7 @@ app.include_router(invito_router)
 app.include_router(recupero_router)
 app.include_router(report_router)
 app.include_router(aggiornamenti_router)
+app.include_router(automazioni_router)
 app.include_router(import_router)
 app.include_router(export_router)
 app.include_router(clienti_router)

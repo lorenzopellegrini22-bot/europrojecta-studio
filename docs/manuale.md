@@ -150,6 +150,30 @@ Guida breve per il consulente. Ogni pagina ha anche le sue spiegazioni (le «i»
   bozze insieme). Partono solo ai referenti con il consenso; le email hanno il link per
   disiscriversi.
 
+### Automazioni (Studio → Automazioni)
+Messaggi ai clienti che partono da soli ogni mattina, dopo la ricerca dei bandi. Ogni
+automazione si sceglie così:
+- **Quando parte:** esce un nuovo bando adatto · un bando adatto scade entro N giorni ·
+  riepilogo settimanale o mensile (bandi del periodo, pratiche e scadenze).
+- **Per quali clienti:** tutti, solo imprese, solo enti pubblici e comuni, o clienti scelti.
+- **Quali bandi:** europei, nazionali, regionali e locali, gare; da quale punteggio in su
+  (consigliato 70). Valgono anche le caselle «Dove cercare» di ogni cliente.
+- **Cosa fa:** prepara una **bozza** da approvare in Aggiornamenti oppure **invia da sola**,
+  a nome del titolare che l'ha salvata. Canale: quello preferito dal referente, email o
+  WhatsApp.
+- **Il messaggio:** oggetto e testo con i campi che si riempiono da soli
+  (`{nome_referente}`, `{ragione_sociale}`, `{titolo_bando}`, `{scadenza}`, `{perche}`,
+  `{link_bando}`, `{elenco_bandi}`, `{riepilogo}`, `{nome_consulente}`); riscrittura con l'AI
+  facoltativa (all'AI non arrivano i nomi). **Anteprima** con un cliente vero nella scheda.
+
+Sicurezze sempre attive: al massimo un messaggio al giorno per cliente (più bandi insieme
+vanno nello stesso messaggio); un bando già segnalato non riparte come nuovo; accendendo
+un'automazione non partono messaggi arretrati; solo referenti con il consenso. Il
+**registro** nella scheda dell'automazione mostra cosa ha preparato o inviato, a chi e
+quando. Pronte (spente): «Nuovo bando adatto» (da 70, bozza) e «Promemoria: il bando scade
+tra 15 giorni». Crearle e cambiarle spetta al titolare; i collaboratori con la sezione
+Aggiornamenti le vedono.
+
 ## 7. Pratiche e scadenze
 - Pratiche a fasi da modelli personalizzabili, con checklist, documenti, email al cliente.
 - Lo **Scadenzario** raccoglie operazioni, presentazioni e promemoria dei clienti.

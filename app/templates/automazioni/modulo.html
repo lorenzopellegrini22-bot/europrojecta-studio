@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block titolo %}{{ au.nome or "Nuova automazione" }} · {{ NOME_APP }}{% endblock %}
+{% block contenuto %}
+{%- set puo = utente.is_titolare %}
+<nav aria-label="breadcrumb"><ul><li><a href="/automazioni">Automazioni</a></li><li>{{ au.nome or "Nuova" }}</li></ul></nav>
+<div class="intestazione">
+  <hgroup>
+    <h1>{{ au.nome or "Nuova automazione" }}</h1>
+    {% if au.id %}<p>{{ "Accesa" if au.attiva else "Spenta" }}{% if au.ultima_esecuzione %} · ultima esecuzione {{ au.ultima_esecuzione | data_ora }}: {{ au.ultimo_esito }}{% endif %}</p>{% endif %}
+  </hgroup>
+  {% if au.id and puo %}
+  <form method="post" action="/automazioni/{{ au.id }}/esegui" data-attesa="Eseguo…">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="secondary outline piccolo" title="Fa subito quello che farebbe domattina: prepara le bozze o, se impostata così, invia i messaggi">Esegui adesso</button>
+  </form>
+  {% endif %}
+</div>
+{% if msg %}<div class="messaggio {{ 'ok' if esito == 'ok' else 'errore' }}" role="status">{{ msg }}</div>{% endif %}
+{% if errori %}<div class="messaggio errore" role="alert"><ul>{% for e in errori %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+
+<form method="post" action="{{ '/automazioni/nuova' if nuova else '/automazioni/%d' % au.id }}" class="modulo-automazione" data-modelli="{{ modelli | tojson | forceescape }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <fieldset {% if not puo %}disabled{% endif %}>
+  <label>Nome<input name="nome" value="{{ au.nome or '' }}" required placeholder="Es. Nuovo bando per i comuni"></label>
+
+  <fieldset>
+    <legend><strong>Quando parte</strong></legend>
+    <select name="evento" aria-label="Quando parte" data-evento-automazione>
+      {% for k, e in eventi.items() %}<option value="{{ k }}" {% if au.evento == k %}selected{% endif %}>{{ e }}</option>{% endfor %}
+    </select>
+    <label data-solo-evento="scadenza">Quanti giorni prima della scadenza
+      <input type="number" name="giorni_scadenza" min="1" max="120" value="{{ au.giorni_scadenza or 15 }}">
+    </label>
+    <label data-solo-evento="riepilogo">Ogni quanto
+      <select name="frequenza">
+        <option value="settimanale" {% if au.frequenza == "settimanale" %}selected{% endif %}>Ogni settimana</option>
+        <option value="mensile" {% if au.frequenza != "settimanale" %}selected{% endif %}>Ogni mese</option>
+      </select>
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend><strong>Per quali clienti</strong></legend>
+    <select name="destinatari" aria-label="Per quali clienti" data-destinatari-automazione>
+      {% for k, e in destinatari.items() %}<option value="{{ k }}" {% if au.destinatari == k %}selected{% endif %}>{{ e }}</option>{% endfor %}
+    </select>
+    <label data-solo-destinatari="scelti">Clienti (puoi sceglierne più di uno: Ctrl + clic sul computer)
+      <select name="aziende_ids" multiple size="8">
+        {% for c in clienti %}<option value="{{ c.id }}" {% if c.id in (au.aziende_ids or []) %}selected{% endif %}>{{ c.ragione_sociale }}</option>{% endfor %}
+      </select>
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend><strong>Quali bandi</strong></legend>
+    {% for k, e in ambiti.items() %}
+    <label class="casella"><input type="checkbox" name="ambiti" value="{{ k }}" {% if not au.ambiti or k in au.ambiti %}checked{% endif %}> {{ e }}</label>
+    {% endfor %}
+    <label>Da quale punteggio in su
+      <input type="number" name="punteggio_minimo" min="45" max="100" value="{{ au.punteggio_minimo }}">
+      <small>L'app segnala i bandi da 45 in su. Per scrivere ai clienti conviene stare più in alto (70: bandi molto adatti). Valgono comunque anche le caselle «Dove cercare» di ogni cliente.</small>
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend><strong>Cosa fa</strong></legend>
+    {% for k, e in azioni.items() %}
+    <label class="casella"><input type="radio" name="azione" value="{{ k }}" {% if au.azione == k %}checked{% endif %}> {{ e }}</label>
+    {% endfor %}
+    <small>Con «Invia da sola» il messaggio parte senza che tu lo rilegga, a tuo nome. Conviene usarlo con punteggi alti e dopo aver provato l'automazione con le bozze.</small>
+    <label>Canale
+      <select name="canale">
+        {% for k, e in canali.items() %}<option value="{{ k }}" {% if au.canale == k %}selected{% endif %}>{{ e }}</option>{% endfor %}
+      </select>
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend><strong>Il messaggio</strong></legend>
+    <label>Oggetto (solo email)<input name="oggetto" value="{{ au.oggetto }}" required></label>
+    <label>Testo<textarea name="testo" rows="12" required>{{ au.testo }}</textarea></label>
+    <details class="guida">
+      <summary><span class="icona-info" aria-hidden="true">i</span> Campi che si riempiono da soli</summary>
+      <ul>{% for k, e in segnaposto.items() %}<li><code>{{ k }}</code>: {{ e }}</li>{% endfor %}</ul>
+    </details>
+    <label class="casella"><input type="checkbox" name="usa_ai" value="1" {% if au.usa_ai %}checked{% endif %}> Riscrivi ogni messaggio con l'AI, in modo più naturale (all'AI arriva il testo con i campi, mai i nomi del cliente)</label>
+  </fieldset>
+
+  <label class="casella"><input type="checkbox" name="attiva" value="1" {% if au.attiva %}checked{% endif %}> <strong>Accesa</strong>: gira ogni mattina</label>
+  {% if puo %}<button type="submit">{{ "Crea l'automazione" if nuova else "Salva" }}</button>{% endif %}
+  </fieldset>
+</form>
+
+{% if au.id %}
+<section>
+  <h2>Anteprima con un cliente</h2>
+  <form method="get" action="/automazioni/{{ au.id }}" class="grid">
+    <select name="cliente" aria-label="Cliente">
+      <option value="">Scegli un cliente…</option>
+      {% for c in clienti %}<option value="{{ c.id }}" {% if cliente_anteprima == c.id %}selected{% endif %}>{{ c.ragione_sociale }}</option>{% endfor %}
+    </select>
+    <button class="secondary">Mostra l'anteprima</button>
+  </form>
+  {% if anteprima %}
+    {% if anteprima.vuota %}
+    <article><p>Oggi per {{ anteprima.cliente.ragione_sociale }} non c'è niente che corrisponda a questa automazione (tipo di bando, punteggio{% if au.evento == "scadenza" %}, scadenza{% endif %}).</p></article>
+    {% else %}
+    <article>
+      <header>A {{ anteprima.referente.nome_completo if anteprima.referente else "nessun referente con il consenso: il messaggio non partirebbe" }}</header>
+      <p><strong>{{ anteprima.oggetto }}</strong></p>
+      <pre class="testo-messaggio">{{ anteprima.testo }}</pre>
+      <footer><small>Anteprima con i dati di oggi, salvati: se hai cambiato il modulo, salva prima. Non tiene conto dei bandi già segnalati.</small></footer>
+    </article>
+    {% endif %}
+  {% endif %}
+</section>
+
+<section>
+  <h2>Registro</h2>
+  {% if not registro %}
+  <p>Questa automazione non ha ancora preparato messaggi.</p>
+  {% else %}
+  <div class="overflow-auto">
+  <table class="striped">
+    <thead><tr><th>Quando</th><th>Cliente</th><th>A</th><th>Stato</th></tr></thead>
+    <tbody>
+    {% for ag in registro %}
+    <tr>
+      <td>{{ ag.creato_il | data_ora }}</td>
+      <td><a href="/aggiornamenti/{{ ag.id }}">{{ ag.azienda.ragione_sociale }}</a></td>
+      <td>{{ ag.referente.nome_completo if ag.referente else "—" }} · {{ "email" if ag.canale == "email" else "WhatsApp" }}</td>
+      <td>{{ etichette_stato[ag.stato] }}{% if ag.inviato_il %} il {{ ag.inviato_il | data_ora }}{% endif %}{% if ag.errore %}<br><small class="errore-campo">{{ ag.errore | truncate(100) }}</small>{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
+</section>
+
+{% if puo %}
+<form method="post" action="/automazioni/{{ au.id }}/elimina" data-conferma="Eliminare l'automazione «{{ au.nome }}»? I messaggi già preparati restano in Aggiornamenti.">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <button class="secondary outline piccolo">Elimina l'automazione</button>
+</form>
+{% endif %}
+{% endif %}
+{% endblock %}

@@ -209,7 +209,7 @@ def parti_bozza(dati: dict[str, Any]) -> tuple[str, str]:
     return "\n".join(righe), "\n".join(riservate)
 
 
-def _riscrivi_con_ai(db: Session, testo: str) -> str | None:
+def _riscrivi_con_ai(db: Session, testo: str, istruzioni: str = PROMPT_AI) -> str | None:
     """L'AI riceve solo il testo con segnaposto (dati dei bandi, nessun nome). Se perde un
     segnaposto o fallisce, si tiene il testo del server."""
     from app.extraction import servizio as ai
@@ -228,7 +228,7 @@ def _riscrivi_con_ai(db: Session, testo: str) -> str | None:
         client = openai.OpenAI(
             api_key=integrazioni.leggi_valori(db, "openai")["api_key"], timeout=60.0
         )
-        r = client.responses.create(model=modello, instructions=PROMPT_AI, input=testo)
+        r = client.responses.create(model=modello, instructions=istruzioni, input=testo)
         uso = getattr(r, "usage", None)
         ai.registra_uso(
             db,

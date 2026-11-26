@@ -4,7 +4,7 @@
 <div class="intestazione">
   <hgroup>
     <h1>Aggiornamenti ai clienti</h1>
-    <p>Messaggi periodici ai tuoi clienti, per email o WhatsApp, con i bandi che hai scelto per loro e lo stato delle pratiche. Nessun messaggio parte senza la tua approvazione.</p>
+    <p>Messaggi periodici ai tuoi clienti, per email o WhatsApp, con i bandi che hai scelto per loro e lo stato delle pratiche. Nessun messaggio parte senza la tua approvazione, tranne quelli delle <a href="/automazioni">automazioni</a> impostate su «Invia da sola».</p>
   </hgroup>
   <form method="post" action="/aggiornamenti/genera">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -17,7 +17,7 @@
 <details class="guida">
   <summary><span class="icona-info" aria-hidden="true">i</span> Come funzionano</summary>
   <ul>
-    <li>Le bozze si creano da sole per i clienti con aggiornamenti «ogni settimana» o «ogni mese» (scheda cliente → Modifica), oppure quando vuoi con il pulsante qui sopra.</li>
+    <li>Le bozze si creano da sole per i clienti con aggiornamenti «ogni settimana» o «ogni mese» (scheda cliente → Modifica), dalle <a href="/automazioni">Automazioni</a>, oppure quando vuoi con il pulsante qui sopra.</li>
     <li>Partono solo ai referenti che hanno dato il consenso per quel canale (scheda cliente → Referenti → Consensi). Chi si disiscrive dal link nell'email non riceve più nulla.</li>
     <li>Con l'AI il testo viene riscritto in modo più naturale: all'AI arriva solo il testo con i segnaposto, mai i nomi del cliente o dei referenti.</li>
   </ul>
@@ -40,7 +40,7 @@
     {% for ag in elenco %}
     <tr>
       <td>{% if ag.stato in ("bozza", "errore") %}<input type="checkbox" name="ids" value="{{ ag.id }}" aria-label="Seleziona">{% endif %}</td>
-      <td><a href="/aggiornamenti/{{ ag.id }}">{{ ag.azienda.ragione_sociale }}</a>{% if ag.generato_con_ai %} <small class="etichetta">AI</small>{% endif %}</td>
+      <td><a href="/aggiornamenti/{{ ag.id }}">{{ ag.azienda.ragione_sociale }}</a>{% if ag.generato_con_ai %} <small class="etichetta">AI</small>{% endif %}{% if ag.automazione %}<br><small>da «<a href="/automazioni/{{ ag.automazione_id }}">{{ ag.automazione.nome }}</a>»</small>{% endif %}</td>
       <td>{{ ag.referente.nome_completo if ag.referente else "—" }}</td>
       <td>{{ "Email" if ag.canale == "email" else "WhatsApp" }}</td>
       <td>{{ etichette[ag.stato] }}{% if ag.errore %}<br><small class="errore-campo">{{ ag.errore | truncate(80) }}</small>{% endif %}</td>

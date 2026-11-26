@@ -74,6 +74,7 @@ def elenco(request: Request, db: Db, _: Autenticato) -> Response:
         .options(
             selectinload(AggiornamentoCliente.azienda),
             selectinload(AggiornamentoCliente.referente),
+            selectinload(AggiornamentoCliente.automazione),
         )
         .order_by(AggiornamentoCliente.creato_il.desc())
         .limit(200)

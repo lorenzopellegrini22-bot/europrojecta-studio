@@ -240,10 +240,12 @@ def raccolta_appalti() -> str:
 
 def opportunita() -> str:
     """Ogni mattina (pipeline del brief, passi 6-7 ed email delle 7:00): abbinamento a regole,
-    punteggio AI, bozze periodiche degli aggiornamenti ai clienti, poi l'email del mattino a
-    ogni utente attivo. L'email parte anche senza novità; al massimo una al giorno per utente.
+    punteggio AI, bozze periodiche degli aggiornamenti ai clienti, automazioni, poi l'email del
+    mattino a ogni utente attivo. L'email parte anche senza novità; al massimo una al giorno
+    per utente.
     Un passo che fallisce non blocca i successivi."""
     from app.aggiornamenti.servizio import bozze_periodiche
+    from app.automazioni.servizio import esegui as esegui_automazioni
     from app.comunicazioni import email_disponibile, invia_registrando
     from app.config import get_settings
     from app.extraction.servizio import impostazioni
@@ -258,6 +260,7 @@ def opportunita() -> str:
         for nome, passo in (
             ("Valutazione AI", valuta),
             ("Bozze aggiornamenti", bozze_periodiche),
+            ("Automazioni", esegui_automazioni),
             ("Bandi e gare seguiti", controlla_seguiti),
         ):
             try:

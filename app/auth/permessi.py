@@ -34,8 +34,8 @@ SEZIONI: dict[str, tuple[str, tuple[str, ...]]] = {
     "bandi": ("Bandi, fonti, revisione AI e PDF", ("/bandi", "/fonti", "/revisione", "/documenti")),
     "appalti": ("Appalti pubblici", ("/appalti",)),
     "aggiornamenti": (
-        "Aggiornamenti ai clienti e report PDF",
-        ("/aggiornamenti", "/aggiornamenti-approva", "/report"),
+        "Aggiornamenti ai clienti, automazioni e report PDF",
+        ("/aggiornamenti", "/aggiornamenti-approva", "/automazioni", "/report"),
     ),
     "prefattibilita": ("Prefattibilità", ("/prefattibilita",)),
     "segnalatori": ("Segnalatori", ("/segnalatori",)),
